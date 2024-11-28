@@ -1,3 +1,3 @@
 Requirements:
 
-Node.js: LTS 14.17.1
+Node.js: v22.11.0 LTS

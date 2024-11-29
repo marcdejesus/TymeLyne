@@ -1,5 +1,5 @@
 <h3>Why are we rebuilding using React Native?</h3>
-<p>Although we have used .NET Maui and familiarized ourselves with their DevOps, Microsoft decided to discontinue support for Xamarin in May of 2024. The documentation we had to work with all semester was very minimal, leaving us to experiment and brute-force our frontend development (XAML). The smallest features could potentially take hours to implement, meaning we lacked an agile workflow. After researching more stable frameworks, the contenders for the best are React Native and Flutter. Both are viable options and are actively supported with updates, documentation, libraries, and many tutorials. The choice to use React Native instead of Flutter is due to the fact that React Native uses JavaScript and TypeScript, while Flutter uses its own language, Dart. JavaScript and TypeScript are more in demand than Dart due to the wider range of what we could accomplish with them and the ability to apply them outside of mobile app development.</p>
+<p>Although we have used .NET Maui and familiarized ourselves with their DevOps, Microsoft discontinued support for Xamarin in May of 2024. The documentation we had to work with all semester was very minimal, leaving us to experiment and brute-force our front-end development (XAML). The smallest features could potentially take hours to implement, meaning we lacked an agile workflow. After researching more stable frameworks, I found that the best contenders for the best are React Native and Flutter. Both are viable options and are actively supported with updates, documentation, libraries, and many tutorials. The choice to use React Native instead of Flutter is due to the fact that React Native uses JavaScript and TypeScript, while Flutter uses its own language, Dart. JavaScript and TypeScript are more in demand than Dart due to the wider range of what we could accomplish with them and the ability to apply them outside of mobile app development. We are using TypeScript over JavaScript due to its static typing and optimization for larger scaled projects over JavaScript. </p>
 
 <h3>Requirements:</h3>
 
@@ -27,6 +27,7 @@ VS Code (Dark Mode Theme)
 <h3>More advice:</h3>
 <p>-Work on a separate branch from main if you're implementing features that require more testing</p>
 <p>-Work directly within the repository, so if you need to roll back to a previous commit, it's easier to do so through cmd line or git controls in VS Code</p>
+<p>-Push often on your branch whenever you have a stable build, so you can roll back to it if needed.</p>
 <p>-Use Figma to assist in UI Design. Many assets are easily transferrable towards React Native, or at least easily replicable.</p>
 
 <h3>What to do if you run into an issue?</h3>

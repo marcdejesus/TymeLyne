@@ -24,6 +24,11 @@ VS Code (Dark Mode Theme)
 <p>Scan the QR code that appears in your terminal using your camera and the current build will open on your phone using Expo Go.</p>
 <p>Enjoy features including live edits, performance metrics, and many more.</p>
 
+<h3>More advice:</h3>
+<p>-Work on a separate branch from main if you're implementing features that require more testing</p>
+<p>-Work directly within the repository, so if you need to roll back to a previous commit, it's easier to do so through cmd line or git controls in VS Code</p>
+<p>-Use Figma to assist in UI Design. Many assets are easily transferrable towards React Native, or at least easily replicable.</p>
+
 <h3>What to do if you run into an issue?</h3>
 <p>I ran into many issues during my initial build. Luckily for us, React Native and Expo have millions of users and plenty of resources online. If you're encountering any issues, paste your command line error into your browser or ChatGPT and you will have the proper guidance to overcome any issues you may encounter. Feel free to reach out to me as well with any questions.</p>
 

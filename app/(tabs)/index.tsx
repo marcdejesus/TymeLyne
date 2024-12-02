@@ -1,6 +1,6 @@
 import * as React from "react";
-import {ScrollView, Text, StyleSheet, View, Image} from "react-native";
-
+import {StyleSheet, View, Image} from "react-native";
+import {ScrollView, Text} from "@/components/Themed";
 const Current = () => {
   	
   	return (
@@ -15,7 +15,7 @@ const Current = () => {
         				<Text style={[styles.label, styles.labelTypo]}>Add New</Text>
       			</View>
       			<View style={[styles.statsCard, styles.menuBorder]}>
-						<Image style={styles.clockIcon} resizeMode="cover" source={require('@/assets/images/clock.svg')} />
+						<Image style={styles.clockIcon} resizeMode="cover" source={require('@/assets/images/fire.png')} />
         				<View style={styles.reviewBody}>
           					<View style={styles.textHeading}>
             						<Text style={styles.textHeading1}>13</Text>
@@ -35,7 +35,7 @@ const Current = () => {
         				</View>
         				<View style={styles.menuSection}>
           					<View style={[styles.menuItem, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.svg')} />
+            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -44,7 +44,7 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.svg')} />
+            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -53,7 +53,7 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.svg')} />
+            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -67,7 +67,7 @@ const Current = () => {
         				</View>
         				<View style={styles.menuSection1}>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.svg')} />
+            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -76,7 +76,7 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.svg')} />
+            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -111,13 +111,11 @@ const styles = StyleSheet.create({
     		borderStyle: "solid",
     		left: 17,
     		borderRadius: 8,
-    		position: "absolute",
-    		backgroundColor: "#fff"
+    		position: "absolute"
   	},
   	text1Layout: {
     		lineHeight: 22,
-    		fontSize: 16,
-    		color: "#1e1e1e"
+    		fontSize: 16
   	},
   	menuItemSpaceBlock: {
     		gap: 12,
@@ -135,7 +133,6 @@ const styles = StyleSheet.create({
     		alignItems: "center"
   	},
   	label: {
-    		color: "#000",
     		lineHeight: 20,
     		letterSpacing: 0,
     		fontSize: 15,
@@ -143,7 +140,7 @@ const styles = StyleSheet.create({
   	},
   	button: {
     		left: 98,
-    		backgroundColor: "#c7c7cc",
+    		backgroundColor: "#006abc",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
@@ -151,7 +148,6 @@ const styles = StyleSheet.create({
     		position: "absolute"
   	},
   	label1: {
-    		color: "#fff",
     		lineHeight: 20,
     		letterSpacing: 0,
     		fontSize: 15,
@@ -159,7 +155,7 @@ const styles = StyleSheet.create({
   	},
   	button1: {
     		left: 18,
-    		backgroundColor: "#000",
+			backgroundColor: "#003083",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
@@ -168,7 +164,7 @@ const styles = StyleSheet.create({
   	},
   	button2: {
     		left: 202,
-    		backgroundColor: "#c7c7cc",
+			backgroundColor: "#006abc",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
@@ -177,15 +173,13 @@ const styles = StyleSheet.create({
   	},
   	clockIcon: {
     		width: 40,
-    		height: 40,
-    		overflow: "hidden"
+    		height: 50
   	},
   	textHeading1: {
     		fontSize: 24,
     		letterSpacing: -0.5,
     		lineHeight: 29,
     		textAlign: "center",
-    		color: "#1e1e1e",
     		fontFamily: "Inter-SemiBold",
     		fontWeight: "600"
   	},
@@ -215,7 +209,6 @@ const styles = StyleSheet.create({
   	heading: {
     		fontSize: 14,
     		lineHeight: 20,
-    		color: "#757575",
     		alignSelf: "stretch"
   	},
   	heading1: {
@@ -233,7 +226,6 @@ const styles = StyleSheet.create({
     		overflow: "hidden"
   	},
   	rule: {
-    		backgroundColor: "#d9d9d9",
     		height: 1,
     		alignSelf: "stretch"
   	},
@@ -269,21 +261,15 @@ const styles = StyleSheet.create({
     		borderRadius: 8
   	},
   	menuSeparator1: {
-    		borderRadius: 8
+    		borderRadius: 8,
+			color: "#d9d9d9"
   	},
   	menuSection1: {
     		alignSelf: "stretch"
   	},
   	menu: {
     		top: 234,
-    		shadowColor: "rgba(12, 12, 13, 0.1)",
-    		shadowOffset: {
-      			width: 0,
-      			height: 4
-    		},
-    		shadowRadius: 4,
     		elevation: 4,
-    		shadowOpacity: 1,
     		height: 452,
     		padding: 8,
     		overflow: "hidden"
@@ -291,8 +277,7 @@ const styles = StyleSheet.create({
   	current: {
     		width: "100%",
     		maxWidth: "100%",
-    		flex: 1,
-    		backgroundColor: "#fff"
+    		flex: 1
   	}
 });
 

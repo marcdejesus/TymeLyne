@@ -27,7 +27,10 @@ npm i react-native-bouncy-checkbox
 
 <p>If you are on MacOS, install HomeBrew and run the command: brew install watchman, if you're on Windows you should be fine.</p>
 <p>Open your terminal in VS Code and make sure you're in the project directory. Navigate using cd command and pwd command to check</p>
-<p>Run this command to run: npx expo start --reset-cache</p>
+<p>Run this command to run:</p>  
+
+```npx expo start --reset-cache```
+
 <p>Scan the QR code that appears in your terminal using your camera and the current build will open on your phone using Expo Go.</p>
 <p>Enjoy features including live edits, performance metrics, and many more.</p>
 

@@ -42,7 +42,7 @@ export default function TabLayout() {
         ),
       }}>
       <Tabs.Screen // This is the default tab, Home Page
-        name="home"
+        name="index"
         options={{
           title: 'Tyme Lyne',
           tabBarIcon: ({ color }) => <Ionicons name="home-sharp" size={31} color={color} />,

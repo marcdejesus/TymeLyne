@@ -16,6 +16,12 @@ VS Code (Dark Mode Theme)
 <p>Take all of the files from the repository, place them into your build, and click replace all duplicates.</p>
 <p>Begin coding!</p>
 
+#Required Packages
+
+"""md
+npm i react-native-bouncy-checkbox
+"""
+
 <h3>How to test your current build:</h3>
 
 <p>If you are on MacOS, install HomeBrew and run the command: brew install watchman</p>

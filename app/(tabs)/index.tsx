@@ -1,6 +1,8 @@
 import * as React from "react";
 import {StyleSheet, View, Image} from "react-native";
 import {ScrollView, Text} from "@/components/Themed";
+import BouncyCheckbox from "react-native-bouncy-checkbox";
+
 const Current = () => {
   	
   	return (
@@ -15,7 +17,7 @@ const Current = () => {
         				<Text style={[styles.label, styles.labelTypo]}>Add New</Text>
       			</View>
       			<View style={[styles.statsCard, styles.menuBorder]}>
-						<Image style={styles.clockIcon} resizeMode="cover" source={require('@/assets/images/fire.png')} />
+						<Image style={styles.fireIcon} resizeMode="cover" source={require('@/assets/images/fire.png')} />
         				<View style={styles.reviewBody}>
           					<View style={styles.textHeading}>
             						<Text style={styles.textHeading1}>13</Text>
@@ -35,7 +37,15 @@ const Current = () => {
         				</View>
         				<View style={styles.menuSection}>
           					<View style={[styles.menuItem, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
+							  <BouncyCheckbox
+  									size={25}
+  									fillColor="red"
+  									text="Custom Checkbox"
+  									iconStyle={{ borderColor: "red" }}
+  									innerIconStyle={{ borderWidth: 2 }}
+  									textStyle={{ fontFamily: "JosefinSans-Regular" }}
+  									onPress={(isChecked: boolean) => {console.log(isChecked)}}
+								/>
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -44,7 +54,15 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
+							  <BouncyCheckbox
+  									size={25}
+  									fillColor="red"
+  									text="Custom Checkbox"
+  									iconStyle={{ borderColor: "red" }}
+  									innerIconStyle={{ borderWidth: 2 }}
+  									textStyle={{ fontFamily: "JosefinSans-Regular" }}
+  									onPress={(isChecked: boolean) => {console.log(isChecked)}}
+								/>
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -53,7 +71,15 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
+            						<BouncyCheckbox
+  										size={25}
+  										fillColor="red"
+  										text="Custom Checkbox"
+  										iconStyle={{ borderColor: "red" }}
+  										innerIconStyle={{ borderWidth: 2 }}
+  										textStyle={{ fontFamily: "JosefinSans-Regular" }}
+  										onPress={(isChecked: boolean) => {console.log(isChecked)}}
+									/>
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -61,13 +87,18 @@ const Current = () => {
               							<Text style={[styles.heading, styles.labelTypo]}>Menu description.</Text>
             						</View>
           					</View>
-        				</View>
-        				<View style={[styles.menuSeparator1, styles.menuFlexBox]}>
-          					<View style={styles.rule} />
         				</View>
         				<View style={styles.menuSection1}>
           					<View style={[styles.menuItem1, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
+							  <BouncyCheckbox
+  									size={25}
+  									fillColor="red"
+  									text="Custom Checkbox"
+  									iconStyle={{ borderColor: "red" }}
+  									innerIconStyle={{ borderWidth: 2 }}
+  									textStyle={{ fontFamily: "JosefinSans-Regular" }}
+  									onPress={(isChecked: boolean) => {console.log(isChecked)}}
+								/>
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -76,7 +107,15 @@ const Current = () => {
             						</View>
           					</View>
           					<View style={[styles.menuItem, styles.menuItemSpaceBlock]}>
-            						<Image style={styles.squareIcon} resizeMode="cover" source={require('@/assets/images/star.png')} />
+            						<BouncyCheckbox
+  										size={25}
+  										fillColor="red"
+  										text="Custom Checkbox"
+  										iconStyle={{ borderColor: "red" }}
+  										innerIconStyle={{ borderWidth: 2 }}
+  										textStyle={{ fontFamily: "JosefinSans-Regular" }}
+  										onPress={(isChecked: boolean) => {console.log(isChecked)}}
+									/>
             						<View style={styles.body}>
               							<View style={styles.row}>
                 								<Text style={[styles.label3, styles.text1Layout]}>Menu Label</Text>
@@ -140,7 +179,7 @@ const styles = StyleSheet.create({
   	},
   	button: {
     		left: 98,
-    		backgroundColor: "#006abc",
+    		backgroundColor: "#ff0000",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
@@ -155,7 +194,7 @@ const styles = StyleSheet.create({
   	},
   	button1: {
     		left: 18,
-			backgroundColor: "#003083",
+			backgroundColor: "#a90000",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
@@ -164,16 +203,16 @@ const styles = StyleSheet.create({
   	},
   	button2: {
     		left: 202,
-			backgroundColor: "#006abc",
+			backgroundColor: "#ff0000",
     		paddingVertical: 4,
     		paddingHorizontal: 10,
     		borderRadius: 40,
     		top: 9,
     		position: "absolute"
   	},
-  	clockIcon: {
+  	fireIcon: {
     		width: 40,
-    		height: 50
+    		height: 52
   	},
   	textHeading1: {
     		fontSize: 24,

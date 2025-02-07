@@ -25,108 +25,34 @@ export default function TabLayout() {
         // Disable the static render of the header on web
         // to prevent a hydration error in React Navigation v6.
         headerShown: false,
-        tabBarLabel: () => null, // Hide the tab bar labels
-        headerLeft: () => (
-          <Link href="/settings" asChild>
-            <Pressable>
-              {({ pressed }) => (
-                <Ionicons
-                  name="settings-outline"
-                  size={25}
-                  color={Colors[colorScheme ?? 'light'].text}
-                  style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                />
-              )}
-            </Pressable>
-          </Link>
-        ),
+        tabBarLabel: () => null
       }}>
       <Tabs.Screen // This is the default tab, Home Page
         name="index"
         options={{
-          title: 'Tyme Lyne',
           tabBarIcon: ({ color }) => <Ionicons name="home-sharp" size={31} color={color} />,
-          tabBarLabel: () => null, // Hide the label for this tab
-          headerLeft: () => (
-            <Link href="/settings" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <Ionicons
-                    name="settings-outline"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          tabBarLabel: () => null
         }}
       />
       <Tabs.Screen // This is the third tab, Calendar Page
         name="calendar"
         options={{
-          title: 'Tyme Lyne',
           tabBarIcon: ({ color }) => <Ionicons name="calendar-outline" size ={30} color={color} />,
-          tabBarLabel: () => null, // Hide the label for this tab
-          headerLeft: () => (
-            <Link href="/settings" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <Ionicons
-                    name="settings-outline"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          tabBarLabel: () => null
         }}
       />
       <Tabs.Screen // This is the third tab, Explore Page
         name="explore"
         options={{
-          title: 'Tyme Lyne',
           tabBarIcon: ({ color }) => <Ionicons name="search" size={31} color={color} />,
-          tabBarLabel: () => null, // Hide the label for this tab
-          headerLeft: () => (
-            <Link href="/settings" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <Ionicons
-                    name="settings-outline"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          tabBarLabel: () => null
         }}
       />
       <Tabs.Screen // This is the fourth tab, Profile Page
         name="profile"
         options={{
-          title: 'Tyme Lyne',
           tabBarIcon: ({ color }) => <Ionicons name="person-circle" size={31} color={color} />,
-          tabBarLabel: () => null, // Hide the label for this tab
-          headerLeft: () => (
-            <Link href="/settings" asChild>
-              <Pressable>
-                {({ pressed }) => (
-                  <Ionicons
-                    name="settings-outline"
-                    size={25}
-                    color={Colors[colorScheme ?? 'light'].text}
-                    style={{ marginRight: 15, opacity: pressed ? 0.5 : 1 }}
-                  />
-                )}
-              </Pressable>
-            </Link>
-          ),
+          tabBarLabel: () => null
         }}
       />
     </Tabs>

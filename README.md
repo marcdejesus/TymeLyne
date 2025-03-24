@@ -1,46 +1,123 @@
-# Why are we rebuilding using React Native?
-<p>Although we have used .NET Maui and familiarized ourselves with their DevOps, Microsoft discontinued support for Xamarin in May of 2024. The documentation we had to work with all semester was very minimal, leaving us to experiment and brute-force our front-end development (XAML). The smallest features could potentially take hours to implement, meaning we lacked an agile workflow. After researching more stable frameworks, I found that the best contenders for the best are React Native and Flutter. Both are viable options and are actively supported with updates, documentation, libraries, and many tutorials. The choice to use React Native instead of Flutter is due to the fact that React Native uses JavaScript and TypeScript, while Flutter uses its own language, Dart. JavaScript and TypeScript are more in demand than Dart due to the wider range of what we could accomplish with them and the ability to apply them outside of mobile app development. We are using TypeScript over JavaScript due to its static typing and optimization for larger-scale projects over JavaScript. </p>
+# TymeLyne
 
-# Requirements:
+A modern goal-tracking and achievement platform built with React Native and Django.
 
-* VS Code (Dark Mode Theme)
-
-* <a href="https://nodejs.org/en">Node.js</a>: v22.11.0 LTS
-
-* <a href="https://docs.expo.dev/">Expo Documentation</a>: Set up an Expo account, Download Expo Go on your mobile device, and make sure you have the latest version of Expo installed.
-
-# Initial Environment Setup:
-
-* Install Node.js. Verify install with ```node -v``` and ```npm -v```. (You may have to restart your terminal)
-* Install Expo: ```npm install expo```
-* Open up the repository in Visual Studio Code (Can easily be done by cloning the repository in GitHub Desktop, and clicking the Open in Visual Studio Code drop-down option)
-* Verify you have all of the latest packages installed locally. They will be listed in the section below.
-* Refer to "How to test your current build:" to learn how to run the application.
-
-# Required Packages
+## Project Structure
 
 ```
-npm i react-native-bouncy-checkbox
+TymeLyne/
+├── frontend/          # React Native (Expo) frontend
+│   ├── src/
+│   │   ├── components/   # Reusable UI components
+│   │   ├── screens/      # Screen components
+│   │   ├── services/     # API and external service integrations
+│   │   ├── hooks/        # Custom React hooks
+│   │   ├── utils/        # Utility functions
+│   │   ├── types/        # TypeScript type definitions
+│   │   └── constants/    # Constants and configuration
+│   └── App.tsx          # Root component
+└── backend/          # Django backend
+    ├── users/        # User management app
+    ├── goals/        # Goals management app
+    ├── tasks/        # Tasks management app
+    └── tymeline/     # Main project configuration
 ```
 
-# How to test your current build:
+## Tech Stack
 
-<p>If you are on MacOS, install HomeBrew and run the command: brew install watchman, if you're on Windows you should be fine.</p>
-<p>Open your terminal in VS Code and make sure you're in the project directory. Navigate using cd command and pwd command to check</p>
-<p>Run this command to run:</p>  
+- **Frontend**: React Native (Expo)
+- **Backend**: Django REST Framework
+- **Authentication**: Supabase
+- **Database**: PostgreSQL (via Supabase)
+- **AI**: DeepSeek API
+- **Payments**: Stripe
+- **Notifications**: OneSignal/Firebase Cloud Messaging
+- **Calendar Integration**: Google Calendar API, Apple EventKit
+- **Analytics**: Google Analytics for Firebase/Mixpanel
 
-```npx expo start --reset-cache```
+## Prerequisites
 
-<p>Scan the QR code that appears in your terminal using your camera and the current build will open on your phone using Expo Go.</p>
-<p>Enjoy features including live edits, performance metrics, and many more.</p>
+- Node.js (v18 or higher)
+- Python (v3.9 or higher)
+- Git
+- Expo CLI
+- PostgreSQL
 
-# More advice:
-* Work on a separate branch from main if you're implementing features that require more testing
-* Work directly within the repository, so if you need to roll back to a previous commit, it's easier to do so through cmd line or git controls in VS Code</p>
-* Push often on your branch whenever you have a stable build, so you can roll back to it if needed.
-* Use Figma to assist in UI Design. Many assets are easily transferrable towards React Native, or at least easily replicable.
+## Getting Started
 
-# What to do if you run into an issue?
-<p>I ran into many issues during my initial build. Luckily for us, React Native and Expo have millions of users and plenty of resources online. If you're encountering any issues, paste your command line error into your browser or ChatGPT and you will have the proper guidance to overcome any issues you may encounter. Feel free to reach out to me as well with any questions.</p>
+### Backend Setup
 
-<p><i>-Marc De Jesus, Crunch Time Studios</i></p>
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+
+2. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: venv\Scripts\activate
+   ```
+
+3. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+5. Run migrations:
+   ```bash
+   python manage.py migrate
+   ```
+
+6. Start the development server:
+   ```bash
+   python manage.py runserver
+   ```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+
+3. Set up environment variables:
+   ```bash
+   cp .env.example .env
+   # Edit .env with your configuration
+   ```
+
+4. Start the development server:
+   ```bash
+   npm start
+   ```
+
+## Development Guidelines
+
+- Follow the existing code patterns and conventions
+- Write clean, maintainable code
+- Keep files under 200-300 lines
+- Avoid code duplication
+- Write tests for new features
+- Use proper environment variables for configuration
+
+## Contributing
+
+1. Create a new branch for your feature
+2. Make your changes
+3. Write/update tests
+4. Submit a pull request
+
+## License
+
+Copyright CrunchTimeStudios All Rights Reserved.

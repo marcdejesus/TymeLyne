@@ -4,6 +4,8 @@ import { Button, TextInput, Avatar, Divider, Card } from 'react-native-paper';
 import { useAuth } from '../../hooks/useAuth';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
+import { supabase } from '../../services/supabase';
+import Toast from 'react-native-toast-message';
 
 export default function ProfileScreen() {
   const { user, profile, signOut, updateProfile, updateAvatar } = useAuth();
@@ -80,19 +82,183 @@ export default function ProfileScreen() {
     }
   };
 
+  const fixDatabaseIssues = async () => {
+    setLoading(true);
+    try {
+      // First check if profiles table exists
+      const { error: checkError } = await supabase
+        .from('profiles')
+        .select('id')
+        .limit(1);
+
+      if (checkError && checkError.code === '42P01') {
+        // Run the SQL script to create profiles table
+        try {
+          // Try running our stored procedure
+          const { error: rpcError } = await supabase.rpc('create_profiles_table');
+          
+          if (rpcError) {
+            console.error('Error creating profiles table via RPC:', rpcError);
+            throw rpcError;
+          }
+          
+          Toast.show({
+            type: 'success',
+            text1: 'Success!',
+            text2: 'Created profiles table. Please reload the app.',
+            position: 'bottom',
+            visibilityTime: 4000,
+          });
+          return;
+        } catch (error) {
+          console.error('RPC error:', error);
+          
+          // If RPC fails, show SQL script instructions
+          showSqlInstructions();
+          return;
+        }
+      }
+      
+      // If profile doesn't exist for user, create one
+      if (user) {
+        const { data, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', user.id);
+          
+        if (!profileError && (!data || data.length === 0)) {
+          // Create profile
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert([
+              {
+                id: user.id,
+                email: user.email || '',
+                full_name: fullName || user.user_metadata?.full_name || '',
+                role: 'USER',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              },
+            ]);
+            
+          if (insertError) {
+            console.error('Error creating profile:', insertError);
+            
+            // Check for RLS error
+            if (insertError.code === '42501') {
+              showSqlInstructions();
+              return;
+            }
+            
+            throw insertError;
+          }
+          
+          Toast.show({
+            type: 'success',
+            text1: 'Success!',
+            text2: 'Created your profile. Please reload the app.',
+            position: 'bottom',
+            visibilityTime: 4000,
+          });
+          return;
+        }
+      }
+      
+      // Check if avatars bucket exists and create if needed
+      const { error: bucketError } = await supabase.storage.getBucket('avatars');
+      
+      if (bucketError && bucketError.message.includes('not found')) {
+        // Create bucket
+        const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif']
+        });
+        
+        if (createBucketError) {
+          console.error('Error creating avatars bucket:', createBucketError);
+          
+          // Check for RLS error
+          if (createBucketError.message.includes('row-level security policy')) {
+            showSqlInstructions();
+            return;
+          }
+          
+          throw createBucketError;
+        }
+        
+        Toast.show({
+          type: 'success',
+          text1: 'Success!', 
+          text2: 'Created avatars storage bucket.',
+          position: 'bottom',
+          visibilityTime: 4000,
+        });
+        return;
+      }
+      
+      Toast.show({
+        type: 'info',
+        text1: 'No issues found',
+        text2: 'Your database setup appears to be working correctly.',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to fix database issues');
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  const showSqlInstructions = () => {
+    Alert.alert(
+      'Database Setup Required',
+      'Your account does not have permission to create tables or buckets in Supabase. You need to run the SQL script from the frontend/src/services/supabase.sql file in your Supabase dashboard SQL Editor.',
+      [
+        { 
+          text: 'OK', 
+          style: 'default'
+        }
+      ]
+    );
+  };
+
   if (!user || !profile) {
     return (
       <View style={styles.container}>
         <Text>Loading profile...</Text>
+        <Button 
+          mode="contained" 
+          onPress={fixDatabaseIssues}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+          icon="database"
+        >
+          Fix Database Issues
+        </Button>
       </View>
     );
   }
+
+  // Function to get avatar source
+  const getAvatarSource = () => {
+    if (!profile.avatar_url) return undefined;
+    
+    // If it's a local avatar, return undefined to use the icon
+    if (profile.avatar_url.startsWith('local-avatar://')) {
+      return undefined;
+    }
+    
+    return { uri: profile.avatar_url };
+  };
 
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={handleAvatarUpload} disabled={loading}>
-          {profile.avatar_url ? (
+          {profile.avatar_url && !profile.avatar_url.startsWith('local-avatar://') ? (
             <Avatar.Image 
               size={100} 
               source={{ uri: profile.avatar_url }} 
@@ -192,6 +358,16 @@ export default function ProfileScreen() {
             icon="lock"
           >
             Change Password
+          </Button>
+          <Button 
+            mode="outlined" 
+            onPress={fixDatabaseIssues}
+            style={styles.button}
+            icon="database"
+            loading={loading}
+            disabled={loading}
+          >
+            Fix Database Issues
           </Button>
           <Button 
             mode="outlined" 

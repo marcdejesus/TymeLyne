@@ -95,10 +95,19 @@ python manage.py runserver
 
 4. Set up the email confirmation template in Authentication > Email Templates
 
-5. Run the SQL script in `frontend/src/services/supabase.sql` in the Supabase SQL Editor to create the necessary tables and functions
+5. **IMPORTANT: Run the SQL script in the Supabase SQL Editor**
+   - Navigate to the SQL Editor in your Supabase dashboard
+   - Copy and paste the entire SQL script from `frontend/src/services/supabase.sql` 
+   - Click "Run" to execute the script
+   - This script creates tables, functions, and sets up Row Level Security (RLS) policies
 
-6. Create Storage buckets:
-   - Create a bucket named "avatars" with public access
+6. **Row Level Security (RLS) Policies**
+   - The SQL script sets up the following RLS policies:
+     - Users can view any profile
+     - Users can insert their own profile (with `auth.uid() = id`)
+     - Users can update their own profile (with `auth.uid() = id`)
+     - The avatars storage bucket allows public access for viewing
+     - Users can only upload avatars to their own folder
 
 7. Get your JWT secret for authentication:
    - Go to Settings > API > JWT Settings
@@ -107,7 +116,15 @@ python manage.py runserver
 
 ## Troubleshooting
 
-### "relation "public.profiles" does not exist"
+### "RLS policy violation" errors
+
+If you see errors like "new row violates row-level security policy", you need to:
+
+1. Run the SQL script from `frontend/src/services/supabase.sql` in the Supabase SQL Editor
+2. Make sure you're signed in (these errors happen when trying to create profiles or upload files without proper authentication)
+3. Use the "Fix Database Issues" button on the Profile screen for help diagnosing issues
+
+### "relation 'public.profiles' does not exist" error
 
 This error occurs when the profiles table hasn't been created in Supabase. Run the SQL script in `frontend/src/services/supabase.sql` in the Supabase SQL Editor.
 

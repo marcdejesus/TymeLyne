@@ -11,22 +11,35 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create RLS policies
+-- Create proper RLS policies for profiles
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- Public profiles are viewable by everyone
+-- Drop existing policies if they exist
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+
+-- Add policies
+-- Allow users to view any profile
 CREATE POLICY "Public profiles are viewable by everyone"
 ON public.profiles
 FOR SELECT USING (true);
 
--- Users can update their own profiles
+-- Allow users to insert their own profile
+CREATE POLICY "Users can insert own profile"
+ON public.profiles
+FOR INSERT WITH CHECK (auth.uid() = id);
+
+-- Allow users to update their own profile
 CREATE POLICY "Users can update own profile"
 ON public.profiles
 FOR UPDATE USING (auth.uid() = id);
 
--- Create function to create the profiles table
+-- Create function to create the profiles table with SECURITY DEFINER
 CREATE OR REPLACE FUNCTION create_profiles_table() 
-RETURNS VOID AS $$
+RETURNS VOID 
+SECURITY DEFINER -- This bypasses RLS
+AS $$
 BEGIN
     IF NOT EXISTS (
         SELECT FROM pg_tables
@@ -47,12 +60,18 @@ BEGIN
         -- Create RLS policies
         ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-        -- Public profiles are viewable by everyone
+        -- Add policies
+        -- Allow users to view any profile
         CREATE POLICY "Public profiles are viewable by everyone"
         ON public.profiles
         FOR SELECT USING (true);
 
-        -- Users can update their own profiles
+        -- Allow users to insert their own profile
+        CREATE POLICY "Users can insert own profile"
+        ON public.profiles
+        FOR INSERT WITH CHECK (auth.uid() = id);
+
+        -- Allow users to update their own profile
         CREATE POLICY "Users can update own profile"
         ON public.profiles
         FOR UPDATE USING (auth.uid() = id);
@@ -62,7 +81,9 @@ $$ LANGUAGE plpgsql;
 
 -- Create function to auto-create profile after user signup
 CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER 
+SECURITY DEFINER -- This bypasses RLS
+AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, full_name, role, created_at, updated_at)
     VALUES (
@@ -75,10 +96,45 @@ BEGIN
     );
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- Create trigger for new user signup
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
-    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user(); 
+    FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- Storage bucket RLS policies
+-- This needs to run from the SQL editor in Supabase dashboard
+
+-- Enable storage bucket creation - using security definer function
+CREATE OR REPLACE FUNCTION create_avatars_bucket()
+RETURNS VOID
+SECURITY DEFINER -- This bypasses RLS
+AS $$
+BEGIN
+    INSERT INTO storage.buckets (id, name, public, avif_autodetection, file_size_limit, allowed_mime_types)
+    VALUES ('avatars', 'avatars', true, false, 5242880, ARRAY['image/png', 'image/jpeg', 'image/gif'])
+    ON CONFLICT (id) DO NOTHING;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Call the function to create the bucket
+SELECT create_avatars_bucket();
+
+-- Storage RLS policies
+DROP POLICY IF EXISTS "Avatar images are publicly accessible" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
+
+-- Allow public access to avatar images
+CREATE POLICY "Avatar images are publicly accessible"
+ON storage.objects FOR SELECT
+USING (bucket_id = 'avatars');
+
+-- Allow users to upload avatars to their own folder
+CREATE POLICY "Users can upload their own avatar"
+ON storage.objects FOR INSERT
+WITH CHECK (
+  bucket_id = 'avatars' AND
+  (storage.foldername(name))[1] = auth.uid()::text
+); 

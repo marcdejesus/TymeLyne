@@ -1,46 +1,72 @@
 import React, { useState } from 'react';
-import {
-  View,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  TouchableOpacity,
-} from 'react-native';
-import { TextInput, Button, Text } from 'react-native-paper';
+import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { Button, TextInput, HelperText } from 'react-native-paper';
 import { useAuth } from '../../hooks/useAuth';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { supabase } from '../../services/supabase';
+import Toast from 'react-native-toast-message';
+import { AuthError } from '@supabase/supabase-js';
 
-type RootStackParamList = {
-  Login: undefined;
-  Register: undefined;
-  ForgotPassword: undefined;
-};
-
-type LoginScreenProps = {
-  navigation: NativeStackNavigationProp<RootStackParamList, 'Login'>;
-};
-
-export default function LoginScreen({ navigation }: LoginScreenProps) {
+export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
+  
   const { signIn } = useAuth();
 
   const handleLogin = async () => {
-    if (!email || !password) {
-      setError('Please fill in all fields');
+    if (!email.trim() || !password) {
+      setError('Please enter both email and password');
       return;
     }
-
+    
     setLoading(true);
     setError(null);
-
+    
     try {
       const { error } = await signIn(email, password);
+      if (error) {
+        const authError = error as AuthError;
+        if (authError.message === 'Email not confirmed') {
+          setError('Please verify your email before logging in');
+          setEmailConfirmationSent(true);
+        } else {
+          throw error;
+        }
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const resendConfirmationEmail = async () => {
+    if (!email.trim()) {
+      setError('Please enter your email address');
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      
       if (error) throw error;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      
+      Toast.show({
+        type: 'success',
+        text1: 'Confirmation email sent',
+        text2: 'Please check your inbox to verify your account',
+        position: 'bottom',
+        visibilityTime: 4000,
+      });
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend confirmation email');
     } finally {
       setLoading(false);
     }
@@ -51,14 +77,10 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
-      <View style={styles.content}>
-        <Text variant="headlineMedium" style={styles.title}>
-          Welcome Back
-        </Text>
-        <Text variant="bodyLarge" style={styles.subtitle}>
-          Sign in to continue
-        </Text>
-
+      <View style={styles.form}>
+        <Text style={styles.title}>Welcome Back</Text>
+        <Text style={styles.subtitle}>Sign in to your account</Text>
+        
         <TextInput
           label="Email"
           value={email}
@@ -67,7 +89,7 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           keyboardType="email-address"
           style={styles.input}
         />
-
+        
         <TextInput
           label="Password"
           value={password}
@@ -75,9 +97,9 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
           secureTextEntry
           style={styles.input}
         />
-
-        {error && <Text style={styles.error}>{error}</Text>}
-
+        
+        {error && <HelperText type="error" visible={!!error}>{error}</HelperText>}
+        
         <Button
           mode="contained"
           onPress={handleLogin}
@@ -87,16 +109,31 @@ export default function LoginScreen({ navigation }: LoginScreenProps) {
         >
           Sign In
         </Button>
-
-        <View style={styles.links}>
-          <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-            <Text>Forgot Password?</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-            <Text>Don't have an account? Sign Up</Text>
-          </TouchableOpacity>
-        </View>
+        
+        {emailConfirmationSent && (
+          <Button
+            mode="outlined"
+            onPress={resendConfirmationEmail}
+            disabled={loading}
+            style={styles.resendButton}
+          >
+            Resend Confirmation Email
+          </Button>
+        )}
+        
+        <Button
+          onPress={() => navigation.navigate('ForgotPassword')}
+          style={styles.link}
+        >
+          Forgot Password?
+        </Button>
+        
+        <Button
+          onPress={() => navigation.navigate('Register')}
+          style={styles.link}
+        >
+          Don't have an account? Sign Up
+        </Button>
       </View>
     </KeyboardAvoidingView>
   );
@@ -107,34 +144,34 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#fff',
   },
-  content: {
+  form: {
     flex: 1,
     padding: 20,
     justifyContent: 'center',
   },
   title: {
-    textAlign: 'center',
+    fontSize: 24,
+    fontWeight: 'bold',
     marginBottom: 8,
+    textAlign: 'center',
   },
   subtitle: {
+    fontSize: 16,
+    marginBottom: 24,
     textAlign: 'center',
-    marginBottom: 32,
     color: '#666',
   },
   input: {
-    marginBottom: 16,
+    marginBottom: 12,
   },
   button: {
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  resendButton: {
+    marginBottom: 10,
+  },
+  link: {
     marginTop: 8,
-    marginBottom: 16,
-  },
-  error: {
-    color: '#B00020',
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  links: {
-    alignItems: 'center',
-    gap: 8,
   },
 }); 

@@ -1,123 +1,124 @@
 # TymeLyne
 
-A modern goal-tracking and achievement platform built with React Native and Django.
+A time management and goal tracking application built with React Native, Django, and Supabase.
 
 ## Project Structure
 
-```
-TymeLyne/
-├── frontend/          # React Native (Expo) frontend
-│   ├── src/
-│   │   ├── components/   # Reusable UI components
-│   │   ├── screens/      # Screen components
-│   │   ├── services/     # API and external service integrations
-│   │   ├── hooks/        # Custom React hooks
-│   │   ├── utils/        # Utility functions
-│   │   ├── types/        # TypeScript type definitions
-│   │   └── constants/    # Constants and configuration
-│   └── App.tsx          # Root component
-└── backend/          # Django backend
-    ├── users/        # User management app
-    ├── goals/        # Goals management app
-    ├── tasks/        # Tasks management app
-    └── tymeline/     # Main project configuration
-```
-
-## Tech Stack
-
-- **Frontend**: React Native (Expo)
-- **Backend**: Django REST Framework
-- **Authentication**: Supabase
-- **Database**: PostgreSQL (via Supabase)
-- **AI**: DeepSeek API
-- **Payments**: Stripe
-- **Notifications**: OneSignal/Firebase Cloud Messaging
-- **Calendar Integration**: Google Calendar API, Apple EventKit
-- **Analytics**: Google Analytics for Firebase/Mixpanel
-
-## Prerequisites
-
-- Node.js (v18 or higher)
-- Python (v3.9 or higher)
-- Git
-- Expo CLI
-- PostgreSQL
+- `frontend`: React Native application using Expo
+- `backend`: Django REST Framework API
 
 ## Getting Started
 
-### Backend Setup
+### Prerequisites
 
-1. Navigate to the backend directory:
-   ```bash
-   cd backend
-   ```
-
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-5. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-
-6. Start the development server:
-   ```bash
-   python manage.py runserver
-   ```
+- Node.js and npm
+- Python 3.8+
+- Supabase account
+- PostgreSQL
 
 ### Frontend Setup
 
 1. Navigate to the frontend directory:
-   ```bash
-   cd frontend
-   ```
+```
+cd frontend
+```
 
 2. Install dependencies:
-   ```bash
-   npm install
-   ```
+```
+npm install
+```
 
-3. Set up environment variables:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
+3. Create a `.env` file with the following variables:
+```
+EXPO_PUBLIC_SUPABASE_URL=your_supabase_url
+EXPO_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
 4. Start the development server:
-   ```bash
-   npm start
-   ```
+```
+npm start
+```
 
-## Development Guidelines
+### Backend Setup
 
-- Follow the existing code patterns and conventions
-- Write clean, maintainable code
-- Keep files under 200-300 lines
-- Avoid code duplication
-- Write tests for new features
-- Use proper environment variables for configuration
+1. Navigate to the backend directory:
+```
+cd backend
+```
 
-## Contributing
+2. Create a virtual environment:
+```
+python -m venv venv
+```
 
-1. Create a new branch for your feature
-2. Make your changes
-3. Write/update tests
-4. Submit a pull request
+3. Activate the virtual environment:
+   - Windows: `venv\Scripts\activate`
+   - macOS/Linux: `source venv/bin/activate`
 
-## License
+4. Install dependencies:
+```
+pip install -r requirements.txt
+```
 
-Copyright CrunchTimeStudios All Rights Reserved.
+5. Create a `.env` file with the following variables:
+```
+SECRET_KEY=your_django_secret_key
+DEBUG=True
+DATABASE_URL=your_database_url
+SUPABASE_URL=your_supabase_url
+SUPABASE_KEY=your_supabase_key
+SUPABASE_JWT_SECRET=your_supabase_jwt_secret
+```
+
+6. Run migrations:
+```
+python manage.py migrate
+```
+
+7. Create a superuser:
+```
+python manage.py createsuperuser
+```
+
+8. Start the development server:
+```
+python manage.py runserver
+```
+
+### Supabase Setup
+
+1. Create a new Supabase project at https://supabase.io
+
+2. Get your project URL and anon key from the API settings
+
+3. Enable Email Authentication in Authentication > Providers
+
+4. Set up the email confirmation template in Authentication > Email Templates
+
+5. Run the SQL script in `frontend/src/services/supabase.sql` in the Supabase SQL Editor to create the necessary tables and functions
+
+6. Create Storage buckets:
+   - Create a bucket named "avatars" with public access
+
+7. Get your JWT secret for authentication:
+   - Go to Settings > API > JWT Settings
+   - Copy the JWT Secret
+   - Add this to your backend `.env` file as `SUPABASE_JWT_SECRET`
+
+## Troubleshooting
+
+### "relation "public.profiles" does not exist"
+
+This error occurs when the profiles table hasn't been created in Supabase. Run the SQL script in `frontend/src/services/supabase.sql` in the Supabase SQL Editor.
+
+### "Email not confirmed" error
+
+When signing up, users need to confirm their email address. Check your Supabase authentication settings to ensure email confirmation is enabled and templates are set up correctly.
+
+## Features
+
+- User authentication with email/password
+- User profiles with avatars
+- Goal tracking
+- Task management
+- Responsive design for mobile devices

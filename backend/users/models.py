@@ -13,11 +13,18 @@ class User(AbstractUser):
         choices=Roles.choices,
         default=Roles.USER
     )
+    avatar_url = models.URLField(
+        max_length=500,
+        null=True,
+        blank=True,
+        help_text=_('User avatar URL from Supabase')
+    )
+    # Keep avatar field for backward compatibility 
     avatar = models.ImageField(
         upload_to='avatars/',
         null=True,
         blank=True,
-        help_text=_('User profile picture')
+        help_text=_('User profile picture (local storage)')
     )
     bio = models.TextField(
         max_length=500,
@@ -28,6 +35,12 @@ class User(AbstractUser):
         null=True,
         blank=True,
         help_text=_('User date of birth')
+    )
+    full_name = models.CharField(
+        max_length=255,
+        blank=True, 
+        null=True,
+        help_text=_('User full name')
     )
     supabase_id = models.CharField(
         max_length=255,

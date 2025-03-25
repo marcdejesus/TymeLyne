@@ -1,6 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
+import { UserProfile } from '../hooks/useAuth';
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -16,18 +17,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 
 // Types for database schema
 export type UserRole = 'ADMIN' | 'USER' | 'PREMIUM';
-
-export interface UserProfile {
-  id: string;
-  email: string;
-  role: UserRole;
-  avatar_url?: string | null;
-  full_name?: string | null;
-  bio?: string | null;
-  date_of_birth?: string | null;
-  created_at: string;
-  updated_at: string;
-}
 
 export type Database = {
   public: {

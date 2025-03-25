@@ -1,8 +1,21 @@
 import { useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '../services/supabase';
-import { UserProfile } from '../services/supabase';
 import Toast from 'react-native-toast-message';
+
+// Update the UserProfile interface to include avatar_retry_count
+export interface UserProfile {
+  id: string;
+  email: string;
+  full_name?: string;
+  bio?: string;
+  avatar_url?: string | null;
+  avatar_preview_uri?: string; // Local URI for displaying selected image preview
+  avatar_retry_count?: number; // Track number of retries for loading avatar
+  role?: 'USER' | 'ADMIN' | 'PREMIUM';
+  created_at: string;
+  updated_at: string;
+}
 
 // A simplified authentication hook for development
 export function useAuth() {
@@ -10,6 +23,7 @@ export function useAuth() {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [admin, setAdmin] = useState(false);
 
   useEffect(() => {
     // Get initial session and set up auth state listener
@@ -67,125 +81,272 @@ export function useAuth() {
     initAuth();
   }, []);
 
-  const fetchUserProfile = async (userId: string) => {
-    try {
-      // Check if profiles table exists by attempting to query it
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId);
-
-      if (error) {
-        // If we get a "relation does not exist" error, create the table
-        if (error.code === '42P01') {
-          console.log('Profiles table does not exist, creating user in backend instead');
-          createLocalProfile(userId);
-          return;
-        }
-        throw error;
-      }
-
-      // If no profile was found but the table exists, create one
-      if (data.length === 0) {
-        console.log('No profile found for user, creating one');
+  // Effects to handle user changes
+  useEffect(() => {
+    if (user) {
+      setLoading(true);
+      
+      const loadProfile = async () => {
+        // Try to fetch the user's profile
+        const userProfile = await fetchUserProfile(user.id);
         
-        if (user) {
-          // Try to create the profile
+        if (userProfile) {
+          setProfile(userProfile);
+        } else {
+          // Profile fetch failed, try to create one
+          console.log('No profile found, attempting to create one');
           const created = await createProfileInSupabase(
-            userId, 
-            user.email || '', 
+            user.id,
+            user.email || '',
             user.user_metadata?.full_name || ''
           );
           
-          if (!created) {
-            // If creation failed, use a local profile
-            createLocalProfile(userId);
-          } else {
-            // Fetch the newly created profile
-            const { data: newProfile, error: fetchError } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', userId)
-              .single();
-              
-            if (!fetchError && newProfile) {
+          if (created) {
+            // Try to fetch again
+            const newProfile = await fetchUserProfile(user.id);
+            if (newProfile) {
               setProfile(newProfile);
+            } else {
+              // Create a minimal local profile
+              createLocalProfile(user.id);
             }
+          } else {
+            // Creation failed, use local profile
+            createLocalProfile(user.id);
           }
-        } else {
-          createLocalProfile(userId);
         }
-        return;
-      }
+        
+        // Check if user is an admin
+        try {
+          const { data, error } = await supabase
+            .from('admin_users')
+            .select('is_admin')
+            .eq('user_id', user.id)
+            .single();
+          
+          if (!error && data) {
+            setAdmin(data.is_admin);
+          } else {
+            setAdmin(false);
+          }
+        } catch (adminError) {
+          console.error('Error checking admin status:', adminError);
+          setAdmin(false);
+        }
+        
+        setLoading(false);
+      };
+      
+      loadProfile();
+    } else {
+      // Reset state when user logs out
+      setProfile(null);
+      setAdmin(false);
+    }
+  }, [user]);
 
-      // If we have data with at least one profile, use the first one
-      if (data.length > 0) {
-        setProfile(data[0]);
+  const fetchUserProfile = async (userId: string): Promise<UserProfile | null> => {
+    console.log('Fetching profile for:', userId);
+    
+    // First try using our read-only function to avoid recursion
+    try {
+      // Use a new instance of the client without RLS for this operation
+      const { data, error } = await supabase.rpc('get_profile_by_id', {
+        lookup_user_id: userId
+      });
+      
+      if (!error && data) {
+        console.log('Profile fetched successfully using RPC');
+        
+        // Validate avatar URLs
+        if (data.avatar_url) {
+          // Ensure avatar URL is still valid (not expired)
+          try {
+            // If it's a Supabase storage URL, check if the bucket and file exist
+            if (data.avatar_url.includes('/storage/v1/object/public/avatars/')) {
+              // Get the path part from the URL
+              const urlParts = data.avatar_url.split('/avatars/');
+              if (urlParts.length > 1) {
+                const filePath = urlParts[1];
+                
+                // Use the storage.getPublicUrl method to verify the public URL is working
+                const { data: urlData } = supabase.storage
+                  .from('avatars')
+                  .getPublicUrl(filePath);
+                
+                if (urlData && urlData.publicUrl) {
+                  // Check if the URL is accessible without downloading the full file
+                  try {
+                    const response = await fetch(urlData.publicUrl, { 
+                      method: 'HEAD',
+                      cache: 'no-store' // Bypass cache to ensure file exists
+                    });
+                    
+                    if (!response.ok) {
+                      console.error('Avatar file not accessible (HEAD request failed):', response.status);
+                      console.log('Clearing invalid avatar URL from profile');
+                      data.avatar_url = null;
+                    } else {
+                      console.log('Avatar URL verified with HEAD request');
+                    }
+                  } catch (fetchError) {
+                    console.error('Error validating avatar URL with fetch:', fetchError);
+                    // Keep the URL, let the Image component handle the fallback
+                  }
+                }
+              }
+            }
+          } catch (avatarError) {
+            console.error('Error validating avatar URL:', avatarError);
+            // Don't clear the URL, let the Image component handle the fallback
+          }
+        }
+        
+        return data as UserProfile;
+      } else {
+        console.error('Error fetching profile with RPC:', error);
       }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      createLocalProfile(userId);
+    } catch (rpcError) {
+      console.error('Exception with get_profile_by_id RPC:', rpcError);
+    }
+    
+    // If RPC fails, try standard query
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        // Check for infinite recursion error
+        if (error.message && (
+            error.message.includes('infinite recursion') ||
+            error.code === '42P17')) {
+          console.error('Infinite recursion error when fetching profile:', error);
+          
+          // Create a minimal profile with just the ID
+          // This allows the app to function while the backend issues are resolved
+          return {
+            id: userId,
+            email: user?.email || '',
+            role: 'USER',
+            full_name: user?.user_metadata?.full_name || '',
+            bio: '',
+            avatar_url: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+        }
+        
+        console.error('Error fetching profile:', error);
+        return null;
+      }
+      
+      console.log('Profile fetched successfully:', data);
+      return data as UserProfile;
+    } catch (fetchError) {
+      console.error('Error fetching profile:', fetchError);
+      
+      // Create a minimal profile with just the ID
+      // This allows the app to function while the backend issues are resolved
+      if (user) {
+        return {
+          id: userId,
+          email: user.email || '',
+          role: 'USER',
+          full_name: user.user_metadata?.full_name || '',
+          bio: '',
+          avatar_url: null, 
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
+      }
+      
+      return null;
     }
   };
   
   const createLocalProfile = (userId: string) => {
-    // Create a local profile when Supabase operations fail
-    setProfile({
+    console.log('Creating local profile for:', userId);
+    
+    // Create a minimal profile with just the ID when we can't access Supabase
+    const localProfile: UserProfile = {
       id: userId,
       email: user?.email || '',
       role: 'USER',
       full_name: user?.user_metadata?.full_name || '',
+      bio: '',
+      avatar_url: null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
-    });
+    };
+    
+    setProfile(localProfile);
+    return localProfile;
   };
 
-  const createProfileInSupabase = async (userId: string, email: string, fullName: string) => {
+  const createProfileInSupabase = async (
+    userId: string,
+    email: string,
+    fullName: string
+  ): Promise<boolean> => {
+    console.log('Creating profile for:', userId, email);
+    
     try {
-      // Check if profiles table exists by attempting to query it
-      const { error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
-
-      if (checkError && checkError.code === '42P01') {
-        // If the table doesn't exist, we'll create it using SQL - this is a workaround
-        const { error: createTableError } = await supabase.rpc('create_profiles_table');
-        if (createTableError) {
-          console.error('Error creating profiles table:', createTableError);
-          return false;
+      // Try using our RPC function first - most reliable
+      try {
+        const { data, error } = await supabase.rpc('update_profile', {
+          user_id: userId,
+          new_full_name: fullName,
+          new_bio: ''
+        });
+        
+        if (!error) {
+          console.log('Profile created successfully using RPC');
+          return true;
+        } else {
+          console.error('RPC error when creating profile:', error);
         }
+      } catch (rpcError) {
+        console.error('Exception with update_profile RPC:', rpcError);
       }
-
-      // Now try to create the profile
-      const { error } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: userId,
-            email: email,
-            full_name: fullName,
-            role: 'USER',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          },
-        ]);
-
-      if (error) {
-        // Check if it's an RLS policy error
-        if (error.code === '42501') {
-          console.error('RLS policy violation when creating profile - user lacks permission');
+      
+      // If RPC fails, try direct insert
+      try {
+        const { error } = await supabase.from('profiles').insert({
+          id: userId,
+          email,
+          full_name: fullName,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        
+        if (error) {
+          // Check for infinite recursion error
+          if (error.message && (
+              error.message.includes('infinite recursion') ||
+              error.code === '42P17')) {
+            console.error('Infinite recursion error when inserting profile:', error);
+            return false;
+          }
           
-          // Even though we can't create the profile in Supabase, we can still use a local profile
-          console.log('Falling back to local profile');
+          // Check for duplicate key
+          if (error.code === '23505') {
+            console.log('Profile already exists, no need to create');
+            return true;
+          }
+          
+          console.error('Error creating profile:', error);
           return false;
         }
         
-        console.error('Error creating profile:', error);
+        console.log('Profile created successfully using direct insert');
+        return true;
+      } catch (insertError) {
+        console.error('Error inserting profile:', insertError);
         return false;
       }
-
-      return true;
     } catch (error) {
       console.error('Error in createProfileInSupabase:', error);
       return false;
@@ -194,51 +355,55 @@ export function useAuth() {
 
   const ensureSupabaseSetup = async () => {
     try {
-      // Check if profiles table exists
-      const { error: checkError } = await supabase
-        .from('profiles')
-        .select('id')
-        .limit(1);
-
-      if (checkError && checkError.code === '42P01') {
-        console.log('Profiles table does not exist, trying to create it');
-        
-        // Try to create profiles table using our RPC function
-        const { error: createError } = await supabase.rpc('create_profiles_table');
-        
-        if (createError) {
-          console.error('Failed to create profiles table via RPC:', createError);
-          
-          // If RPC fails, let's try direct SQL (only works if user has enough permissions)
-          const { error: sqlError } = await supabase.from('dummy_operation_to_trigger_migration').select();
-          console.log('Triggered migration attempt:', sqlError ? 'Failed' : 'Success');
-          
-          return false;
+      console.log('Checking Supabase setup...');
+      
+      // Try to use our new consolidated setup function
+      try {
+        const { error } = await supabase.rpc('setup_database');
+        if (error) {
+          console.error('Failed to run setup_database:', error);
+          // Continue anyway, as the app has fallbacks for permissions issues
+        } else {
+          console.log('Supabase setup successful, fetching user profile');
+          return true;
         }
-        return true;
+      } catch (error) {
+        console.log('Error calling setup_database RPC:', error);
+        
+        // Try the individual setup functions as fallback
+        try {
+          // Try creating the bucket with our specialized function
+          await supabase.rpc('create_avatars_bucket', { bucket_name: 'avatars' });
+        } catch (bucketError) {
+          console.log('Error creating bucket via RPC:', bucketError);
+          
+          // Fallback to direct creation which might fail due to RLS
+          const { error: directError } = await supabase.storage.getBucket('avatars');
+          if (directError && directError.message.includes('not found')) {
+            console.log('Avatars bucket does not exist, creating it');
+            const { error: createError } = await supabase.storage.createBucket('avatars', {
+              public: true,
+              fileSizeLimit: 5242880, // 5MB
+              allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif']
+            });
+            
+            if (createError) {
+              console.error('Failed to create avatars bucket:', createError);
+              if (createError.message.includes('row-level security policy')) {
+                console.error('RLS policy violation when creating bucket - user lacks permission');
+                console.log('Unable to create storage bucket due to permissions');
+              }
+            }
+          }
+        }
       }
       
-      // Check if avatars bucket exists
-      const { error: bucketError } = await supabase.storage.getBucket('avatars');
-      
-      if (bucketError && bucketError.message.includes('not found')) {
-        console.log('Avatars bucket does not exist, creating it');
-        
-        const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
-          public: true,
-          fileSizeLimit: 5242880, // 5MB
-          allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif']
-        });
-        
-        if (createBucketError) {
-          console.error('Failed to create avatars bucket:', createBucketError);
-          return false;
-        }
-      }
-      
-      return true;
+      // Even if some parts failed, we can still try to fetch the profile
+      console.log('Supabase setup issues, will try to fetch profile anyway');
+      return false;
     } catch (error) {
       console.error('Error in ensureSupabaseSetup:', error);
+      console.log('Supabase setup issues, will try to fetch profile anyway');
       return false;
     }
   };
@@ -277,7 +442,7 @@ export function useAuth() {
   const signUp = async (email: string, password: string, fullName: string) => {
     setLoading(true);
     try {
-      // Ensure Supabase is set up correctly
+      // Ensure Supabase is set up correctly before signup
       await ensureSupabaseSetup();
       
       // Create auth user with user_metadata containing fullName
@@ -291,7 +456,34 @@ export function useAuth() {
         },
       });
 
-      if (error) throw error;
+      if (error) {
+        // Special handling for database errors - they may indicate issues with the trigger
+        if (error.message.includes('Database error')) {
+          console.error('Database error during signup:', error.message);
+          // The user might have been created but the profile creation failed
+          // Let's try to get the session anyway
+          const { data: sessionData } = await supabase.auth.getSession();
+          
+          if (sessionData?.session?.user) {
+            // User was created, but profile creation likely failed
+            // Create the profile manually
+            const userId = sessionData.session.user.id;
+            await createProfileInSupabase(userId, email, fullName);
+            
+            Toast.show({
+              type: 'success',
+              text1: 'Account created!',
+              text2: 'Please check your email to confirm your account.',
+              position: 'bottom',
+              visibilityTime: 4000,
+            });
+            
+            return { data: sessionData, error: null };
+          }
+        }
+        
+        throw error;
+      }
 
       // Show toast message for email confirmation
       Toast.show({
@@ -305,7 +497,14 @@ export function useAuth() {
       // Try to create profile if signup successful
       if (data.user) {
         try {
-          await createProfileInSupabase(data.user.id, email, fullName);
+          // For safety, run the setup database function again
+          await supabase.rpc('setup_database');
+          
+          // Then create the profile with explicit error handling
+          const created = await createProfileInSupabase(data.user.id, email, fullName);
+          if (!created) {
+            console.log('Failed to create profile, but user was created. Will create on next login.');
+          }
         } catch (profileError) {
           console.error('Error creating profile after signup:', profileError);
         }
@@ -334,195 +533,388 @@ export function useAuth() {
     }
   };
 
-  const updateProfile = async (updates: Partial<UserProfile>) => {
-    if (!user) return { error: new Error('User not authenticated') };
-
+  // Add a refreshProfile function that forces a fresh reload of profile data
+  const refreshProfile = async () => {
+    if (!user) return null;
+    
+    console.log('Forcing profile refresh for user:', user.id);
+    
+    // Clear the current profile first to ensure UI updates
+    setProfile(null);
+    
+    // Fetch fresh profile data
     try {
-      // Try to update in Supabase first
+      // Try the direct RPC function first
+      const { data, error } = await supabase.rpc('get_profile_by_id', {
+        lookup_user_id: user.id
+      });
+      
+      if (!error && data) {
+        console.log('Profile refreshed with fresh data:', data);
+        setProfile(data as UserProfile);
+        return data as UserProfile;
+      } else {
+        console.error('Error refreshing profile via RPC:', error);
+        
+        // Fall back to standard query
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+        
+        if (!profileError && profileData) {
+          console.log('Profile refreshed with standard query:', profileData);
+          setProfile(profileData as UserProfile);
+          return profileData as UserProfile;
+        } else {
+          console.error('Error refreshing profile via standard query:', profileError);
+        }
+      }
+    } catch (error) {
+      console.error('Error in refreshProfile:', error);
+    }
+    
+    return null;
+  };
+
+  // Update the updateProfile method to properly refresh data after updates
+  const updateProfile = async (updates: Partial<UserProfile>) => {
+    if (!user) return { data: null, error: new Error('No user logged in') };
+    
+    console.log('Updating profile with:', updates);
+    
+    setLoading(true);
+    try {
+      // Try using our RPC function first (most reliable)
       try {
+        console.log('Using update_profile RPC function');
+        const { data, error } = await supabase.rpc('update_profile', {
+          user_id: user.id,
+          new_full_name: updates.full_name,
+          new_bio: updates.bio
+        });
+        
+        if (!error) {
+          console.log('Profile updated successfully using RPC');
+          
+          // Get fresh profile data instead of just merging updates
+          await refreshProfile();
+          
+          return { data, error: null };
+        }
+      } catch (rpcError) {
+        console.error('Exception with update_profile RPC:', rpcError);
+      }
+      
+      // If we get here, the RPC approach failed, try direct update
+      try {
+        console.log('Trying direct profile update');
         const { data, error } = await supabase
           .from('profiles')
-          .update({
-            ...updates,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updates)
           .eq('id', user.id)
-          .select();
+          .select()
+          .single();
 
         if (error) {
-          // Check if the error indicates that no record was found to update
-          if (error.details?.includes('no rows')) {
-            console.log('No profile to update, attempting to create one');
+          // Check for infinite recursion error
+          if (error.message && (
+              error.message.includes('infinite recursion') ||
+              error.code === '42P17')) {
+            console.log('Supabase update failed, trying local update:', error);
             
-            // Try to create the profile instead
-            const created = await createProfileInSupabase(
-              user.id,
-              user.email || '',
-              user.user_metadata?.full_name || updates.full_name || ''
-            );
+            // Just update locally
+            setProfile(prev => prev ? { ...prev, ...updates } : null);
             
-            if (created) {
-              // Fetch the newly created profile
-              const { data: newProfile, error: fetchError } = await supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', user.id)
-                .single();
-                
-              if (!fetchError && newProfile) {
-                setProfile(newProfile);
-                return { data: newProfile, error: null };
-              }
-            }
-            throw error;
+            return { 
+              data: profile ? { ...profile, ...updates } : null, 
+              error: null 
+            };
           }
+          
+          // Try running a test query to check permissions
+          try {
+            console.log('Testing read permissions on profile');
+            const { data: testData, error: testError } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', user.id)
+              .single();
+            
+            if (testError) {
+              console.error('Test query failed - cannot read profile:', testError);
+            } else {
+              console.log('Can read profile, but cannot update. Current data:', testData);
+            }
+          } catch (testError) {
+            console.error('Error testing read permissions:', testError);
+          }
+          
           throw error;
         }
 
-        if (data && data.length > 0) {
-          setProfile(data[0]);
-          return { data: data[0], error: null };
+        // Update was successful - get fresh data
+        console.log('Profile updated successfully via direct update');
+        
+        // Force a full refresh instead of just updating the state
+        await refreshProfile();
+        
+        return { data, error: null };
+      } catch (updateError) {
+        console.error('Error directly updating profile:', updateError);
+        
+        // Try direct RPC as last resort
+        try {
+          if (user.email) {
+            console.log('Trying direct_update_profile as last resort');
+            const { data, error } = await supabase.rpc('direct_update_profile', {
+              user_email: user.email,
+              new_full_name: updates.full_name || null,
+              new_bio: updates.bio || null,
+              new_avatar_url: updates.avatar_url || null
+            });
+            
+            if (!error) {
+              console.log('Profile updated with direct_update_profile:', data);
+              
+              // Force a full refresh
+              await refreshProfile();
+              
+              return { data, error: null };
+            }
+          }
+        } catch (directError) {
+          console.error('Error with direct_update_profile:', directError);
         }
-      } catch (supabaseError) {
-        console.log('Supabase update failed, trying local update:', supabaseError);
-      }
-
-      // If Supabase fails, update local state for now
-      if (profile) {
-        const updatedProfile = {
-          ...profile,
-          ...updates,
-          updated_at: new Date().toISOString()
+        
+        // Fall back to local update
+        console.log('Falling back to local profile update');
+        setProfile(prev => prev ? { ...prev, ...updates } : null);
+        
+        return { 
+          data: profile ? { ...profile, ...updates } : null, 
+          error: null 
         };
-        setProfile(updatedProfile);
-        return { data: updatedProfile, error: null };
       }
-
-      return { data: null, error: new Error('Failed to update profile') };
     } catch (error) {
-      console.error('Error updating profile:', error);
+      console.error('Error in updateProfile:', error);
       return { data: null, error };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateAvatarUrl = async (avatarUrl: string) => {
+    if (!user) return { data: null, error: new Error('No user logged in') };
+    
+    setLoading(true);
+    try {
+      // First try using our RPC function
+      try {
+        const { data, error } = await supabase.rpc('update_avatar_url', {
+          user_id: user.id,
+          new_avatar_url: avatarUrl
+        });
+        
+        if (!error) {
+          // Update was successful with RPC
+          setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+          return { data, error: null };
+        } else {
+          console.error('RPC error when updating avatar:', error);
+        }
+      } catch (rpcError) {
+        console.error('Exception with update_avatar_url RPC:', rpcError);
+      }
+      
+      // Fall back to direct update if RPC fails
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .update({ avatar_url: avatarUrl })
+          .eq('id', user.id)
+          .select()
+          .single();
+
+        if (error) {
+          // Check for infinite recursion error
+          if (error.message && (
+              error.message.includes('infinite recursion') ||
+              error.code === '42P17')) {
+            console.log('Supabase avatar update failed, using local update:', error);
+            
+            // Just update locally
+            setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+            
+            return { 
+              data: profile ? { ...profile, avatar_url: avatarUrl } : null, 
+              error: null 
+            };
+          }
+          
+          throw error;
+        }
+
+        // Update was successful with direct approach
+        setProfile(prev => prev ? { ...prev, ...data } : data);
+        return { data, error: null };
+      } catch (updateError) {
+        console.error('Error directly updating avatar:', updateError);
+        
+        // Fall back to local update
+        setProfile(prev => prev ? { ...prev, avatar_url: avatarUrl } : null);
+        
+        return { 
+          data: profile ? { ...profile, avatar_url: avatarUrl } : null, 
+          error: null 
+        };
+      }
+    } catch (error) {
+      console.error('Error in updateAvatarUrl:', error);
+      return { data: null, error };
+    } finally {
+      setLoading(false);
     }
   };
 
   const updateAvatar = async (file: FormData) => {
-    if (!user) return { error: new Error('User not authenticated') };
+    if (!user) return { data: null, error: new Error('No user logged in') };
 
     try {
-      // Check if storage bucket exists first
-      const { error: bucketError } = await supabase.storage.getBucket('avatars');
-      
-      // If bucket doesn't exist, create it
-      if (bucketError && bucketError.message.includes('not found')) {
-        try {
-          const { error: createBucketError } = await supabase.storage.createBucket('avatars', {
-            public: true,
-            fileSizeLimit: 5242880, // 5MB
-            allowedMimeTypes: ['image/png', 'image/jpeg', 'image/gif']
-          });
-          
-          if (createBucketError) {
-            // Check if it's an RLS policy error
-            if (createBucketError.message.includes('row-level security policy')) {
-              console.error('RLS policy violation when creating bucket - user lacks permission');
-              
-              // Even though we can't create the bucket, we can still save the avatar locally
-              console.log('Unable to create storage bucket due to permissions');
-              
-              // Create a fake URL for avatar in local mode
-              const fileObject = file.get('file') as File;
-              if (!fileObject) {
-                return { data: null, error: new Error('No file provided') };
-              }
-              
-              // Just update the profile with a placeholder URL for now
-              const placeholderUrl = 'local-avatar://' + Date.now();
-              return await updateProfile({
-                avatar_url: placeholderUrl
-              });
-            }
-            
-            console.error('Error creating avatars bucket:', createBucketError);
-            throw createBucketError;
-          }
-        } catch (bucketCreateError) {
-          // If we can't create the bucket, try to proceed anyway
-          console.error('Error creating avatars bucket:', bucketCreateError);
-          
-          // Create a fake URL for avatar in local mode
-          const fileObject = file.get('file') as File;
-          if (!fileObject) {
-            return { data: null, error: new Error('No file provided') };
-          }
-          
-          // Just update the profile with a placeholder URL for now
-          const placeholderUrl = 'local-avatar://' + Date.now();
-          return await updateProfile({
-            avatar_url: placeholderUrl
-          });
-        }
-      }
-
-      // Upload file to Supabase Storage
-      const fileObject = file.get('file') as File;
+      // Extract the file object
+      const fileObject = file.get('file') as any;
       if (!fileObject) {
         return { data: null, error: new Error('No file provided') };
       }
-      
-      const fileExt = fileObject?.name?.split('.').pop() || 'jpg';
-      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
 
+      // Log the file properties for debugging
+      console.log('File for upload:', {
+        uri: fileObject.uri,
+        name: fileObject.name,
+        type: fileObject.type
+      });
+
+      // Check if storage bucket exists and create it if needed
       try {
+        await supabase.rpc('create_avatars_bucket', {
+          bucket_name: 'avatars',
+          public_access: true
+        });
+        
+        await supabase.rpc('update_avatars_mime_types', {
+          mime_types: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+        });
+        
+        console.log('Avatars bucket configured for upload');
+      } catch (bucketError) {
+        console.error('Error with bucket setup:', bucketError);
+        // Continue anyway, the bucket might already exist
+      }
+      
+      // Direct file upload to Supabase Storage
+      try {
+        const filePath = `${user.id}/${fileObject.name}`;
+        
+        // Use the Fetch API for reliable uploads
+        const fetchResponse = await fetch(fileObject.uri);
+        const blob = await fetchResponse.blob();
+        
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('avatars')
-          .upload(filePath, fileObject, {
+          .upload(filePath, blob, {
             cacheControl: '3600',
             upsert: true,
+            contentType: fileObject.type || 'image/jpeg'
           });
 
         if (uploadError) {
-          // Check if it's an RLS policy error
-          if (uploadError.message.includes('row-level security policy')) {
-            console.error('RLS policy violation when uploading avatar - user lacks permission');
-            
-            // Even though we can't upload to Supabase, we can still save the avatar locally
-            console.log('Unable to upload to Supabase Storage due to permissions');
-            
-            // Just update the profile with a placeholder URL for now
-            const placeholderUrl = 'local-avatar://' + Date.now();
-            return await updateProfile({
-              avatar_url: placeholderUrl
-            });
-          }
-          
+          console.error('Storage upload error:', uploadError);
           throw uploadError;
         }
 
         // Get public URL
-        const { data: publicURL } = supabase.storage
+        const { data: publicUrlData } = supabase.storage
           .from('avatars')
           .getPublicUrl(filePath);
 
-        if (!publicURL || !publicURL.publicUrl) {
-          throw new Error('Failed to get public URL for avatar');
+        if (!publicUrlData || !publicUrlData.publicUrl) {
+          throw new Error('Failed to get public URL for uploaded file');
+        }
+        
+        console.log('File successfully uploaded, public URL:', publicUrlData.publicUrl);
+
+        // Update profile with the new avatar URL
+        const avatarUrl = publicUrlData.publicUrl;
+        const { data, error } = await supabase.from('profiles')
+          .update({ avatar_url: avatarUrl })
+          .eq('id', user.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating profile with avatar URL:', error);
+          
+          // Try the RPC method as backup
+          try {
+            const { data: rpcData, error: rpcError } = await supabase.rpc('update_avatar_url', {
+              user_id: user.id,
+              new_avatar_url: avatarUrl
+            });
+            
+            if (rpcError) {
+              console.error('RPC error when updating avatar URL:', rpcError);
+              throw rpcError;
+            }
+            
+            // Update profile in state
+            if (profile) {
+              setProfile({
+                ...profile,
+                avatar_url: avatarUrl,
+                avatar_preview_uri: fileObject.uri
+              });
+            }
+            
+            return { data: { avatar_url: avatarUrl } as any, error: undefined };
+          } catch (rpcError) {
+            console.error('Error with RPC avatar update:', rpcError);
+            throw error; // Throw the original error
+          }
         }
 
-        // Update profile with avatar URL
-        return await updateProfile({
-          avatar_url: publicURL.publicUrl
-        });
-      } catch (uploadError) {
+        // Update was successful with direct approach
+        if (profile) {
+          setProfile({
+            ...profile,
+            ...data,
+            avatar_preview_uri: fileObject.uri // Keep the preview URI
+          });
+        }
+        
+        return { data, error: undefined };
+      } catch (uploadError: any) {
         console.error('Upload error:', uploadError);
         
-        // Just update the profile with a placeholder URL for now
-        const placeholderUrl = 'local-avatar://' + Date.now();
-        return await updateProfile({
-          avatar_url: placeholderUrl
-        });
+        // Update local preview even if upload fails
+        if (profile) {
+          const localUrl = 'local-avatar://' + Date.now();
+          setProfile({
+            ...profile,
+            avatar_url: localUrl,
+            avatar_preview_uri: fileObject.uri
+          });
+        }
+        
+        // Create a more user-friendly error
+        return { 
+          data: { avatar_url: 'local-avatar://' + Date.now() } as any, 
+          error: new Error('Upload failed with status: ' + (uploadError.message || '400'))
+        };
       }
     } catch (error) {
       console.error('Error updating avatar:', error);
-      return { data: null, error };
+      return { data: null, error: error as Error };
     }
   };
 
@@ -531,10 +923,14 @@ export function useAuth() {
     session,
     profile,
     loading,
+    admin,
     signIn,
     signUp,
     signOut,
     updateProfile,
+    updateAvatarUrl,
     updateAvatar,
+    refreshProfile,
+    setProfile,
   };
 } 

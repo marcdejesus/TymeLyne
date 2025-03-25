@@ -1,7 +1,51 @@
--- First, ensure we have the necessary extensions
+-- --------------------------------------------------------
+-- Script to run all SQL in order with proper policy cleanup
+-- --------------------------------------------------------
+
+-- First, drop all potentially problematic policies
+DO $$
+BEGIN
+  -- Drop policies on profiles table
+  DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
+  DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+  DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+  DROP POLICY IF EXISTS "Admins can view all profiles" ON public.profiles;
+  DROP POLICY IF EXISTS "Admins can update all profiles" ON public.profiles;
+  
+  -- Drop policies on admin_users table
+  DROP POLICY IF EXISTS "Admins can manage admin_users" ON public.admin_users;
+  DROP POLICY IF EXISTS "Users can read admin_users" ON public.admin_users;
+  DROP POLICY IF EXISTS "Everyone can read admin_users" ON public.admin_users;
+  
+  -- Drop storage policies
+  DROP POLICY IF EXISTS "Public Access" ON storage.objects;
+  DROP POLICY IF EXISTS "Authenticated users can upload avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Users can update their own avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Users can delete their own avatars" ON storage.objects;
+  DROP POLICY IF EXISTS "Admins can manage all avatars" ON storage.objects;
+  
+  -- Drop all functions to ensure clean slate
+  DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
+  DROP FUNCTION IF EXISTS public.setup_database() CASCADE;
+  DROP FUNCTION IF EXISTS public.make_user_admin(TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS public.update_profile(UUID, TEXT, TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS public.update_avatar_url(UUID, TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS storage.create_bucket(TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS public.create_profile(UUID, TEXT, TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS public.init_admin(TEXT) CASCADE;
+  DROP FUNCTION IF EXISTS public.get_profile_by_id(UUID) CASCADE;
+  
+  -- Drop trigger if it exists
+  DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+EXCEPTION WHEN OTHERS THEN
+  RAISE NOTICE 'Error dropping existing objects: %', SQLERRM;
+END
+$$;
+
+-- 1. Extensions
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
--- Create function to handle new user signup
+-- 2. User Trigger
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 DECLARE
@@ -45,7 +89,7 @@ CREATE TRIGGER on_auth_user_created
     AFTER INSERT ON auth.users
     FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- Create function to set up the entire database
+-- 3. Setup Database Function
 CREATE OR REPLACE FUNCTION public.setup_database()
 RETURNS void AS $$
 DECLARE
@@ -89,7 +133,7 @@ BEGIN
     ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
     ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
-    -- Delete existing policies
+    -- Delete existing policies (just to be safe)
     DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
     DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
     DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
@@ -233,13 +277,13 @@ BEGIN
                 WHERE user_id = auth.uid() AND is_admin = true
             )
         );
-
+    
     -- Add a notice to remind about admin setup
     RAISE NOTICE 'Database setup complete. To make a user an admin, run: SELECT public.init_admin(''your-email@example.com'');';
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to update an existing user's role to ADMIN
+-- 4. Admin Functions
 CREATE OR REPLACE FUNCTION public.make_user_admin(user_email TEXT)
 RETURNS void AS $$
 DECLARE
@@ -266,7 +310,36 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to allow updating a profile from RPC
+-- Function to initialize an admin user (useful for first setup)
+CREATE OR REPLACE FUNCTION public.init_admin(admin_email TEXT)
+RETURNS void AS $$
+DECLARE
+    user_id UUID;
+BEGIN
+    -- Find the user ID from the email
+    SELECT id INTO user_id
+    FROM auth.users
+    WHERE email = admin_email;
+    
+    IF user_id IS NULL THEN
+        RAISE EXCEPTION 'No user found with email %', admin_email;
+    END IF;
+    
+    -- Insert into admin_users
+    INSERT INTO public.admin_users (user_id, is_admin)
+    VALUES (user_id, TRUE)
+    ON CONFLICT (user_id) DO UPDATE SET is_admin = TRUE;
+    
+    -- Update profile role
+    UPDATE public.profiles
+    SET role = 'ADMIN'
+    WHERE id = user_id;
+    
+    RAISE NOTICE 'User % has been made an admin', admin_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 5. Profile Functions
 CREATE OR REPLACE FUNCTION public.update_profile(
     user_id UUID,
     new_full_name TEXT DEFAULT NULL,
@@ -364,26 +437,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create bucket if it doesn't exist
-CREATE OR REPLACE FUNCTION storage.create_bucket(bucket_name TEXT)
-RETURNS BOOLEAN AS $$
-DECLARE
-    bucket_exists BOOLEAN;
-BEGIN
-    SELECT EXISTS (
-        SELECT 1 FROM storage.buckets WHERE id = bucket_name
-    ) INTO bucket_exists;
-    
-    IF NOT bucket_exists THEN
-        INSERT INTO storage.buckets (id, name, public)
-        VALUES (bucket_name, bucket_name, true);
-        RETURN TRUE;
-    END IF;
-    
-    RETURN FALSE;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Function to explicitly create a user profile when needed
 CREATE OR REPLACE FUNCTION public.create_profile(
     user_id UUID,
@@ -429,35 +482,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Function to initialize an admin user (useful for first setup)
-CREATE OR REPLACE FUNCTION public.init_admin(admin_email TEXT)
-RETURNS void AS $$
-DECLARE
-    user_id UUID;
-BEGIN
-    -- Find the user ID from the email
-    SELECT id INTO user_id
-    FROM auth.users
-    WHERE email = admin_email;
-    
-    IF user_id IS NULL THEN
-        RAISE EXCEPTION 'No user found with email %', admin_email;
-    END IF;
-    
-    -- Insert into admin_users
-    INSERT INTO public.admin_users (user_id, is_admin)
-    VALUES (user_id, TRUE)
-    ON CONFLICT (user_id) DO UPDATE SET is_admin = TRUE;
-    
-    -- Update profile role
-    UPDATE public.profiles
-    SET role = 'ADMIN'
-    WHERE id = user_id;
-    
-    RAISE NOTICE 'User % has been made an admin', admin_email;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
 -- Create a secure function to get a profile by ID without hitting RLS policies
 CREATE OR REPLACE FUNCTION public.get_profile_by_id(lookup_user_id UUID)
 RETURNS JSONB
@@ -485,5 +509,35 @@ BEGIN
 END;
 $$;
 
+-- 6. Storage Functions
+CREATE OR REPLACE FUNCTION storage.create_bucket(bucket_name TEXT)
+RETURNS BOOLEAN AS $$
+DECLARE
+    bucket_exists BOOLEAN;
+BEGIN
+    SELECT EXISTS (
+        SELECT 1 FROM storage.buckets WHERE id = bucket_name
+    ) INTO bucket_exists;
+    
+    IF NOT bucket_exists THEN
+        INSERT INTO storage.buckets (id, name, public)
+        VALUES (bucket_name, bucket_name, true);
+        RETURN TRUE;
+    END IF;
+    
+    RETURN FALSE;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 -- Execute the setup function
-SELECT public.setup_database(); 
+SELECT public.setup_database();
+
+-- Show completion message
+DO $$
+BEGIN
+  RAISE NOTICE '======================================';
+  RAISE NOTICE 'SQL setup complete!';
+  RAISE NOTICE 'To make yourself an admin, run:';
+  RAISE NOTICE 'SELECT public.init_admin(''your-email@example.com'');';
+  RAISE NOTICE '======================================';
+END $$; 

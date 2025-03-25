@@ -87,7 +87,7 @@ python manage.py runserver
 
 ### Supabase Setup
 
-1. Create a new Supabase project at https://supabase.io
+1. Create a new Supabase project at https://app.supabase.io
 
 2. Get your project URL and anon key from the API settings
 
@@ -100,14 +100,31 @@ python manage.py runserver
    - Copy and paste the entire SQL script from `frontend/src/services/supabase.sql` 
    - Click "Run" to execute the script
    - This script creates tables, functions, and sets up Row Level Security (RLS) policies
+   - **Use your admin account when executing this script** - regular users don't have permission to create tables or modify RLS policies
 
-6. **Row Level Security (RLS) Policies**
-   - The SQL script sets up the following RLS policies:
-     - Users can view any profile
-     - Users can insert their own profile (with `auth.uid() = id`)
-     - Users can update their own profile (with `auth.uid() = id`)
-     - The avatars storage bucket allows public access for viewing
-     - Users can only upload avatars to their own folder
+6. **Row Level Security (RLS) Policies and RPC Functions**
+   The SQL script creates the following important components:
+   
+   - **Profiles Table**: Stores user profile information
+   - **RLS Policies for Profiles**:
+     - Users can view/edit their own profile
+     - Admins can view/edit all profiles
+   
+   - **Avatars Storage Bucket**: For storing user profile images
+   - **RLS Policies for Storage**:
+     - Public access for viewing avatars
+     - Authenticated users can upload to avatars bucket
+     - Users can update/delete only their own avatars
+     - Admins can manage all avatars
+   
+   - **RPC Functions to Bypass RLS**:
+     - `setup_database()`: Master function that sets up everything
+     - `update_profile()`: Update user profile details
+     - `update_avatar_url()`: Update just the avatar URL
+     - `make_user_admin()`: Promote a user to admin
+     - `create_bucket()`: Create a storage bucket
+
+   These functions use `SECURITY DEFINER` to bypass RLS policies, allowing operations that would otherwise be blocked due to permissions.
 
 7. Get your JWT secret for authentication:
    - Go to Settings > API > JWT Settings
@@ -118,11 +135,44 @@ python manage.py runserver
 
 ### "RLS policy violation" errors
 
-If you see errors like "new row violates row-level security policy", you need to:
+If you encounter "row violates row-level security policy" errors:
 
-1. Run the SQL script from `frontend/src/services/supabase.sql` in the Supabase SQL Editor
-2. Make sure you're signed in (these errors happen when trying to create profiles or upload files without proper authentication)
-3. Use the "Fix Database Issues" button on the Profile screen for help diagnosing issues
+1. **Option 1: Run the SQL Script as Admin (Recommended)**
+   - Go to the Supabase SQL Editor (as an admin user)
+   - Copy and paste the entire SQL script from `frontend/src/services/supabase.sql`
+   - Click "Run" to execute all statements 
+   - The script will create RPC functions that bypass RLS
+
+2. **Option 2: Use the "Fix Database Issues" Button**
+   - In the app, go to the Profile screen
+   - Click the "Fix Database Issues" button
+   - This will call the `setup_database()` RPC function
+
+3. **Option 3: Use the "Make Me Admin" Button**
+   - In the app, go to the Profile screen
+   - Click the "Make Me Admin" button
+   - This will promote your user to have admin privileges
+   - Admin users have extended permissions in the app
+
+4. **Understanding RPC Functions**
+   The app now uses RPC functions to bypass RLS where needed:
+   - Profile updates use `update_profile()` RPC function
+   - Avatar updates use `update_avatar_url()` RPC function
+   - Database setup uses `setup_database()` RPC function
+
+### If All Else Fails: Temporary RLS Disable (DEVELOPMENT ONLY)
+
+```sql
+-- WARNING: Only use in development, NEVER in production
+ALTER TABLE public.profiles DISABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.buckets DISABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.objects DISABLE ROW LEVEL SECURITY;
+
+-- Re-enable RLS when done testing:
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.buckets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE storage.objects ENABLE ROW LEVEL SECURITY;
+```
 
 ### "relation 'public.profiles' does not exist" error
 

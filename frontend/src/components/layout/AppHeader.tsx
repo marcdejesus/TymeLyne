@@ -1,168 +1,83 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import { Avatar, Badge, IconButton } from 'react-native-paper';
-import Icon from 'react-native-vector-icons/Feather';
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { Appbar, Avatar, useTheme, Badge } from 'react-native-paper';
+import { useAuth } from '../../hooks/useAuth';
 import { useNavigation } from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/Feather';
 
 interface AppHeaderProps {
   title: string;
-  userRole?: string;
-  username: string;
-  avatarUrl?: string;
-  showBackButton?: boolean;
-  showSettingsButton?: boolean;
-  showNotificationsButton?: boolean;
+  showBack?: boolean;
+  showSettings?: boolean;
   onSettingsPress?: () => void;
-  onNotificationsPress?: () => void;
-  backButton?: boolean;
-  onBackPress?: () => void;
 }
 
-const AppHeader = ({
-  title,
-  userRole = 'USER',
-  username,
-  avatarUrl,
-  showBackButton = false,
-  showSettingsButton = false,
-  showNotificationsButton = false,
-  onSettingsPress,
-  onNotificationsPress,
-  backButton = false,
-  onBackPress,
-}: AppHeaderProps) => {
+const AppHeader = ({ title, showBack = false, showSettings = false, onSettingsPress }: AppHeaderProps) => {
+  const { colors } = useTheme();
   const navigation = useNavigation();
+  const { profile } = useAuth();
 
-  // Determine if we should show a back button
-  const shouldShowBackButton = showBackButton || backButton;
-  
-  // Use the provided onBackPress function or fallback to navigation.goBack
-  const handleBackPress = () => {
-    if (onBackPress) {
-      onBackPress();
-    } else {
-      navigation.goBack();
+  const getInitials = (name: string) => {
+    return name
+      .split(' ')
+      .map(n => n[0])
+      .join('')
+      .toUpperCase();
+  };
+
+  const renderAvatar = () => {
+    if (profile?.avatar_url) {
+      return (
+        <Avatar.Image 
+          size={40} 
+          source={{ uri: profile.avatar_url }} 
+        />
+      );
     }
+    
+    return (
+      <Avatar.Text 
+        size={40} 
+        label={profile?.full_name ? getInitials(profile.full_name) : 'U'} 
+      />
+    );
   };
 
   return (
-    <View style={styles.header}>
-      <View style={styles.headerContent}>
-        {shouldShowBackButton ? (
-          <TouchableOpacity 
-            style={styles.backButton} 
-            onPress={handleBackPress}
-          >
-            <Icon name="arrow-left" size={24} color="#fff" />
-          </TouchableOpacity>
-        ) : null}
-        
-        <Text style={styles.title}>{title}</Text>
-        
-        <View style={styles.headerRight}>
-          {showSettingsButton && (
-            <TouchableOpacity 
-              style={styles.actionButton}
-              onPress={onSettingsPress}
-            >
-              <Icon name="settings" size={24} color="#fff" />
-            </TouchableOpacity>
-          )}
-          
-          {showNotificationsButton && (
-            <View>
-              <TouchableOpacity
-                style={styles.actionButton}
-                onPress={onNotificationsPress}
-              >
-                <Icon name="bell" size={24} color="#fff" />
-              </TouchableOpacity>
-              <Badge visible={true} size={8} style={styles.notificationBadge} />
-            </View>
-          )}
-          
-          {!showSettingsButton && !showNotificationsButton && (
-            <>
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{userRole}</Text>
-              </View>
-              
-              <TouchableOpacity 
-                style={styles.avatarContainer}
-                onPress={() => navigation.navigate('Profile' as never)}
-              >
-                {avatarUrl ? (
-                  <Avatar.Image source={{ uri: avatarUrl }} size={40} />
-                ) : (
-                  <Avatar.Text 
-                    size={40} 
-                    label={username.substring(0, 2).toUpperCase()} 
-                    color="#fff"
-                    style={{ backgroundColor: "#6200ee" }}
-                  />
-                )}
-              </TouchableOpacity>
-            </>
-          )}
-        </View>
-      </View>
-    </View>
+    <Appbar.Header
+      mode="center-aligned"
+      style={{ backgroundColor: colors.background }}
+    >
+      {showBack && (
+        <Appbar.BackAction
+          onPress={() => navigation.goBack()}
+          color={colors.primary}
+        />
+      )}
+      
+      <Appbar.Content
+        title={title}
+        color={colors.onBackground}
+      />
+      
+      {showSettings ? (
+        <TouchableOpacity onPress={onSettingsPress} style={styles.settingsButton}>
+          {renderAvatar()}
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.rightButtonSpace} />
+      )}
+    </Appbar.Header>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
-    backgroundColor: '#121212',
-    paddingTop: 60,
-    paddingBottom: 16,
-    paddingHorizontal: 16,
+  settingsButton: {
+    marginRight: 10,
   },
-  headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-    flex: 1,
-  },
-  headerRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  badge: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    marginRight: 12,
-  },
-  badgeText: {
-    color: '#000',
-    fontWeight: 'bold',
-    fontSize: 12,
-  },
-  avatarContainer: {
+  rightButtonSpace: {
     width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  actionButton: {
-    margin: 0,
-    marginLeft: 4,
-  },
-  notificationBadge: {
-    position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: '#ff4081',
+    marginRight: 10,
   },
 });
 

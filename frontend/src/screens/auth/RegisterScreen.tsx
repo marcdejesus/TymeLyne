@@ -12,7 +12,7 @@ export default function RegisterScreen({ navigation }: any) {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   
-  const { signUp } = useAuth();
+  const { register } = useAuth();
 
   const validateInputs = () => {
     if (!fullName.trim()) {
@@ -46,11 +46,11 @@ export default function RegisterScreen({ navigation }: any) {
     setSuccessMessage(null);
     
     try {
-      const { error } = await signUp(email, password, fullName);
+      const { error } = await register(email, password, fullName);
       if (error) throw error;
       
       // Registration successful
-      setSuccessMessage('Registration successful! Please check your email to confirm your account.');
+      setSuccessMessage('Registration successful! You can now use your account.');
       
       // Navigate to login after a short delay
       setTimeout(() => {

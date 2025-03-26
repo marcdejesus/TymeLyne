@@ -11,7 +11,7 @@ import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/main/HomeScreen';
-import TasksScreen from '../screens/main/TasksScreen';
+import LeaderboardScreen from '../screens/main/TasksScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
 import AchievementsScreen from '../components/profile/AchievementsScreen';
 
@@ -55,11 +55,11 @@ function MainTabs() {
         }}
       />
       <Tab.Screen
-        name="Tasks"
-        component={TasksScreen}
+        name="Leaderboard"
+        component={LeaderboardScreen}
         options={{
           tabBarIcon: ({ color, size }) => (
-            <Icon name="check-square" size={size} color={color} />
+            <Icon name="award" size={size} color={color} />
           ),
         }}
       />

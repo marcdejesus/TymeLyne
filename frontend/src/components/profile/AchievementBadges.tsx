@@ -55,7 +55,7 @@ const mockAchievements: Achievement[] = [
     id: '4',
     title: 'Goal Crusher',
     description: 'Completed 10 goals',
-    icon: 'award',
+    icon: 'trophy',
     dateUnlocked: '2023-06-10',
     selected: false,
     rarity: 'epic'
@@ -254,7 +254,7 @@ const AchievementBadges: React.FC<AchievementBadgesProps> = ({
             ))
           ) : (
             <View style={styles.noBadgesContainer}>
-              <Icon name="award" size={40} color={theme.primaryColor} style={styles.noBadgesIcon} />
+              <Icon name="trophy" size={40} color={theme.primaryColor} style={styles.noBadgesIcon} />
               <Paragraph style={styles.noBadgesText}>
                 No achievements selected. Tap Edit to choose which achievements to display.
               </Paragraph>

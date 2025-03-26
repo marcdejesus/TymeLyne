@@ -2,18 +2,15 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, TextInput, HelperText } from 'react-native-paper';
 import { useAuth } from '../../hooks/useAuth';
-import { supabase } from '../../services/supabase';
 import Toast from 'react-native-toast-message';
-import { AuthError } from '@supabase/supabase-js';
 
 export default function LoginScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [emailConfirmationSent, setEmailConfirmationSent] = useState(false);
   
-  const { signIn } = useAuth();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     if (!email.trim() || !password) {
@@ -25,48 +22,12 @@ export default function LoginScreen({ navigation }: any) {
     setError(null);
     
     try {
-      const { error } = await signIn(email, password);
+      const { error } = await login(email, password);
       if (error) {
-        const authError = error as AuthError;
-        if (authError.message === 'Email not confirmed') {
-          setError('Please verify your email before logging in');
-          setEmailConfirmationSent(true);
-        } else {
-          throw error;
-        }
+        throw error;
       }
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const resendConfirmationEmail = async () => {
-    if (!email.trim()) {
-      setError('Please enter your email address');
-      return;
-    }
-    
-    setLoading(true);
-    
-    try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
-      
-      if (error) throw error;
-      
-      Toast.show({
-        type: 'success',
-        text1: 'Confirmation email sent',
-        text2: 'Please check your inbox to verify your account',
-        position: 'bottom',
-        visibilityTime: 4000,
-      });
-    } catch (err: any) {
-      setError(err.message || 'Failed to resend confirmation email');
     } finally {
       setLoading(false);
     }
@@ -109,17 +70,6 @@ export default function LoginScreen({ navigation }: any) {
         >
           Sign In
         </Button>
-        
-        {emailConfirmationSent && (
-          <Button
-            mode="outlined"
-            onPress={resendConfirmationEmail}
-            disabled={loading}
-            style={styles.resendButton}
-          >
-            Resend Confirmation Email
-          </Button>
-        )}
         
         <Button
           onPress={() => navigation.navigate('ForgotPassword')}
@@ -167,9 +117,6 @@ const styles = StyleSheet.create({
   button: {
     marginTop: 16,
     marginBottom: 8,
-  },
-  resendButton: {
-    marginBottom: 10,
   },
   link: {
     marginTop: 8,

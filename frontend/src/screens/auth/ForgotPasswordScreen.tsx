@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { Button, TextInput, HelperText } from 'react-native-paper';
-import { supabase } from '../../services/supabase';
+import { api } from '../../services/api';
 
 export default function ForgotPasswordScreen({ navigation }: any) {
   const [email, setEmail] = useState('');
@@ -20,12 +20,7 @@ export default function ForgotPasswordScreen({ navigation }: any) {
     setMessage(null);
     
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'exp://localhost:19000/reset-password',
-      });
-      
-      if (error) throw error;
-      
+      await api.resetPassword(email);
       setMessage('Check your email for a password reset link');
     } catch (err: any) {
       setError(err.message || 'Failed to reset password');

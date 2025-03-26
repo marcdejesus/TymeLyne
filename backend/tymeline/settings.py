@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from dotenv import load_dotenv
+from datetime import timedelta
 
 load_dotenv()
 
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'corsheaders',
     'django_filters',
+    'rest_framework_simplejwt',
     # Local apps
     'users',
     'goals',
@@ -122,7 +124,8 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # REST Framework settings
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'users.utils.SupabaseAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'users.utils.JWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
         'rest_framework.authentication.BasicAuthentication',
     ],
@@ -144,12 +147,58 @@ CORS_ALLOWED_ORIGINS = [
     "http://localhost:19006",
     "http://127.0.0.1:3000",
     "http://127.0.0.1:19006",
+    "http://localhost:8081",
+    "http://localhost:8082",
+    "http://127.0.0.1:8081",
+    "http://127.0.0.1:8082",
+    "exp://127.0.0.1:19000",
+    "exp://localhost:19000",
+    # Add your local network IP
+    "http://192.168.1.61:19000",
+    "http://192.168.1.61:19006",
+    "exp://192.168.1.61:19000",
+    "exp://192.168.1.61:19006",
 ]
 
-# Supabase settings
-SUPABASE_URL = os.getenv('SUPABASE_URL')
-SUPABASE_KEY = os.getenv('SUPABASE_KEY')
-SUPABASE_JWT_SECRET = os.getenv('SUPABASE_JWT_SECRET')
+# Allow all Expo origins
+CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+# JWT settings
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': False,
+
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'VERIFYING_KEY': None,
+    'AUDIENCE': None,
+    'ISSUER': None,
+    'JWK_URL': None,
+    'LEEWAY': 0,
+
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    'USER_AUTHENTICATION_RULE': 'rest_framework_simplejwt.authentication.default_user_authentication_rule',
+
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    'TOKEN_USER_CLASS': 'rest_framework_simplejwt.models.TokenUser',
+
+    'JTI_CLAIM': 'jti',
+
+    'SLIDING_TOKEN_REFRESH_EXP_CLAIM': 'refresh_exp',
+    'SLIDING_TOKEN_LIFETIME': timedelta(minutes=5),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+}
 
 # Custom user model
-AUTH_USER_MODEL = 'users.User' 
+AUTH_USER_MODEL = 'users.User'
+
+# Frontend URL for password reset links
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:19006') 

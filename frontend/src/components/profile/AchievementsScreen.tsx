@@ -170,13 +170,11 @@ const AchievementsScreen = () => {
   
   return (
     <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
-      <AppHeader 
-        title="Achievements" 
-        showBackButton 
-        onBackPress={() => navigation.goBack()}
-        username={profile?.full_name || 'User'}
-        avatarUrl={profile?.avatar_url || undefined}
-        userRole={profile?.role || 'USER'}
+      <AppHeader
+        title="Achievements"
+        showBack={true}
+        showSettings={false}
+        onSettingsPress={() => {}}
       />
       
       <View style={styles.content}>

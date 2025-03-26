@@ -31,9 +31,9 @@ const notificationOptions: NotificationOption[] = [
     defaultValue: true,
   },
   {
-    id: 'achievements',
+    id: 'achievement',
     title: 'Achievement Unlocked',
-    description: 'Celebrate when you earn badges and level up',
+    description: 'When you earn a new achievement',
     icon: 'award',
     defaultValue: true,
   },

@@ -1,15 +1,27 @@
-import os
 import jwt
+from datetime import datetime, timedelta
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from rest_framework import authentication
 from rest_framework.exceptions import AuthenticationFailed
+from rest_framework_simplejwt.tokens import RefreshToken
 
 User = get_user_model()
 
-class SupabaseAuthentication(authentication.BaseAuthentication):
+def generate_tokens_for_user(user):
     """
-    Custom authentication class for Supabase JWT tokens.
+    Generate JWT tokens for a user
+    """
+    refresh = RefreshToken.for_user(user)
+    
+    return {
+        'refresh': str(refresh),
+        'access': str(refresh.access_token),
+    }
+
+class JWTAuthentication(authentication.BaseAuthentication):
+    """
+    Custom authentication class for JWT tokens.
     """
     def authenticate(self, request):
         # Get the JWT token from the Authorization header
@@ -23,47 +35,28 @@ class SupabaseAuthentication(authentication.BaseAuthentication):
             # Decode the JWT token
             payload = jwt.decode(
                 token,
-                settings.SUPABASE_JWT_SECRET,
-                algorithms=['HS256'],
-                options={"verify_signature": True}
+                settings.SECRET_KEY,
+                algorithms=['HS256']
             )
             
-            # Get the Supabase user ID from the token
-            supabase_id = payload.get('sub')
-            if not supabase_id:
+            # Get the user ID from the token
+            user_id = payload.get('user_id')
+            if not user_id:
                 raise AuthenticationFailed('Invalid token payload')
             
-            # Get or create the user in our system
+            # Get the user from the database
             try:
-                user = User.objects.get(supabase_id=supabase_id)
+                user = User.objects.get(id=user_id)
                 
-                # Update user data from payload if anything changed
-                email = payload.get('email')
-                if email and user.email != email:
-                    user.email = email
-                    user.save(update_fields=['email'])
+                # Check if token is expired
+                exp = payload.get('exp')
+                if exp and datetime.now().timestamp() > exp:
+                    raise AuthenticationFailed('Token has expired')
                     
+                return (user, token)
             except User.DoesNotExist:
-                # If the user doesn't exist in our system yet, but has a valid Supabase token,
-                # create a new user in our system
-                email = payload.get('email', '')
-                if not email:
-                    raise AuthenticationFailed('Email not found in token')
+                raise AuthenticationFailed('User not found')
                 
-                # Get user metadata if available
-                user_metadata = payload.get('user_metadata', {})
-                full_name = user_metadata.get('full_name', '')
-                
-                # Create the user with data from Supabase
-                user = User.objects.create(
-                    username=email,
-                    email=email,
-                    full_name=full_name,
-                    supabase_id=supabase_id,
-                    is_active=True
-                )
-            
-            return (user, token)
         except jwt.PyJWTError as e:
             raise AuthenticationFailed(f'Invalid token: {str(e)}')
         

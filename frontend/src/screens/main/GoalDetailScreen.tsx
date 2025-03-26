@@ -141,12 +141,9 @@ export default function GoalDetailScreen() {
   return (
     <View style={styles.container}>
       <AppHeader
-        title={goal.title}
-        username={profile?.full_name || 'User'}
-        avatarUrl={profile?.avatar_url || undefined}
-        userRole={profile?.role || 'USER'}
-        backButton
-        onBackPress={() => navigation.goBack()}
+        title={goal?.title || 'Goal Details'}
+        showBack={true}
+        showSettings={false}
       />
       
       <ScrollView 

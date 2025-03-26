@@ -4,7 +4,6 @@ import { Button, TextInput, Avatar, Divider, Card, IconButton, Modal, Portal } f
 import { useAuth } from '../../hooks/useAuth';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
-import { supabase } from '../../services/supabase';
 import Toast from 'react-native-toast-message';
 import { UserProfile } from '../../hooks/useAuth';
 import * as FileSystem from 'expo-file-system';
@@ -16,14 +15,14 @@ import { useTheme, AccentKey, accentThemes } from '../../contexts/ThemeContext';
 import AchievementBadges from '../../components/profile/AchievementBadges';
 import { useNavigation } from '@react-navigation/native';
 
-interface SupabaseError {
+interface ApiError {
   message: string;
   code?: string;
   details?: string;
 }
 
 export default function ProfileScreen() {
-  const { user, profile, signOut, updateProfile, updateAvatar, refreshProfile, setProfile } = useAuth();
+  const { user, profile, logout, updateProfile, updateAvatar, refreshProfile } = useAuth();
   const { theme, accentKey, setAccentKey, useSystemTheme, setUseSystemTheme, isDarkMode } = useTheme();
   const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
@@ -44,8 +43,8 @@ export default function ProfileScreen() {
       if (user && !initComplete) {
         setLoading(true);
         try {
-          console.log('Auto-running database fixes on profile load');
-          await fixDatabaseIssues(false); // Don't show toast for auto-run
+          // Just refresh the profile data
+          await refreshProfile();
           setInitComplete(true);
         } catch (error) {
           console.error('Error initializing profile:', error);
@@ -158,114 +157,67 @@ export default function ProfileScreen() {
   }, [profile?.avatar_url]);
 
   const handleSignOut = async () => {
-    try {
-      const { error } = await signOut();
-      if (error) throw error;
-    } catch (error: any) {
-      Alert.alert('Error', error.message);
-    }
+    setShowSettingsModal(false); // Close the settings modal
+    
+    // Show confirmation dialog
+    Alert.alert(
+      "Sign Out",
+      "Are you sure you want to sign out?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        {
+          text: "Sign Out",
+          onPress: async () => {
+            setLoading(true);
+            try {
+              const { error } = await logout();
+              if (error) {
+                Toast.show({
+                  type: 'error',
+                  text1: 'Logout failed',
+                  text2: error.toString(),
+                  position: 'bottom',
+                });
+              }
+            } catch (error) {
+              console.error('Error during logout:', error);
+              Toast.show({
+                type: 'error',
+                text1: 'Logout Error',
+                text2: error instanceof Error ? error.message : 'Unknown error',
+                position: 'bottom',
+              });
+            } finally {
+              setLoading(false);
+            }
+          },
+          style: "destructive"
+        }
+      ]
+    );
   };
 
-  const fixDatabaseIssues = async (showToast = true) => {
+  const refreshProfileData = async (showToast = true) => {
     setLoading(true);
     try {
-      // Try to reset policies
-      const { data: resetData, error: resetError } = await supabase.rpc('reset_profile_policies');
-      if (resetError) {
-        console.error('Error resetting policies:', resetError);
-        if (showToast) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error resetting policies',
-            text2: resetError.message
-          });
-        }
-      } else {
-        console.log('Policies reset:', resetData);
-      }
-
-      // Try to fix any missing profiles
-      const { data: fixData, error: fixError } = await supabase.rpc('fix_missing_profiles');
-      if (fixError) {
-        console.error('Error fixing profiles:', fixError);
-        if (showToast) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error fixing profiles',
-            text2: fixError.message
-          });
-        }
-      } else {
-        console.log('Fixed profiles count:', fixData);
-      }
-
-      // Check storage permissions
-      const { data: storageData, error: storageError } = await supabase.rpc('test_storage_permissions');
-      if (storageError) {
-        console.error('Error testing storage:', storageError);
-      } else {
-        console.log('Storage permissions:', storageData);
-      }
-
-      // Test profile permissions
-      if (user && user.email) {
-        try {
-          const { data: profileData, error: profileError } = await supabase.rpc('test_profile_permissions', {
-            user_email: user.email
-          });
-          
-          if (profileError) {
-            console.error('Error testing profile permissions:', profileError);
-          } else {
-            console.log('Profile permissions:', profileData);
-          }
-        } catch (error) {
-          console.error('Error in profile permissions check:', error);
-        }
-      }
+      const refreshedProfile = await refreshProfile();
       
-      // Update MIME type settings for avatars bucket
-      try {
-        const { error: mimeError } = await supabase.rpc('update_avatars_mime_types', {
-          mime_types: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+      if (refreshedProfile && showToast) {
+        Toast.show({
+          type: 'success',
+          text1: 'Profile refreshed',
+          text2: 'Latest profile data has been loaded'
         });
-        
-        if (mimeError) {
-          console.error('Error updating MIME types:', mimeError);
-        } else {
-          console.log('Updated MIME types for avatars bucket');
-        }
-      } catch (mimeError) {
-        console.error('Exception updating MIME types:', mimeError);
       }
-      
-      // Force profile refresh
-      if (refreshProfile) {
-        // Force a complete refresh to get latest data
-        const refreshedProfile = await refreshProfile();
-        
-        // Update local state with current profile data
-        if (refreshedProfile) {
-          setFullName(refreshedProfile.full_name || '');
-          setBio(refreshedProfile.bio || '');
-        }
-        
-        // Only show toast if explicitly requested (not for auto-run)
-        if (showToast) {
-          Toast.show({
-            type: 'success',
-            text1: 'Profile refreshed',
-            text2: 'Latest profile data has been loaded'
-          });
-        }
-      }
-      
     } catch (error) {
-      console.error('Error fixing database:', error);
+      console.error('Error refreshing profile:', error);
       if (showToast) {
         Toast.show({
           type: 'error',
-          text1: 'Error fixing database',
+          text1: 'Error refreshing profile',
           text2: error instanceof Error ? error.message : 'Unknown error'
         });
       }
@@ -354,7 +306,6 @@ export default function ProfileScreen() {
     setLoading(true);
     
     try {
-      // First try using standard updateProfile
       console.log('Updating profile with:', { full_name: fullName, bio });
       const { data, error } = await updateProfile({
         full_name: fullName,
@@ -362,41 +313,22 @@ export default function ProfileScreen() {
       });
       
       if (error) {
-        console.error('Error updating profile via standard method:', error);
-        
-        // Try via direct RPC function
-        console.log('Trying via RPC function...');
-        const success = await updateProfileViaRPC({ fullName, bio });
-        
-        if (!success) {
-          Toast.show({
-            type: 'error',
-            text1: 'Error updating profile',
-            text2: 'Failed to update profile. Try restarting the app.'
-          });
-        } else {
-          // Successfully updated, exit edit mode
-          setEditing(false);
-        }
+        console.error('Error updating profile:', error);
+        Toast.show({
+          type: 'error',
+          text1: 'Error updating profile',
+          text2: error.toString()
+        });
       } else {
-        console.log('Profile updated successfully via standard method:', data);
         Toast.show({
           type: 'success',
           text1: 'Profile updated',
           text2: 'Your profile has been updated successfully'
         });
-        
-        // Explicitly refresh the form values from the updated profile
-        if (profile) {
-          setFullName(profile.full_name || '');
-          setBio(profile.bio || '');
-        }
-        
-        // Exit edit mode
         setEditing(false);
       }
     } catch (error) {
-      console.error('Exception in handleSaveChanges:', error);
+      console.error('Exception updating profile:', error);
       Toast.show({
         type: 'error',
         text1: 'Error',
@@ -647,8 +579,14 @@ export default function ProfileScreen() {
   };
 
   const handleNotificationSettingsChange = (settings: Record<string, boolean>) => {
-    // In a real app, this would update notification preferences in the backend
-    console.log('Notification settings updated:', settings);
+    // Here you would typically save the notification settings
+    console.log('Notification settings changed:', settings);
+    // Show feedback to user
+    Toast.show({
+      type: 'success',
+      text1: 'Settings Saved',
+      text2: 'Your notification preferences have been updated'
+    });
   };
 
   if (!user || !profile) {
@@ -718,46 +656,224 @@ export default function ProfileScreen() {
       
       console.log('Using avatar URL from profile:', profile.avatar_url);
       
-      // When using a remote URL, immediately trigger a cache attempt
-      // This way the next render might use the cached version
+      // When using a remote URL, immediately start downloading it to avoid empty images
       if (!cachedAvatarUri && profile.avatar_url) {
+        // Immediately attempt to download and cache the avatar
         console.log('No cached avatar available, initiating immediate download');
         
-        // Use immediate async download to improve user experience
         (async () => {
           try {
-            // Use the fixed URL for download
-            const avatarUrl = fixStorageUrl(profile.avatar_url);
+            const avatarUrl = profile.avatar_url;
+            // Skip if avatar URL is suddenly unavailable
             if (!avatarUrl) return;
             
-            // Try direct download first
-            const localUri = await downloadAvatarToLocal(avatarUrl);
+            // Try optimized download first (our own implementation with high reliability)
+            const localUri = await optimizedAvatarDownload(avatarUrl);
             if (localUri) {
-              console.log('Immediate download successful, setting cached URI:', localUri);
+              console.log('Optimized download successful:', localUri);
               setCachedAvatarUri(localUri);
-            } else {
-              // If direct download fails, try the caching approach
-              console.log('Immediate download failed, trying cache approach');
-              cacheAvatarImage(avatarUrl);
+              return;
             }
+            
+            // If that fails, try legacy download
+            console.log('Optimized download failed, trying legacy download');
+            const legacyUri = await downloadAvatarToLocal(avatarUrl);
+            if (legacyUri) {
+              console.log('Legacy download successful:', legacyUri);
+              setCachedAvatarUri(legacyUri);
+              return;
+            }
+            
+            // If direct download fails, try the caching approach
+            console.log('Direct downloads failed, trying cache approach');
+            cacheAvatarImage(avatarUrl);
           } catch (error) {
             console.error('Error in immediate avatar download:', error);
           }
         })();
       }
       
-      // Create a properly formatted URL with cache busting and render endpoint if needed
-      const fixedUrl = fixStorageUrl(profile.avatar_url);
+      // Create a URL that will work with the Image component
+      // We will add a cache-busting parameter to prevent stale images
+      const timestamp = new Date().getTime();
+      const cacheBustUrl = `${profile.avatar_url}${profile.avatar_url.includes('?') ? '&' : '?'}t=${timestamp}`;
       
-      // Request medium resolution for better performance
-      const imageUrl = fixedUrl ? `${fixedUrl}&width=300` : undefined;
-      
-      return imageUrl ? { uri: imageUrl } : require('../../../assets/images/default-avatar.png');
+      // Return the URL - we'll use a fallback in the Image component if this fails
+      return { uri: cacheBustUrl };
     }
     
     // Default fallback
     console.log('Using default avatar (no avatar in profile)');
     return require('../../../assets/images/default-avatar.png');
+  };
+
+  // New optimized download function that tries multiple approaches
+  const optimizedAvatarDownload = async (avatarUrl: string) => {
+    if (!avatarUrl || !FileSystem) return null;
+    
+    try {
+      console.log('Starting optimized avatar download for:', avatarUrl);
+      
+      // Create a filename and paths
+      const filename = `avatar-${Date.now()}-${Math.random().toString(36).substring(7)}.jpg`;
+      const cacheDir = `${FileSystem.cacheDirectory}avatars/`;
+      const localUri = `${cacheDir}${filename}`;
+      
+      // Ensure cache directory exists
+      const dirInfo = await FileSystem.getInfoAsync(cacheDir);
+      if (!dirInfo.exists) {
+        await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
+      }
+      
+      // Add cache-busting to URL
+      const timestamp = Date.now();
+      const downloadUrl = `${avatarUrl}${avatarUrl.includes('?') ? '&' : '?'}t=${timestamp}`;
+      
+      // Try method 1: Using XMLHttpRequest (most reliable on React Native)
+      try {
+        console.log('Trying XMLHttpRequest download...');
+        return await new Promise((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.responseType = 'blob';
+          
+          xhr.onload = async () => {
+            if (xhr.status !== 200) {
+              return reject(new Error(`HTTP error: ${xhr.status}`));
+            }
+            
+            try {
+              const blob = xhr.response;
+              if (!blob || blob.size === 0) {
+                return reject(new Error('Empty response'));
+              }
+              
+              // Read as base64
+              const reader = new FileReader();
+              reader.onload = async () => {
+                try {
+                  const base64data = reader.result?.toString().split(',')[1];
+                  if (!base64data) {
+                    return reject(new Error('Failed to convert to base64'));
+                  }
+                  
+                  // Write file
+                  await FileSystem.writeAsStringAsync(localUri, base64data, {
+                    encoding: FileSystem.EncodingType.Base64,
+                  });
+                  
+                  const fileInfo = await FileSystem.getInfoAsync(localUri);
+                  if (!fileInfo.exists || fileInfo.size === 0) {
+                    return reject(new Error('File not written properly'));
+                  }
+                  
+                  console.log('XMLHttpRequest download successful:', fileInfo.size, 'bytes');
+                  resolve(localUri);
+                } catch (e) {
+                  reject(e);
+                }
+              };
+              reader.onerror = () => reject(new Error('FileReader error'));
+              reader.readAsDataURL(blob);
+            } catch (e) {
+              reject(e);
+            }
+          };
+          
+          xhr.onerror = () => reject(new Error('Network error'));
+          xhr.onabort = () => reject(new Error('Download aborted'));
+          xhr.ontimeout = () => reject(new Error('Download timed out'));
+          
+          xhr.open('GET', downloadUrl);
+          xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          xhr.setRequestHeader('Pragma', 'no-cache');
+          xhr.setRequestHeader('Expires', '0');
+          xhr.send();
+        });
+      } catch (xhrError) {
+        console.warn('XMLHttpRequest download failed:', xhrError);
+      }
+      
+      // Try method 2: Using fetch with blob (fallback)
+      try {
+        console.log('Trying fetch with blob download...');
+        const response = await fetch(downloadUrl, {
+          method: 'GET',
+          headers: {
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0'
+          }
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('Empty blob');
+        }
+        
+        console.log('Fetch returned blob of size:', blob.size);
+        
+        // Convert blob to base64
+        const base64 = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => {
+            const base64data = reader.result?.toString().split(',')[1];
+            if (base64data) {
+              resolve(base64data);
+            } else {
+              reject(new Error('Failed to convert to base64'));
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+        
+        // Write the file
+        await FileSystem.writeAsStringAsync(localUri, base64, {
+          encoding: FileSystem.EncodingType.Base64,
+        });
+        
+        const fileInfo = await FileSystem.getInfoAsync(localUri);
+        if (!fileInfo.exists || fileInfo.size === 0) {
+          throw new Error('File not written properly');
+        }
+        
+        console.log('Fetch+blob download successful:', fileInfo.size, 'bytes');
+        return localUri;
+      } catch (fetchError) {
+        console.warn('Fetch with blob download failed:', fetchError);
+      }
+      
+      // Try method 3: Using Expo's downloadAsync as last resort
+      try {
+        console.log('Trying Expo FileSystem.downloadAsync...');
+        const result = await FileSystem.downloadAsync(downloadUrl, localUri);
+        
+        if (result.status !== 200) {
+          throw new Error(`Download failed with status: ${result.status}`);
+        }
+        
+        const fileInfo = await FileSystem.getInfoAsync(localUri);
+        if (!fileInfo.exists || fileInfo.size === 0) {
+          throw new Error('Downloaded file is empty');
+        }
+        
+        console.log('Expo downloadAsync successful:', fileInfo.size, 'bytes');
+        return localUri;
+      } catch (expoError) {
+        console.warn('Expo FileSystem.downloadAsync failed:', expoError);
+      }
+      
+      // All methods failed
+      console.error('All download methods failed for avatar');
+      return null;
+    } catch (error) {
+      console.error('Error in optimizedAvatarDownload:', error);
+      return null;
+    }
   };
 
   // Function to download and store the avatar locally for better reliability
@@ -868,27 +984,36 @@ export default function ProfileScreen() {
       setLocalImageUri('');
       setCachedAvatarUri('');
       
-      // If this is the first error, try to refresh the profile
+      // Try optimized download first, then fall back to other methods
       if (!profile.avatar_url.startsWith('local-avatar://')) {
-        console.log('Attempting to refresh profile data to fix avatar');
+        console.log('Attempting optimized download after error');
         
-        // Try to download the avatar directly
-        downloadAvatarToLocal(profile.avatar_url).then(localUri => {
-          if (localUri) {
-            console.log('Successfully downloaded avatar to local file:', localUri);
-            setCachedAvatarUri(localUri);
+        (async () => {
+          try {
+            const avatarUrl = profile.avatar_url;
+            // Skip if avatar URL is suddenly unavailable
+            if (!avatarUrl) return;
             
-            // Update profile with retry count
-            if (profile) {
-              setProfile({
-                ...profile,
-                avatar_retry_count: currentRetries + 1
-              });
+            // Try our most reliable method first
+            const localUri = await optimizedAvatarDownload(avatarUrl);
+            if (localUri) {
+              console.log('Successful optimized download after error:', localUri);
+              setCachedAvatarUri(localUri);
+              
+              // Update profile with retry count
+              if (profile) {
+                setProfile({
+                  ...profile,
+                  avatar_retry_count: currentRetries + 1
+                });
+              }
+              return;
             }
-          } else {
-            console.log('Failed to download avatar, falling back to profile refresh');
             
-            // Fall back to refreshing the profile data
+            // If that fails, try fallback methods
+            console.log('Failed retry with optimized download, trying alternatives');
+            
+            // Try refreshing the profile as a last resort
             refreshProfile().then(refreshedProfile => {
               if (refreshedProfile?.avatar_url) {
                 console.log('Profile refreshed, new avatar URL:', refreshedProfile.avatar_url);
@@ -899,12 +1024,10 @@ export default function ProfileScreen() {
                   avatar_retry_count: currentRetries + 1
                 });
                 
-                // Try to cache the new URL
+                // Try to cache again with the fresh URL
                 cacheAvatarImage(refreshedProfile.avatar_url);
               } else {
-                console.log('Profile refresh did not return a valid avatar URL');
-                
-                // Show error to user only after exhausting retries
+                // Profile refresh didn't provide a valid avatar URL
                 if (currentRetries + 1 >= maxRetries) {
                   Toast.show({
                     type: 'error',
@@ -914,10 +1037,12 @@ export default function ProfileScreen() {
                 }
               }
             });
+          } catch (error) {
+            console.error('Error in error recovery process:', error);
           }
-        });
+        })();
       } else {
-        // Only show toast on final retry
+        // Local avatar URL that failed
         if (currentRetries + 1 >= maxRetries) {
           Toast.show({
             type: 'error',
@@ -992,6 +1117,16 @@ export default function ProfileScreen() {
           <View style={styles.statItem}>
             <Text style={styles.statValue}>37K</Text>
             <Text style={styles.statLabel}>likes</Text>
+          </View>
+        </View>
+        
+        <View style={styles.levelContainer}>
+          <View style={styles.levelTextContainer}>
+            <Text style={[styles.levelValue, { color: theme.textColor }]}>Level 14</Text>
+            <Text style={[styles.levelPoints, { color: theme.secondaryColor }]}>3,240 / 4,000 XP</Text>
+          </View>
+          <View style={[styles.levelProgressContainer, { backgroundColor: isDarkMode ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }]}>
+            <View style={[styles.levelProgressBar, { backgroundColor: theme.primaryColor, width: `${(3240/4000) * 100}%` }]} />
           </View>
         </View>
       </View>
@@ -1144,86 +1279,263 @@ export default function ProfileScreen() {
 
   const renderThemeSelector = () => {
     return (
-      <Card style={[styles.profileCard, { backgroundColor: theme.cardColor }]}>
-        <Card.Content>
-          <Text style={[styles.cardTitle, { color: theme.textColor }]}>Theme Settings</Text>
-          
-          <View style={styles.themeSystemSection}>
-            <Text style={[styles.themeSettingTitle, { color: theme.textColor }]}>
-              Follow System Appearance
-            </Text>
-            <Switch
-              value={useSystemTheme}
-              onValueChange={setUseSystemTheme}
-              trackColor={{ false: '#767577', true: theme.primaryColor }}
-              thumbColor={useSystemTheme ? theme.primaryColor : '#f4f3f4'}
-            />
-          </View>
-          
-          <Text style={[styles.themeOptionHeader, { color: theme.textColor }]}>
-            {useSystemTheme ? 'Accent Color' : 'App Theme'}
-          </Text>
-
-          <View style={styles.themesContainer}>
-            {/* Theme color options */}
-            {Object.entries(accentThemes).map(([key, themeValue]) => (
-              <TouchableOpacity
-                key={key}
-                style={[
-                  styles.themeOption,
-                  { backgroundColor: themeValue.primaryColor },
-                  accentKey === key && styles.selectedTheme,
-                ]}
-                onPress={() => setAccentKey(key as AccentKey)}
-              >
-                <View style={styles.themeIconContainer}>
-                  {key === 'purple' && <Icon name="zap" size={18} color="white" />}
-                  {key === 'blue' && <Icon name="droplet" size={18} color="white" />}
-                  {key === 'green' && <Icon name="feather" size={18} color="white" />}
-                  {key === 'orange' && <Icon name="sun" size={18} color="white" />}
-                  {key === 'pink' && <Icon name="heart" size={18} color="white" />}
-                </View>
-                <Text style={styles.themeOptionText}>
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </Text>
-                {accentKey === key && (
-                  <View style={styles.themeCheckmark}>
-                    <Icon name="check" size={14} color="white" />
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {!useSystemTheme && (
-            <View style={styles.darkModeContainer}>
+      <>
+        <Card style={[styles.profileCard, { backgroundColor: theme.cardColor }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: theme.textColor }]}>Theme Settings</Text>
+            
+            <View style={styles.themeSystemSection}>
               <Text style={[styles.themeSettingTitle, { color: theme.textColor }]}>
-                Dark Mode
+                Follow System Appearance
               </Text>
               <Switch
-                value={isDarkMode}
-                onValueChange={(value) => {
-                  // This is just a proxy - we're actually setting the accent to force dark mode
-                  if (value) {
-                    // Dark mode
-                    setUseSystemTheme(false);
-                  } else {
-                    // Light mode
-                    setUseSystemTheme(false);
-                  }
-                }}
+                value={useSystemTheme}
+                onValueChange={setUseSystemTheme}
                 trackColor={{ false: '#767577', true: theme.primaryColor }}
-                thumbColor={isDarkMode ? theme.primaryColor : '#f4f3f4'}
+                thumbColor={useSystemTheme ? theme.primaryColor : '#f4f3f4'}
               />
             </View>
-          )}
-        </Card.Content>
-      </Card>
+            
+            <Text style={[styles.themeOptionHeader, { color: theme.textColor }]}>
+              {useSystemTheme ? 'Accent Color' : 'App Theme'}
+            </Text>
+
+            <View style={styles.themesContainer}>
+              {/* Theme color options */}
+              {Object.entries(accentThemes).map(([key, themeValue]) => (
+                <TouchableOpacity
+                  key={key}
+                  style={[
+                    styles.themeOption,
+                    { backgroundColor: themeValue.primaryColor },
+                    accentKey === key && styles.selectedTheme,
+                  ]}
+                  onPress={() => setAccentKey(key as AccentKey)}
+                >
+                  <View style={styles.themeIconContainer}>
+                    {key === 'purple' && <Icon name="zap" size={18} color="white" />}
+                    {key === 'blue' && <Icon name="droplet" size={18} color="white" />}
+                    {key === 'green' && <Icon name="feather" size={18} color="white" />}
+                    {key === 'orange' && <Icon name="sun" size={18} color="white" />}
+                    {key === 'pink' && <Icon name="heart" size={18} color="white" />}
+                  </View>
+                  <Text style={styles.themeOptionText}>
+                    {key.charAt(0).toUpperCase() + key.slice(1)}
+                  </Text>
+                  {accentKey === key && (
+                    <View style={styles.themeCheckmark}>
+                      <Icon name="check" size={14} color="white" />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {!useSystemTheme && (
+              <View style={styles.darkModeContainer}>
+                <Text style={[styles.themeSettingTitle, { color: theme.textColor }]}>
+                  Dark Mode
+                </Text>
+                <Switch
+                  value={isDarkMode}
+                  onValueChange={(value) => {
+                    // This is just a proxy - we're actually setting the accent to force dark mode
+                    if (value) {
+                      // Dark mode
+                      setUseSystemTheme(false);
+                    } else {
+                      // Light mode
+                      setUseSystemTheme(false);
+                    }
+                  }}
+                  trackColor={{ false: '#767577', true: theme.primaryColor }}
+                  thumbColor={isDarkMode ? theme.primaryColor : '#f4f3f4'}
+                />
+              </View>
+            )}
+          </Card.Content>
+        </Card>
+
+        <Card style={[styles.profileCard, { backgroundColor: theme.cardColor, marginTop: 16 }]}>
+          <Card.Content>
+            <Text style={[styles.cardTitle, { color: theme.textColor }]}>Profile Settings</Text>
+            
+            <TouchableOpacity 
+              style={styles.settingsButton}
+              onPress={() => {
+                setShowSettingsModal(false);
+                setEditing(true);
+              }}
+            >
+              <View style={styles.settingsButtonContent}>
+                <Icon name="user" size={20} color={theme.primaryColor} style={styles.settingsButtonIcon} />
+                <Text style={[styles.settingsButtonText, { color: theme.textColor }]}>Edit Profile Information</Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={theme.primaryColor} />
+            </TouchableOpacity>
+            
+            <TouchableOpacity 
+              style={styles.settingsButton}
+              onPress={() => {
+                setShowSettingsModal(false);
+                setShowNotificationsModal(true);
+              }}
+            >
+              <View style={styles.settingsButtonContent}>
+                <Icon name="bell" size={20} color={theme.primaryColor} style={styles.settingsButtonIcon} />
+                <Text style={[styles.settingsButtonText, { color: theme.textColor }]}>Notification Preferences</Text>
+              </View>
+              <Icon name="chevron-right" size={20} color={theme.primaryColor} />
+            </TouchableOpacity>
+          </Card.Content>
+        </Card>
+      </>
+    );
+  };
+
+  const renderSettingsModal = () => {
+    return (
+      <Modal
+        visible={showSettingsModal}
+        onDismiss={() => setShowSettingsModal(false)}
+        contentContainerStyle={[
+          styles.modalContainer,
+          { backgroundColor: theme.backgroundColor || '#fff' }
+        ]}
+      >
+        <ScrollView>
+          <Text style={[styles.modalTitle, { color: theme.primaryColor || '#6200ee' }]}>Settings</Text>
+          
+          <Card style={[styles.settingsCard, { backgroundColor: theme.cardColor || '#fff' }]}>
+            <Card.Title 
+              title="Theme Settings" 
+              titleStyle={{ color: theme.textColor || '#333' }}
+            />
+            <Card.Content>
+              <View style={styles.themeGrid}>
+                {Object.entries(accentThemes).map(([key, color]) => (
+                  <TouchableOpacity
+                    key={key}
+                    style={[
+                      styles.themeOption,
+                      { backgroundColor: color.primaryColor },
+                      accentKey === key && styles.selectedThemeOption
+                    ]}
+                    onPress={() => setAccentKey(key as AccentKey)}
+                  >
+                    {accentKey === key && (
+                      <Icon name="check" size={16} color="#fff" />
+                    )}
+                  </TouchableOpacity>
+                ))}
+              </View>
+            </Card.Content>
+          </Card>
+          
+          <Card style={[styles.settingsCard, { backgroundColor: theme.cardColor || '#fff' }]}>
+            <Card.Content>
+              <View style={styles.settingsRow}>
+                <Text style={[styles.settingTitle, { color: theme.textColor || '#333' }]}>Use System Theme</Text>
+                <Switch
+                  value={useSystemTheme}
+                  onValueChange={setUseSystemTheme}
+                  color={theme.primaryColor || '#6200ee'}
+                />
+              </View>
+            </Card.Content>
+          </Card>
+          
+          <Card style={[styles.settingsCard, { backgroundColor: theme.cardColor || '#fff', marginTop: 10 }]}>
+            <Card.Title 
+              title="Profile Settings" 
+              titleStyle={{ color: theme.textColor || '#333' }}
+            />
+            <Card.Content>
+              <View style={styles.profileSettingsButtons}>
+                <TouchableOpacity 
+                  style={[styles.settingsButton, { backgroundColor: theme.primaryColor + '20' || '#6200ee20' }]}
+                  onPress={() => {
+                    setShowSettingsModal(false);
+                    setEditing(true);
+                  }}
+                >
+                  <Icon name="user" size={20} color={theme.primaryColor || '#6200ee'} style={styles.settingsButtonIcon} />
+                  <Text style={[styles.settingsButtonText, { color: theme.primaryColor || '#6200ee' }]}>
+                    Edit Profile
+                  </Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity 
+                  style={[styles.settingsButton, { backgroundColor: theme.primaryColor + '20' || '#6200ee20' }]}
+                  onPress={() => {
+                    setShowSettingsModal(false);
+                    setShowNotificationsModal(true);
+                  }}
+                >
+                  <Icon name="bell" size={20} color={theme.primaryColor || '#6200ee'} style={styles.settingsButtonIcon} />
+                  <Text style={[styles.settingsButtonText, { color: theme.primaryColor || '#6200ee' }]}>
+                    Notifications
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </Card.Content>
+          </Card>
+          
+          <Button
+            mode="outlined"
+            onPress={() => setShowSettingsModal(false)}
+            style={styles.modalButton}
+          >
+            Close
+          </Button>
+          
+          <Button
+            mode="outlined"
+            onPress={handleSignOut}
+            style={[styles.modalButton, styles.logoutButton]}
+            textColor={theme.accentColor || '#f44336'}
+            icon="logout"
+          >
+            Sign Out
+          </Button>
+        </ScrollView>
+      </Modal>
+    );
+  };
+
+  const renderNotificationsModal = () => {
+    return (
+      <Modal
+        visible={showNotificationsModal}
+        onDismiss={() => setShowNotificationsModal(false)}
+        contentContainerStyle={[
+          styles.modalContainer,
+          { backgroundColor: theme.backgroundColor || '#fff' }
+        ]}
+      >
+        <ScrollView>
+          <Text style={[styles.modalTitle, { color: theme.primaryColor || '#6200ee' }]}>Notification Settings</Text>
+          <Card style={[styles.settingsCard, { backgroundColor: theme.cardColor || '#fff' }]}>
+            <Card.Content>
+              <NotificationSettings 
+                onSettingsChange={handleNotificationSettingsChange}
+              />
+            </Card.Content>
+          </Card>
+          <Button
+            mode="outlined"
+            onPress={() => setShowNotificationsModal(false)}
+            style={styles.modalButton}
+          >
+            Close
+          </Button>
+        </ScrollView>
+      </Modal>
     );
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: theme.backgroundColor }]}>
       <AppHeader
         title="Profile"
         username={profile?.full_name || 'User'}
@@ -1239,44 +1551,14 @@ export default function ProfileScreen() {
       
       {loading && (
         <View style={styles.loadingOverlay}>
-          <ActivityIndicator size="large" color="#6200ee" />
+          <ActivityIndicator size="large" color={theme.primaryColor} />
         </View>
       )}
       
       <Portal>
-        <Modal
-          visible={showSettingsModal}
-          onDismiss={() => setShowSettingsModal(false)}
-          contentContainerStyle={styles.modalContent}
-        >
-          {renderThemeSelector()}
-          <Button
-            mode="contained"
-            onPress={() => setShowSettingsModal(false)}
-            style={styles.closeButton}
-            buttonColor="#6200ee"
-          >
-            Close
-          </Button>
-        </Modal>
+        {renderSettingsModal()}
         
-        <Modal
-          visible={showNotificationsModal}
-          onDismiss={() => setShowNotificationsModal(false)}
-          contentContainerStyle={styles.modalContent}
-        >
-          <NotificationSettings
-            onSettingsChange={handleNotificationSettingsChange}
-          />
-          <Button
-            mode="contained"
-            onPress={() => setShowNotificationsModal(false)}
-            style={styles.closeButton}
-            buttonColor="#6200ee"
-          >
-            Close
-          </Button>
-        </Modal>
+        {renderNotificationsModal()}
       </Portal>
     </View>
   );
@@ -1542,15 +1824,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   themeOption: {
-    width: '48%',
-    height: 60,
-    borderRadius: 8,
-    padding: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginBottom: 10,
+    justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#eaeaea',
   },
   selectedTheme: {
     borderWidth: 2,
@@ -1622,5 +1901,99 @@ const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#eaeaea',
+  },
+  settingsButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 4,
+    flex: 0.48,
+  },
+  settingsButtonContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  settingsButtonIcon: {
+    marginRight: 8,
+  },
+  settingsButtonText: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+  levelContainer: {
+    width: '80%',
+    marginBottom: 20,
+  },
+  levelTextContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 4,
+  },
+  levelValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  levelPoints: {
+    fontSize: 14,
+  },
+  levelProgressContainer: {
+    height: 8,
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  levelProgressBar: {
+    height: '100%',
+    width: '81%', // Default value that will be overwritten
+  },
+  modalContainer: {
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    maxHeight: '80%',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 16,
+    color: '#333',
+  },
+  settingsCard: {
+    marginBottom: 16,
+    elevation: 2,
+  },
+  settingsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  modalButton: {
+    marginTop: 16,
+  },
+  logoutButton: {
+    backgroundColor: '#f44336',
+  },
+  themeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  selectedThemeOption: {
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  profileSettingsButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
 }); 

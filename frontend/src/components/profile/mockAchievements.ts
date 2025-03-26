@@ -29,7 +29,7 @@ export const mockAchievements: Achievement[] = [
     rarity: 'epic'
   },
   {
-    id: '4',
+    id: 'goal_crusher_10',
     title: 'Goal Crusher',
     description: 'Completed 10 goals',
     icon: 'award',

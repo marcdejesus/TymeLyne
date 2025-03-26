@@ -50,7 +50,7 @@ export function useAuth() {
             setAdmin(false);
           }
         }
-        
+
         setLoading(false);
       } catch (error) {
         console.error('Error initializing auth:', error);
@@ -119,7 +119,7 @@ export function useAuth() {
 
   const updateProfile = async (updates: Partial<UserProfile>) => {
     try {
-      if (!user) return { data: null, error: new Error('No user logged in') };
+    if (!user) return { data: null, error: new Error('No user logged in') };
       
       const updatedProfile = await api.updateProfile(updates);
       setProfile(updatedProfile);
@@ -170,11 +170,11 @@ export function useAuth() {
       const updatedProfile = await api.uploadAvatar(file);
       
       // Update the profile with the new avatar URL
-      setProfile({
-        ...profile,
+          setProfile({
+            ...profile,
         ...updatedProfile,
-        avatar_preview_uri: fileObject.uri // Keep the preview URI
-      });
+            avatar_preview_uri: fileObject.uri // Keep the preview URI
+          });
       
       return { data: updatedProfile, error: null };
     } catch (error) {

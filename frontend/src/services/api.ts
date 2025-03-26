@@ -200,6 +200,7 @@ class ApiClient {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Accept': 'application/json',
       },
       body: JSON.stringify({
         username: usernameOrEmail,
@@ -209,11 +210,22 @@ class ApiClient {
     
     const data = await response.json();
     
+    // Check if the response was not successful
     if (!response.ok) {
-      throw new Error(data.detail || 'Login failed');
+      console.error('Login failed:', data);
+      throw new Error(data.detail || data.message || 'Login failed');
     }
     
+    // Verify we have the expected data
+    if (!data.tokens || !data.tokens.access || !data.user) {
+      console.error('Invalid login response:', data);
+      throw new Error('Invalid response from server');
+    }
+    
+    // Store the tokens
     await this.setTokens(data.tokens.access, data.tokens.refresh);
+    
+    console.log('Login successful:', { userId: data.user.id, email: data.user.email });
     return data;
   }
   

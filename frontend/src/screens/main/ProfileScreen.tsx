@@ -124,7 +124,7 @@ export default function ProfileScreen() {
           
           if (blob.size > 0) {
             console.log('FETCH TEST SUCCESSFUL: Image downloaded successfully');
-          } else {
+      } else {
             console.log('FETCH TEST FAILED: Downloaded blob is empty');
             
             // Try XMLHttpRequest as backup test
@@ -203,15 +203,15 @@ export default function ProfileScreen() {
   const refreshProfileData = async (showToast = true) => {
     setLoading(true);
     try {
-      const refreshedProfile = await refreshProfile();
-      
+        const refreshedProfile = await refreshProfile();
+        
       if (refreshedProfile && showToast) {
-        Toast.show({
-          type: 'success',
-          text1: 'Profile refreshed',
-          text2: 'Latest profile data has been loaded'
-        });
-      }
+          Toast.show({
+            type: 'success',
+            text1: 'Profile refreshed',
+            text2: 'Latest profile data has been loaded'
+          });
+        }
     } catch (error) {
       console.error('Error refreshing profile:', error);
       if (showToast) {
@@ -314,12 +314,12 @@ export default function ProfileScreen() {
       
       if (error) {
         console.error('Error updating profile:', error);
-        Toast.show({
-          type: 'error',
-          text1: 'Error updating profile',
+          Toast.show({
+            type: 'error',
+            text1: 'Error updating profile',
           text2: error.toString()
-        });
-      } else {
+          });
+        } else {
         Toast.show({
           type: 'success',
           text1: 'Profile updated',
@@ -503,10 +503,10 @@ export default function ProfileScreen() {
                 });
                 
                 // Verify the file was written
-                const fileInfo = await FileSystem.getInfoAsync(cacheFilePath);
+      const fileInfo = await FileSystem.getInfoAsync(cacheFilePath);
                 if (fileInfo.exists && fileInfo.size > 100) {
                   console.log('Avatar cached successfully at:', cacheFilePath, 'Size:', fileInfo.size);
-                  setCachedAvatarUri(cacheFilePath);
+        setCachedAvatarUri(cacheFilePath);
                   resolve();
                 } else {
                   console.error('Failed to write file or file too small:', fileInfo);
@@ -532,8 +532,8 @@ export default function ProfileScreen() {
         const downloadUrl = imageUrl.includes('?') 
           ? `${imageUrl}&t=${Date.now()}` 
           : `${imageUrl}?t=${Date.now()}`;
-        
-        // Download and cache the file
+      
+      // Download and cache the file
         console.log('Downloading avatar to cache:', downloadUrl);
         const { uri, status } = await FileSystem.downloadAsync(downloadUrl, cacheFilePath);
         
@@ -542,7 +542,7 @@ export default function ProfileScreen() {
           const downloadedFileInfo = await FileSystem.getInfoAsync(uri);
           if (downloadedFileInfo.exists && downloadedFileInfo.size && downloadedFileInfo.size > 100) {
             console.log('Avatar cached at:', uri, 'Size:', downloadedFileInfo.size, 'bytes');
-            setCachedAvatarUri(uri);
+      setCachedAvatarUri(uri);
           } else {
             console.error('Downloaded file is invalid or too small:', downloadedFileInfo);
             if (downloadedFileInfo.exists) {
@@ -941,7 +941,7 @@ export default function ProfileScreen() {
                 const fileInfo = await FileSystem.getInfoAsync(localUri);
                 console.log('File written successfully:', fileInfo);
                 resolve(localUri);
-              } else {
+      } else {
                 reject(new Error('FileReader result is not a string'));
               }
             } catch (e) {
@@ -996,17 +996,17 @@ export default function ProfileScreen() {
             
             // Try our most reliable method first
             const localUri = await optimizedAvatarDownload(avatarUrl);
-            if (localUri) {
+          if (localUri) {
               console.log('Successful optimized download after error:', localUri);
-              setCachedAvatarUri(localUri);
-              
-              // Update profile with retry count
-              if (profile) {
-                setProfile({
-                  ...profile,
-                  avatar_retry_count: currentRetries + 1
-                });
-              }
+            setCachedAvatarUri(localUri);
+            
+            // Update profile with retry count
+            if (profile) {
+              setProfile({
+                ...profile,
+                avatar_retry_count: currentRetries + 1
+              });
+            }
               return;
             }
             
@@ -1076,9 +1076,9 @@ export default function ProfileScreen() {
     <View style={styles.profileViewContainer}>
       <View style={styles.profileHeader}>
         <View style={styles.profileAvatarContainer}>
-          <Image
-            source={getAvatarSource()}
-            style={styles.profileAvatar}
+            <Image
+              source={getAvatarSource()}
+              style={styles.profileAvatar}
             onError={(e) => {
               console.log('PROFILE IMAGE LOAD ERROR:', e.nativeEvent);
               console.log('PROFILE IMAGE ERROR URL:', 
@@ -1088,10 +1088,10 @@ export default function ProfileScreen() {
             onLoad={() => {
               console.log('PROFILE IMAGE LOAD SUCCESS!');
             }}
-            defaultSource={require('../../../assets/images/default-avatar.png')}
-            fadeDuration={300}
-            progressiveRenderingEnabled={true}
-          />
+              defaultSource={require('../../../assets/images/default-avatar.png')}
+              fadeDuration={300}
+              progressiveRenderingEnabled={true}
+            />
         </View>
         
         <Text style={styles.profileName}>{fullName || 'User'}</Text>
@@ -1184,9 +1184,9 @@ export default function ProfileScreen() {
       
       <View style={styles.editAvatarContainer}>
         <TouchableOpacity onPress={pickImage} disabled={isUploading}>
-          <Image
-            source={getAvatarSource()}
-            style={styles.avatar}
+            <Image
+              source={getAvatarSource()}
+              style={styles.avatar}
             onError={(e) => {
               console.log('AVATAR IMAGE LOAD ERROR:', e.nativeEvent);
               console.log('AVATAR IMAGE ERROR URL:', getAvatarSource().uri);
@@ -1195,10 +1195,10 @@ export default function ProfileScreen() {
             onLoad={() => {
               console.log('AVATAR IMAGE LOAD SUCCESS!');
             }}
-            defaultSource={require('../../../assets/images/default-avatar.png')}
-            fadeDuration={300}
-            progressiveRenderingEnabled={true}
-          />
+              defaultSource={require('../../../assets/images/default-avatar.png')}
+              fadeDuration={300}
+              progressiveRenderingEnabled={true}
+            />
           {isUploading && (
             <View style={styles.uploadingOverlay}>
               <ActivityIndicator size="large" color="#ffffff" />
@@ -1278,7 +1278,7 @@ export default function ProfileScreen() {
   );
 
   const renderThemeSelector = () => {
-    return (
+  return (
       <>
         <Card style={[styles.profileCard, { backgroundColor: theme.cardColor }]}>
           <Card.Content>
@@ -1325,8 +1325,8 @@ export default function ProfileScreen() {
                   {accentKey === key && (
                     <View style={styles.themeCheckmark}>
                       <Icon name="check" size={14} color="white" />
-                    </View>
-                  )}
+        </View>
+      )}
                 </TouchableOpacity>
               ))}
             </View>
@@ -1395,9 +1395,9 @@ export default function ProfileScreen() {
 
   const renderSettingsModal = () => {
     return (
-      <Modal
-        visible={showSettingsModal}
-        onDismiss={() => setShowSettingsModal(false)}
+        <Modal
+          visible={showSettingsModal}
+          onDismiss={() => setShowSettingsModal(false)}
         contentContainerStyle={[
           styles.modalContainer,
           { backgroundColor: theme.backgroundColor || '#fff' }
@@ -1499,27 +1499,27 @@ export default function ProfileScreen() {
             Sign Out
           </Button>
         </ScrollView>
-      </Modal>
+        </Modal>
     );
   };
-
+        
   const renderNotificationsModal = () => {
     return (
-      <Modal
-        visible={showNotificationsModal}
-        onDismiss={() => setShowNotificationsModal(false)}
+        <Modal
+          visible={showNotificationsModal}
+          onDismiss={() => setShowNotificationsModal(false)}
         contentContainerStyle={[
           styles.modalContainer,
           { backgroundColor: theme.backgroundColor || '#fff' }
         ]}
-      >
+        >
         <ScrollView>
           <Text style={[styles.modalTitle, { color: theme.primaryColor || '#6200ee' }]}>Notification Settings</Text>
           <Card style={[styles.settingsCard, { backgroundColor: theme.cardColor || '#fff' }]}>
             <Card.Content>
-              <NotificationSettings 
-                onSettingsChange={handleNotificationSettingsChange}
-              />
+          <NotificationSettings
+            onSettingsChange={handleNotificationSettingsChange}
+          />
             </Card.Content>
           </Card>
           <Button
@@ -1530,7 +1530,7 @@ export default function ProfileScreen() {
             Close
           </Button>
         </ScrollView>
-      </Modal>
+        </Modal>
     );
   };
 

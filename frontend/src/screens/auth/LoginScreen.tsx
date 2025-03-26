@@ -22,12 +22,22 @@ export default function LoginScreen({ navigation }: any) {
     setError(null);
     
     try {
-      const { error } = await login(email, password);
+      const { data, error } = await login(email, password);
       if (error) {
         throw error;
       }
+      if (!data) {
+        throw new Error('No response data received');
+      }
+      // Login successful - the useAuth hook will handle the navigation
     } catch (err: any) {
+      console.error('Login error:', err);
       setError(err.message || 'Failed to sign in');
+      Toast.show({
+        type: 'error',
+        text1: 'Login Failed',
+        text2: err.message || 'Please check your credentials and try again'
+      });
     } finally {
       setLoading(false);
     }

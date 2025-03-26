@@ -1,25 +1,41 @@
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
+import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useAuth } from '../hooks/useAuth';
 import Icon from 'react-native-vector-icons/Feather';
+import { useTheme } from '../contexts/ThemeContext';
 
-// Import screens (to be created)
+// Import screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import RegisterScreen from '../screens/auth/RegisterScreen';
 import ForgotPasswordScreen from '../screens/auth/ForgotPasswordScreen';
 import HomeScreen from '../screens/main/HomeScreen';
-import GoalsScreen from '../screens/main/GoalsScreen';
 import TasksScreen from '../screens/main/TasksScreen';
 import ProfileScreen from '../screens/main/ProfileScreen';
+import AchievementsScreen from '../components/profile/AchievementsScreen';
+
+// Import navigators
+import GoalsNavigator from './GoalsNavigator';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
 
 function MainTabs() {
+  const { theme } = useTheme();
+  
   return (
-    <Tab.Navigator>
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: theme.tabBarColor,
+          borderTopColor: theme.backgroundColor === '#121212' ? '#333' : '#ddd',
+        },
+        tabBarActiveTintColor: theme.tabBarActiveColor,
+        tabBarInactiveTintColor: theme.tabBarInactiveColor,
+      }}
+    >
       <Tab.Screen
         name="Home"
         component={HomeScreen}
@@ -31,7 +47,7 @@ function MainTabs() {
       />
       <Tab.Screen
         name="Goals"
-        component={GoalsScreen}
+        component={GoalsNavigator}
         options={{
           tabBarIcon: ({ color, size }) => (
             <Icon name="target" size={size} color={color} />
@@ -62,13 +78,29 @@ function MainTabs() {
 
 export default function Navigation() {
   const { user, loading } = useAuth();
+  const { theme } = useTheme();
+  
+  // Create a proper navigation theme based on our theme
+  const isDark = theme.backgroundColor === '#121212';
+  const navigationTheme = {
+    ...(isDark ? DarkTheme : DefaultTheme),
+    colors: {
+      ...(isDark ? DarkTheme.colors : DefaultTheme.colors),
+      primary: theme.primaryColor,
+      background: theme.backgroundColor,
+      card: theme.cardColor,
+      text: theme.textColor,
+      border: isDark ? '#333' : '#ddd',
+      notification: theme.accentColor,
+    }
+  };
 
   if (loading) {
     return null; // Or a loading screen
   }
 
   return (
-    <NavigationContainer>
+    <NavigationContainer theme={navigationTheme}>
       <Stack.Navigator screenOptions={{ headerShown: false }}>
         {!user ? (
           // Auth Stack
@@ -79,7 +111,10 @@ export default function Navigation() {
           </>
         ) : (
           // Main App Stack
-          <Stack.Screen name="MainApp" component={MainTabs} />
+          <>
+            <Stack.Screen name="MainApp" component={MainTabs} />
+            <Stack.Screen name="Achievements" component={AchievementsScreen} />
+          </>
         )}
       </Stack.Navigator>
     </NavigationContainer>

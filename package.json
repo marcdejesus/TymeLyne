@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "react-native-elements": "^3.4.3",
+    "react-native-snap-carousel": "^3.9.1"
+  },
+  "devDependencies": {
+    "@types/react-native-snap-carousel": "^3.8.11"
+  }
+}

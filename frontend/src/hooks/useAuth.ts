@@ -778,6 +778,7 @@ export function useAuth() {
     }
   };
 
+  // Update the updateAvatar function to ensure the image is valid
   const updateAvatar = async (file: FormData) => {
     if (!user) return { data: null, error: new Error('No user logged in') };
 
@@ -795,6 +796,25 @@ export function useAuth() {
         type: fileObject.type
       });
 
+      // Validate the image file before uploading
+      try {
+        // Verify the source file exists and is valid
+        const sourceFileInfo = await fetch(fileObject.uri, { method: 'HEAD' });
+        if (!sourceFileInfo.ok) {
+          throw new Error(`Source file validation failed: ${sourceFileInfo.status}`);
+        }
+        
+        const contentLength = sourceFileInfo.headers.get('content-length');
+        if (!contentLength || parseInt(contentLength) < 100) {
+          throw new Error('Source file too small or invalid');
+        }
+        
+        console.log('Source file validated, size:', contentLength, 'bytes');
+      } catch (validationError) {
+        console.error('Error validating source file:', validationError);
+        // Continue anyway as the fetch might still work
+      }
+
       // Check if storage bucket exists and create it if needed
       try {
         await supabase.rpc('create_avatars_bucket', {
@@ -803,7 +823,7 @@ export function useAuth() {
         });
         
         await supabase.rpc('update_avatars_mime_types', {
-          mime_types: ['image/png', 'image/jpeg', 'image/gif', 'image/webp']
+          mime_types: ['image/png', 'image/jpeg', 'image/jpg', 'image/gif', 'image/webp']
         });
         
         console.log('Avatars bucket configured for upload');
@@ -818,14 +838,44 @@ export function useAuth() {
         
         // Use the Fetch API for reliable uploads
         const fetchResponse = await fetch(fileObject.uri);
+        if (!fetchResponse.ok) {
+          throw new Error(`Failed to fetch local file: ${fetchResponse.status}`);
+        }
+        
         const blob = await fetchResponse.blob();
+        if (blob.size === 0 || blob.size < 100) {
+          throw new Error(`Invalid blob size: ${blob.size} bytes`);
+        }
+        
+        console.log('Blob created successfully, size:', blob.size, 'bytes');
+        
+        // Ensure we have the correct content type
+        // iOS sometimes has issues with content type detection
+        let contentType = fileObject.type || 'image/jpeg';
+        
+        // If we're handling a JPEG but contentType doesn't match, fix it
+        const isJpeg = fileObject.name.toLowerCase().endsWith('.jpg') || 
+                      fileObject.name.toLowerCase().endsWith('.jpeg');
+        if (isJpeg && contentType !== 'image/jpeg') {
+          console.log('Correcting content type for JPEG image');
+          contentType = 'image/jpeg';
+        }
+        
+        // If we're handling a PNG but contentType doesn't match, fix it
+        const isPng = fileObject.name.toLowerCase().endsWith('.png');
+        if (isPng && contentType !== 'image/png') {
+          console.log('Correcting content type for PNG image');
+          contentType = 'image/png';
+        }
+        
+        console.log('Using content type for upload:', contentType);
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, blob, {
             cacheControl: '3600',
             upsert: true,
-            contentType: fileObject.type || 'image/jpeg'
+            contentType: contentType
           });
 
         if (uploadError) {
@@ -846,6 +896,44 @@ export function useAuth() {
 
         // Update profile with the new avatar URL
         const avatarUrl = publicUrlData.publicUrl;
+        
+        // Validate the URL accessibility with a comprehensive check
+        try {
+          // First try a HEAD request
+          console.log('Validating uploaded file with HEAD request');
+          const urlCheckResponse = await fetch(avatarUrl, { 
+            method: 'HEAD',
+            cache: 'no-store' // Bypass cache to ensure file exists
+          });
+          
+          if (!urlCheckResponse.ok) {
+            console.error('Avatar URL validation failed (HEAD):', urlCheckResponse.status);
+            throw new Error(`URL validation failed: ${urlCheckResponse.status}`);
+          }
+          
+          // Now try a GET request to validate the content
+          console.log('Validating uploaded file with GET request');
+          const contentCheckResponse = await fetch(avatarUrl, {
+            cache: 'no-store'
+          });
+          
+          if (!contentCheckResponse.ok) {
+            console.error('Avatar URL validation failed (GET):', contentCheckResponse.status);
+            throw new Error(`URL content validation failed: ${contentCheckResponse.status}`);
+          }
+          
+          const contentBlob = await contentCheckResponse.blob();
+          if (contentBlob.size === 0 || contentBlob.size < 100) {
+            console.error('Retrieved content invalid size:', contentBlob.size);
+            throw new Error(`Retrieved content has invalid size: ${contentBlob.size} bytes`);
+          }
+          
+          console.log('Avatar URL and content validated successfully, size:', contentBlob.size, 'bytes');
+        } catch (urlCheckError) {
+          console.error('Error validating avatar URL:', urlCheckError);
+          // Continue anyway, but log the issue
+        }
+        
         const { data, error } = await supabase.from('profiles')
           .update({ avatar_url: avatarUrl })
           .eq('id', user.id)

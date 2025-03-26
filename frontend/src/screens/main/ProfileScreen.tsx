@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image, SafeAreaView, ActivityIndicator, ImageBackground, Platform } from 'react-native';
-import { Button, TextInput, Avatar, Divider, Card, IconButton } from 'react-native-paper';
+import { View, Text, StyleSheet, ScrollView, Alert, TouchableOpacity, Image, SafeAreaView, ActivityIndicator, ImageBackground, Platform, Switch } from 'react-native';
+import { Button, TextInput, Avatar, Divider, Card, IconButton, Modal, Portal } from 'react-native-paper';
 import { useAuth } from '../../hooks/useAuth';
 import * as ImagePicker from 'expo-image-picker';
 import Icon from 'react-native-vector-icons/Feather';
@@ -8,6 +8,13 @@ import { supabase } from '../../services/supabase';
 import Toast from 'react-native-toast-message';
 import { UserProfile } from '../../hooks/useAuth';
 import * as FileSystem from 'expo-file-system';
+import AppHeader from '../../components/layout/AppHeader';
+import NotificationSettings from '../../components/profile/NotificationSettings';
+import ProfileThemeSelector from '../../components/profile/ProfileThemeSelector';
+import { fixStorageUrl, getDirectDownloadUrl } from '../../utils/storageUtils';
+import { useTheme, AccentKey, accentThemes } from '../../contexts/ThemeContext';
+import AchievementBadges from '../../components/profile/AchievementBadges';
+import { useNavigation } from '@react-navigation/native';
 
 interface SupabaseError {
   message: string;
@@ -17,6 +24,8 @@ interface SupabaseError {
 
 export default function ProfileScreen() {
   const { user, profile, signOut, updateProfile, updateAvatar, refreshProfile, setProfile } = useAuth();
+  const { theme, accentKey, setAccentKey, useSystemTheme, setUseSystemTheme, isDarkMode } = useTheme();
+  const navigation = useNavigation();
   const [loading, setLoading] = useState(false);
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState(profile?.full_name || '');
@@ -25,6 +34,9 @@ export default function ProfileScreen() {
   const [isUploading, setIsUploading] = useState(false);
   const [localImageUri, setLocalImageUri] = useState('');
   const [cachedAvatarUri, setCachedAvatarUri] = useState('');
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showNotificationsModal, setShowNotificationsModal] = useState(false);
+  const [selectedTheme, setSelectedTheme] = useState('purple');
 
   // Automatically run fixDatabaseIssues when the component mounts
   useEffect(() => {
@@ -58,6 +70,92 @@ export default function ProfileScreen() {
       }
     }
   }, [profile]);
+
+  // Add a test function that uses XMLHttpRequest
+  const xhrDownloadTest = async (url: string) => {
+    if (!url) return;
+    
+    console.log('Testing XHR download for:', url);
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('GET', url, true);
+    xhr.responseType = 'blob';
+    
+    return new Promise((resolve, reject) => {
+      xhr.onload = function() {
+        if (xhr.status === 200) {
+          const blob = xhr.response;
+          console.log('XHR SUCCESS - Status:', xhr.status);
+          console.log('XHR SUCCESS - Content-Type:', xhr.getResponseHeader('Content-Type'));
+          console.log('XHR SUCCESS - Blob size:', blob.size);
+          console.log('XHR SUCCESS - Blob type:', blob.type);
+          resolve(blob);
+        } else {
+          console.log('XHR FAILURE - Status:', xhr.status);
+          reject(new Error(`HTTP error! status: ${xhr.status}`));
+        }
+      };
+      
+      xhr.onerror = function(e) {
+        console.log('XHR ERROR:', e);
+        reject(new Error('Network error'));
+      };
+      
+      xhr.send();
+    });
+  };
+
+  // Add the test to the existing effect
+  useEffect(() => {
+    const testAvatarFetch = async () => {
+      if (profile?.avatar_url) {
+        console.log('TESTING DIRECT AVATAR FETCH');
+        try {
+          const avatarUrl = profile.avatar_url + '?t=' + new Date().getTime();
+          console.log('Fetching from:', avatarUrl);
+          
+          // Test with fetch
+          const response = await fetch(avatarUrl);
+          console.log('Fetch Response status:', response.status);
+          console.log('Fetch Response headers:', response.headers);
+          
+          const blob = await response.blob();
+          console.log('Fetch Blob size:', blob.size);
+          console.log('Fetch Blob type:', blob.type);
+          
+          if (blob.size > 0) {
+            console.log('FETCH TEST SUCCESSFUL: Image downloaded successfully');
+          } else {
+            console.log('FETCH TEST FAILED: Downloaded blob is empty');
+            
+            // Try XMLHttpRequest as backup test
+            try {
+              if (profile.avatar_url) {
+                await xhrDownloadTest(profile.avatar_url);
+              }
+            } catch (xhrError) {
+              console.log('XHR TEST FAILED:', xhrError);
+            }
+          }
+        } catch (error) {
+          console.log('FETCH TEST ERROR:', error);
+          
+          // Try XMLHttpRequest as backup test
+          try {
+            if (profile.avatar_url) {
+              await xhrDownloadTest(profile.avatar_url);
+            }
+          } catch (xhrError) {
+            console.log('XHR TEST FAILED:', xhrError);
+          }
+        }
+      }
+    };
+    
+    if (profile) {
+      testAvatarFetch();
+    }
+  }, [profile?.avatar_url]);
 
   const handleSignOut = async () => {
     try {
@@ -442,22 +540,115 @@ export default function ProfileScreen() {
         await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
       }
       
-      // Check if file already exists in cache
-      const fileInfo = await FileSystem.getInfoAsync(cacheFilePath);
-      if (fileInfo.exists) {
-        console.log('Using cached avatar:', cacheFilePath);
-        setCachedAvatarUri(cacheFilePath);
-        return;
+      // Try direct fetch approach first (more reliable on some devices)
+      try {
+        console.log('Trying direct fetch for image:', imageUrl);
+        const response = await fetch(imageUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        if (blob.size === 0) {
+          throw new Error('Downloaded blob is empty');
+        }
+        
+        console.log('Image fetched successfully, size:', blob.size);
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        return new Promise<void>((resolve, reject) => {
+          reader.onload = async () => {
+            try {
+              if (typeof reader.result === 'string') {
+                // Remove the data URL prefix
+                const base64Data = reader.result.split(',')[1];
+                
+                // Write the file
+                await FileSystem.writeAsStringAsync(cacheFilePath, base64Data, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                
+                // Verify the file was written
+                const fileInfo = await FileSystem.getInfoAsync(cacheFilePath);
+                if (fileInfo.exists && fileInfo.size > 100) {
+                  console.log('Avatar cached successfully at:', cacheFilePath, 'Size:', fileInfo.size);
+                  setCachedAvatarUri(cacheFilePath);
+                  resolve();
+                } else {
+                  console.error('Failed to write file or file too small:', fileInfo);
+                  reject(new Error('Failed to write file or file too small'));
+                }
+              } else {
+                reject(new Error('FileReader result is not a string'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+      } catch (fetchError) {
+        console.error('Direct fetch failed:', fetchError);
+        
+        // Fall back to FileSystem.downloadAsync if direct fetch fails
+        console.log('Falling back to FileSystem.downloadAsync:', imageUrl);
+        
+        // Add cache busting to force fresh download
+        const downloadUrl = imageUrl.includes('?') 
+          ? `${imageUrl}&t=${Date.now()}` 
+          : `${imageUrl}?t=${Date.now()}`;
+        
+        // Download and cache the file
+        console.log('Downloading avatar to cache:', downloadUrl);
+        const { uri, status } = await FileSystem.downloadAsync(downloadUrl, cacheFilePath);
+        
+        if (status === 200) {
+          // Verify file was downloaded correctly and is valid
+          const downloadedFileInfo = await FileSystem.getInfoAsync(uri);
+          if (downloadedFileInfo.exists && downloadedFileInfo.size && downloadedFileInfo.size > 100) {
+            console.log('Avatar cached at:', uri, 'Size:', downloadedFileInfo.size, 'bytes');
+            setCachedAvatarUri(uri);
+          } else {
+            console.error('Downloaded file is invalid or too small:', downloadedFileInfo);
+            if (downloadedFileInfo.exists) {
+              await FileSystem.deleteAsync(uri, { idempotent: true });
+            }
+            throw new Error('Downloaded avatar file is invalid');
+          }
+        } else {
+          console.error('Avatar download failed with status:', status);
+          throw new Error(`Download failed with status: ${status}`);
+        }
       }
-      
-      // Download and cache the file
-      console.log('Downloading avatar to cache:', imageUrl);
-      const { uri } = await FileSystem.downloadAsync(imageUrl, cacheFilePath);
-      console.log('Avatar cached at:', uri);
-      setCachedAvatarUri(uri);
     } catch (error) {
       console.error('Error caching avatar image:', error);
     }
+  };
+
+  const handleSettingsPress = () => {
+    setShowSettingsModal(true);
+  };
+
+  const handleNotificationsPress = () => {
+    setShowNotificationsModal(true);
+  };
+
+  const handleThemeChange = (themeId: string) => {
+    setSelectedTheme(themeId);
+    // In a real app, this would update the app theme
+    Toast.show({
+      type: 'success',
+      text1: 'Theme Updated',
+      text2: 'Your app theme has been changed successfully'
+    });
+  };
+
+  const handleNotificationSettingsChange = (settings: Record<string, boolean>) => {
+    // In a real app, this would update notification preferences in the backend
+    console.log('Notification settings updated:', settings);
   };
 
   if (!user || !profile) {
@@ -526,9 +717,42 @@ export default function ProfileScreen() {
       }
       
       console.log('Using avatar URL from profile:', profile.avatar_url);
-      // Add a cache buster to prevent using cached version from previous failures
-      // and set a max width to reduce bandwidth and improve load times
-      return { uri: `${profile.avatar_url}?t=${Date.now()}&width=300` };
+      
+      // When using a remote URL, immediately trigger a cache attempt
+      // This way the next render might use the cached version
+      if (!cachedAvatarUri && profile.avatar_url) {
+        console.log('No cached avatar available, initiating immediate download');
+        
+        // Use immediate async download to improve user experience
+        (async () => {
+          try {
+            // Use the fixed URL for download
+            const avatarUrl = fixStorageUrl(profile.avatar_url);
+            if (!avatarUrl) return;
+            
+            // Try direct download first
+            const localUri = await downloadAvatarToLocal(avatarUrl);
+            if (localUri) {
+              console.log('Immediate download successful, setting cached URI:', localUri);
+              setCachedAvatarUri(localUri);
+            } else {
+              // If direct download fails, try the caching approach
+              console.log('Immediate download failed, trying cache approach');
+              cacheAvatarImage(avatarUrl);
+            }
+          } catch (error) {
+            console.error('Error in immediate avatar download:', error);
+          }
+        })();
+      }
+      
+      // Create a properly formatted URL with cache busting and render endpoint if needed
+      const fixedUrl = fixStorageUrl(profile.avatar_url);
+      
+      // Request medium resolution for better performance
+      const imageUrl = fixedUrl ? `${fixedUrl}&width=300` : undefined;
+      
+      return imageUrl ? { uri: imageUrl } : require('../../../assets/images/default-avatar.png');
     }
     
     // Default fallback
@@ -537,7 +761,7 @@ export default function ProfileScreen() {
   };
 
   // Function to download and store the avatar locally for better reliability
-  const downloadAvatarToLocal = async (avatarUrl: string) => {
+  const downloadAvatarToLocal = async (avatarUrl: string | undefined | null) => {
     if (!avatarUrl || avatarUrl.startsWith('local-avatar://') || !FileSystem) {
       return null;
     }
@@ -555,21 +779,75 @@ export default function ProfileScreen() {
         await FileSystem.makeDirectoryAsync(cacheDir, { intermediates: true });
       }
       
-      // Add a cache buster to the URL
-      const downloadUrl = `${avatarUrl}?t=${Date.now()}`;
-      
-      console.log('Downloading avatar directly to local file:', downloadUrl);
-      const result = await FileSystem.downloadAsync(downloadUrl, localUri);
-      
-      if (result.status === 200) {
-        console.log('Avatar downloaded successfully to:', localUri);
-        return localUri;
-      } else {
-        console.error('Failed to download avatar, status:', result.status);
-        return null;
+      // Try direct fetch approach first (more reliable)
+      try {
+        console.log('Trying direct fetch for downloading avatar:', avatarUrl);
+        
+        // Use the direct download URL
+        const downloadUrl = getDirectDownloadUrl(avatarUrl);
+        const response = await fetch(downloadUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        // Check content type
+        const contentType = response.headers.get('content-type');
+        if (contentType && 
+            !contentType.startsWith('image/') && 
+            contentType !== 'application/octet-stream') {
+          console.error('Invalid content type for avatar:', contentType);
+          throw new Error(`Invalid content type: ${contentType}`);
+        }
+        
+        const blob = await response.blob();
+        
+        if (blob.size === 0) {
+          throw new Error('Downloaded blob is empty');
+        }
+        
+        console.log('Avatar image fetched successfully, size:', blob.size);
+        
+        // Convert blob to base64
+        const reader = new FileReader();
+        return new Promise<string>((resolve, reject) => {
+          reader.onloadend = async () => {
+            try {
+              if (typeof reader.result === 'string') {
+                // Remove the data URL prefix
+                const base64Data = reader.result.split(',')[1];
+                
+                // Write the file
+                await FileSystem.writeAsStringAsync(localUri, base64Data, {
+                  encoding: FileSystem.EncodingType.Base64,
+                });
+                
+                const fileInfo = await FileSystem.getInfoAsync(localUri);
+                console.log('File written successfully:', fileInfo);
+                resolve(localUri);
+              } else {
+                reject(new Error('FileReader result is not a string'));
+              }
+            } catch (e) {
+              reject(e);
+            }
+          };
+          reader.onerror = () => reject(reader.error);
+          reader.readAsDataURL(blob);
+        });
+      } catch (fetchError) {
+        console.error('Direct fetch failed:', fetchError);
+        
+        // Fall back to original method if direct fetch fails
+        console.log('Falling back to FileSystem.downloadAsync');
+        const fileUri = `${FileSystem.cacheDirectory}avatars/${filename}`;
+        const downloadUrl = `${avatarUrl}?t=${new Date().getTime()}`;
+        await FileSystem.downloadAsync(downloadUrl, fileUri);
+        
+        return fileUri;
       }
     } catch (error) {
-      console.error('Error downloading avatar:', error);
+      console.error('Error in downloadAvatarToLocal:', error);
       return null;
     }
   };
@@ -671,30 +949,27 @@ export default function ProfileScreen() {
 
   const renderViewProfile = () => (
     <View style={styles.profileViewContainer}>
-      <ImageBackground
-        source={require('../../../assets/images/profile-background.png')}
-        style={styles.profileHeader}
-      >
+      <View style={styles.profileHeader}>
         <View style={styles.profileAvatarContainer}>
-          {getAvatarSource() ? (
-            <Image
-              source={getAvatarSource()}
-              style={styles.profileAvatar}
-              onError={handleImageError}
-              defaultSource={require('../../../assets/images/default-avatar.png')}
-              fadeDuration={300}
-              progressiveRenderingEnabled={true}
-            />
-          ) : (
-            <View style={[styles.profileAvatar, styles.placeholderAvatar]}>
-              <Text style={styles.placeholderText}>
-                {fullName ? fullName.substring(0, 2).toUpperCase() : "👤"}
-              </Text>
-            </View>
-          )}
+          <Image
+            source={getAvatarSource()}
+            style={styles.profileAvatar}
+            onError={(e) => {
+              console.log('PROFILE IMAGE LOAD ERROR:', e.nativeEvent);
+              console.log('PROFILE IMAGE ERROR URL:', 
+                getAvatarSource().uri ? getAvatarSource().uri : 'default-image');
+              handleImageError();
+            }}
+            onLoad={() => {
+              console.log('PROFILE IMAGE LOAD SUCCESS!');
+            }}
+            defaultSource={require('../../../assets/images/default-avatar.png')}
+            fadeDuration={300}
+            progressiveRenderingEnabled={true}
+          />
         </View>
         
-        <Text style={styles.profileName}>{fullName}</Text>
+        <Text style={styles.profileName}>{fullName || 'User'}</Text>
         
         {profile?.role && (
           <View style={[styles.roleBadge, 
@@ -704,17 +979,6 @@ export default function ProfileScreen() {
             <Text style={styles.roleText}>{profile.role}</Text>
           </View>
         )}
-        
-        <Text style={styles.profileEmail}>{user?.email}</Text>
-      </ImageBackground>
-      
-      <View style={styles.profileContent}>
-        <Card style={styles.profileCard}>
-          <Card.Content>
-            <Text style={styles.cardTitle}>About</Text>
-            <Text style={styles.bioText}>{bio || 'No bio provided'}</Text>
-          </Card.Content>
-        </Card>
         
         <View style={styles.profileStats}>
           <View style={styles.statItem}>
@@ -730,6 +994,26 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>likes</Text>
           </View>
         </View>
+      </View>
+      
+      <View style={styles.profileContent}>
+        <Card style={styles.profileCard}>
+          <Card.Content>
+            <Text style={styles.cardTitle}>Bio</Text>
+            <Text style={styles.bioText}>{bio || 'No bio provided'}</Text>
+          </Card.Content>
+        </Card>
+        
+        {/* Achievement Badge Component */}
+        <TouchableOpacity 
+          style={styles.achievementsButton}
+          onPress={() => navigation.navigate('Achievements' as never)}
+        >
+          <AchievementBadges userId={user?.id || ''} />
+          <View style={styles.achievementsArrow}>
+            <Icon name="chevron-right" size={24} color={theme.primaryColor} />
+          </View>
+        </TouchableOpacity>
         
         <View style={styles.profileActions}>
           <TouchableOpacity 
@@ -765,21 +1049,21 @@ export default function ProfileScreen() {
       
       <View style={styles.editAvatarContainer}>
         <TouchableOpacity onPress={pickImage} disabled={isUploading}>
-          {getAvatarSource() ? (
-            <Image
-              source={getAvatarSource()}
-              style={styles.avatar}
-              onError={handleImageError}
-              defaultSource={require('../../../assets/images/default-avatar.png')}
-              fadeDuration={300}
-              progressiveRenderingEnabled={true}
-            />
-          ) : (
-            <Avatar.Text 
-              size={80} 
-              label={profile?.full_name?.substring(0, 2) || '??'} 
-            />
-          )}
+          <Image
+            source={getAvatarSource()}
+            style={styles.avatar}
+            onError={(e) => {
+              console.log('AVATAR IMAGE LOAD ERROR:', e.nativeEvent);
+              console.log('AVATAR IMAGE ERROR URL:', getAvatarSource().uri);
+              handleImageError();
+            }}
+            onLoad={() => {
+              console.log('AVATAR IMAGE LOAD SUCCESS!');
+            }}
+            defaultSource={require('../../../assets/images/default-avatar.png')}
+            fadeDuration={300}
+            progressiveRenderingEnabled={true}
+          />
           {isUploading && (
             <View style={styles.uploadingOverlay}>
               <ActivityIndicator size="large" color="#ffffff" />
@@ -858,8 +1142,99 @@ export default function ProfileScreen() {
     </ScrollView>
   );
 
+  const renderThemeSelector = () => {
+    return (
+      <Card style={[styles.profileCard, { backgroundColor: theme.cardColor }]}>
+        <Card.Content>
+          <Text style={[styles.cardTitle, { color: theme.textColor }]}>Theme Settings</Text>
+          
+          <View style={styles.themeSystemSection}>
+            <Text style={[styles.themeSettingTitle, { color: theme.textColor }]}>
+              Follow System Appearance
+            </Text>
+            <Switch
+              value={useSystemTheme}
+              onValueChange={setUseSystemTheme}
+              trackColor={{ false: '#767577', true: theme.primaryColor }}
+              thumbColor={useSystemTheme ? theme.primaryColor : '#f4f3f4'}
+            />
+          </View>
+          
+          <Text style={[styles.themeOptionHeader, { color: theme.textColor }]}>
+            {useSystemTheme ? 'Accent Color' : 'App Theme'}
+          </Text>
+
+          <View style={styles.themesContainer}>
+            {/* Theme color options */}
+            {Object.entries(accentThemes).map(([key, themeValue]) => (
+              <TouchableOpacity
+                key={key}
+                style={[
+                  styles.themeOption,
+                  { backgroundColor: themeValue.primaryColor },
+                  accentKey === key && styles.selectedTheme,
+                ]}
+                onPress={() => setAccentKey(key as AccentKey)}
+              >
+                <View style={styles.themeIconContainer}>
+                  {key === 'purple' && <Icon name="zap" size={18} color="white" />}
+                  {key === 'blue' && <Icon name="droplet" size={18} color="white" />}
+                  {key === 'green' && <Icon name="feather" size={18} color="white" />}
+                  {key === 'orange' && <Icon name="sun" size={18} color="white" />}
+                  {key === 'pink' && <Icon name="heart" size={18} color="white" />}
+                </View>
+                <Text style={styles.themeOptionText}>
+                  {key.charAt(0).toUpperCase() + key.slice(1)}
+                </Text>
+                {accentKey === key && (
+                  <View style={styles.themeCheckmark}>
+                    <Icon name="check" size={14} color="white" />
+                  </View>
+                )}
+              </TouchableOpacity>
+            ))}
+          </View>
+
+          {!useSystemTheme && (
+            <View style={styles.darkModeContainer}>
+              <Text style={[styles.themeSettingTitle, { color: theme.textColor }]}>
+                Dark Mode
+              </Text>
+              <Switch
+                value={isDarkMode}
+                onValueChange={(value) => {
+                  // This is just a proxy - we're actually setting the accent to force dark mode
+                  if (value) {
+                    // Dark mode
+                    setUseSystemTheme(false);
+                  } else {
+                    // Light mode
+                    setUseSystemTheme(false);
+                  }
+                }}
+                trackColor={{ false: '#767577', true: theme.primaryColor }}
+                thumbColor={isDarkMode ? theme.primaryColor : '#f4f3f4'}
+              />
+            </View>
+          )}
+        </Card.Content>
+      </Card>
+    );
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
+      <AppHeader
+        title="Profile"
+        username={profile?.full_name || 'User'}
+        avatarUrl={profile?.avatar_url || undefined}
+        userRole={profile?.role || 'USER'}
+        showSettingsButton
+        showNotificationsButton
+        onSettingsPress={handleSettingsPress}
+        onNotificationsPress={handleNotificationsPress}
+      />
+      
       {editing ? renderEditProfile() : renderViewProfile()}
       
       {loading && (
@@ -867,7 +1242,43 @@ export default function ProfileScreen() {
           <ActivityIndicator size="large" color="#6200ee" />
         </View>
       )}
-    </SafeAreaView>
+      
+      <Portal>
+        <Modal
+          visible={showSettingsModal}
+          onDismiss={() => setShowSettingsModal(false)}
+          contentContainerStyle={styles.modalContent}
+        >
+          {renderThemeSelector()}
+          <Button
+            mode="contained"
+            onPress={() => setShowSettingsModal(false)}
+            style={styles.closeButton}
+            buttonColor="#6200ee"
+          >
+            Close
+          </Button>
+        </Modal>
+        
+        <Modal
+          visible={showNotificationsModal}
+          onDismiss={() => setShowNotificationsModal(false)}
+          contentContainerStyle={styles.modalContent}
+        >
+          <NotificationSettings
+            onSettingsChange={handleNotificationSettingsChange}
+          />
+          <Button
+            mode="contained"
+            onPress={() => setShowNotificationsModal(false)}
+            style={styles.closeButton}
+            buttonColor="#6200ee"
+          >
+            Close
+          </Button>
+        </Modal>
+      </Portal>
+    </View>
   );
 }
 
@@ -881,13 +1292,15 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   profileHeader: {
-    paddingTop: 40,
+    paddingTop: 30,
     paddingBottom: 20,
     alignItems: 'center',
-    backgroundColor: '#6200ee',
+    backgroundColor: '#fff',
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
   },
   profileAvatarContainer: {
-    marginBottom: 10,
+    marginBottom: 16,
   },
   profileAvatar: {
     width: 100,
@@ -897,14 +1310,14 @@ const styles = StyleSheet.create({
     borderColor: 'white',
   },
   profileName: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
-    color: 'white',
-    marginTop: 8,
+    color: '#333',
+    marginBottom: 4,
   },
   profileEmail: {
     fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    color: '#666',
     marginTop: 4,
   },
   profileContent: {
@@ -929,8 +1342,9 @@ const styles = StyleSheet.create({
   profileStats: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
-    paddingHorizontal: 20,
+    width: '80%',
+    marginTop: 20,
+    marginBottom: 10,
   },
   statItem: {
     alignItems: 'center',
@@ -941,11 +1355,29 @@ const styles = StyleSheet.create({
     color: '#333',
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#777',
   },
   profileActions: {
-    marginTop: 10,
+    marginTop: 20,
+  },
+  
+  // Achievements styles
+  achievementsButton: {
+    position: 'relative', 
+    marginVertical: 16,
+  },
+  achievementsArrow: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    marginTop: -12,
+    backgroundColor: 'white',
+    borderRadius: 15,
+    padding: 5,
+    elevation: 3,
+    borderWidth: 1,
+    borderColor: '#eee',
   },
   
   // Edit Profile Styles
@@ -1092,5 +1524,103 @@ const styles = StyleSheet.create({
     color: '#666',
     fontSize: 12,
     textAlign: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    padding: 20,
+    margin: 20,
+    borderRadius: 12,
+    maxHeight: '80%',
+  },
+  closeButton: {
+    marginTop: 16,
+  },
+  themesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 12,
+  },
+  themeOption: {
+    width: '48%',
+    height: 60,
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#eaeaea',
+  },
+  selectedTheme: {
+    borderWidth: 2,
+    borderColor: '#fff',
+  },
+  themeContent: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  themeName: {
+    marginLeft: 8,
+    fontWeight: 'bold',
+  },
+  checkmark: {
+    marginLeft: 'auto',
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  themeIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 8,
+  },
+  themeOptionText: {
+    color: 'white',
+    fontWeight: 'bold',
+    flex: 1,
+  },
+  themeCheckmark: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: 'rgba(0,0,0,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  themeSystemSection: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginVertical: 12,
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eaeaea',
+  },
+  themeSettingTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  themeOptionHeader: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  darkModeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 16,
+    paddingTop: 16,
+    borderTopWidth: 1,
+    borderTopColor: '#eaeaea',
   },
 }); 

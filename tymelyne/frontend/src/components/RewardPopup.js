@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * RewardPopup - Shows an animated popup when user earns rewards
@@ -9,6 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
  * @param {Function} onAnimationComplete - Callback when animation finishes
  */
 const RewardPopup = ({ reward, visible, onAnimationComplete }) => {
+  // Get accent color from theme context
+  const { accent } = useTheme();
+
   // Animation values
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
@@ -83,6 +87,7 @@ const RewardPopup = ({ reward, visible, onAnimationComplete }) => {
               { translateY },
               { scale }
             ],
+            borderColor: accent,
           }
         ]}
       >
@@ -127,7 +132,6 @@ const styles = StyleSheet.create({
     width: Dimensions.get('window').width * 0.8,
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#E67E22',
   },
   title: {
     color: '#FFF',

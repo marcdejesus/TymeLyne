@@ -11,12 +11,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * FriendsScreen - Shows list of friends and allows adding new friends
  */
 const FriendsScreen = () => {
   const navigation = useNavigation();
+  
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState('friends'); // 'friends', 'requests', 'find'
   
@@ -101,7 +110,7 @@ const FriendsScreen = () => {
           style={styles.actionButton}
           onPress={() => handleRemoveFriend(item.id)}
         >
-          <Ionicons name="person-remove" size={20} color="#E67E22" />
+          <Ionicons name="person-remove" size={20} color={accentColor} />
         </TouchableOpacity>
       </View>
     </View>
@@ -122,17 +131,17 @@ const FriendsScreen = () => {
       </TouchableOpacity>
       
       <View style={styles.requestActions}>
-        <TouchableOpacity 
-          style={[styles.actionButton, styles.acceptButton]}
+        <TouchableOpacity
+          style={[styles.actionButton, { backgroundColor: accentColor }]}
           onPress={() => handleAcceptRequest(item.id)}
         >
-          <Ionicons name="checkmark" size={20} color="#2ecc71" />
+          <Ionicons name="checkmark" size={20} color="#FFF" />
         </TouchableOpacity>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[styles.actionButton, styles.declineButton]}
           onPress={() => handleDeclineRequest(item.id)}
         >
-          <Ionicons name="close" size={20} color="#e74c3c" />
+          <Ionicons name="close" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
     </View>
@@ -158,7 +167,7 @@ const FriendsScreen = () => {
           style={styles.actionButton}
           onPress={() => handleSendRequest(item.id)}
         >
-          <Ionicons name="person-add" size={20} color="#E67E22" />
+          <Ionicons name="person-add" size={20} color={accentColor} />
         </TouchableOpacity>
       </View>
     </View>
@@ -194,7 +203,7 @@ const FriendsScreen = () => {
       return (
         <>
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#E67E22" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color={accentColor} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search by username or name"
@@ -218,37 +227,88 @@ const FriendsScreen = () => {
     }
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {/* Tab Buttons */}
-      <View style={styles.tabContainer}>
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'friends' && styles.activeTabButton]}
+  /**
+   * Renders the tab navigation at the top of the screen
+   */
+  const renderTabs = () => {
+    return (
+      <View style={styles.tabsContainer}>
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === 'friends' && { 
+              ...styles.activeTab, 
+              borderBottomColor: accentColor 
+            }
+          ]}
           onPress={() => setActiveTab('friends')}
         >
-          <Text style={[styles.tabText, activeTab === 'friends' && styles.activeTabText]}>
-            Friends
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'friends' && { 
+                ...styles.activeTabText,
+                color: accentColor 
+              }
+            ]}
+          >
+            My Friends
           </Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'requests' && styles.activeTabButton]}
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === 'requests' && { 
+              ...styles.activeTab, 
+              borderBottomColor: accentColor 
+            }
+          ]}
           onPress={() => setActiveTab('requests')}
         >
-          <Text style={[styles.tabText, activeTab === 'requests' && styles.activeTabText]}>
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'requests' && { 
+                ...styles.activeTabText,
+                color: accentColor 
+              }
+            ]}
+          >
             Requests {friendRequests.length > 0 && `(${friendRequests.length})`}
           </Text>
         </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'find' && styles.activeTabButton]}
+
+        <TouchableOpacity
+          style={[
+            styles.tab,
+            activeTab === 'find' && { 
+              ...styles.activeTab, 
+              borderBottomColor: accentColor 
+            }
+          ]}
           onPress={() => setActiveTab('find')}
         >
-          <Text style={[styles.tabText, activeTab === 'find' && styles.activeTabText]}>
-            Find
+          <Text
+            style={[
+              styles.tabText,
+              activeTab === 'find' && { 
+                ...styles.activeTabText,
+                color: accentColor 
+              }
+            ]}
+          >
+            Find Friends
           </Text>
         </TouchableOpacity>
       </View>
+    );
+  };
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {/* Tab Buttons */}
+      {renderTabs()}
       
       {/* Content */}
       {renderContent()}
@@ -261,26 +321,24 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1E1E1E',
   },
-  tabContainer: {
+  tabsContainer: {
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderBottomColor: '#333',
   },
-  tabButton: {
+  tab: {
     flex: 1,
     paddingVertical: 15,
     alignItems: 'center',
   },
-  activeTabButton: {
+  activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#E67E22',
   },
   tabText: {
     color: '#999',
     fontSize: 16,
   },
   activeTabText: {
-    color: '#E67E22',
     fontWeight: 'bold',
   },
   searchContainer: {
@@ -348,25 +406,37 @@ const styles = StyleSheet.create({
     marginRight: 10,
   },
   actionButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#333',
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 5,
+    marginHorizontal: 5,
+    backgroundColor: '#333',
   },
   acceptButton: {
-    backgroundColor: 'rgba(46, 204, 113, 0.2)',
+    backgroundColor: '#2ecc71',
   },
   declineButton: {
-    backgroundColor: 'rgba(231, 76, 60, 0.2)',
+    backgroundColor: '#e74c3c',
   },
   emptyText: {
     color: '#999',
     fontSize: 16,
     textAlign: 'center',
     marginTop: 30,
+  },
+  emptyStateText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 20,
+  },
+  emptyStateAction: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginTop: 10,
   },
 });
 

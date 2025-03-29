@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * TaskFilter - Component for filtering tasks by completion status
@@ -9,6 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
  * @param {Object} counts - Object containing counts for different task statuses
  */
 const TaskFilter = ({ currentFilter, onFilterChange, counts }) => {
+  // Get accent color from theme context
+  const { accent } = useTheme();
+  
   // Define available filters
   const filters = [
     { id: 'all', label: 'All', icon: 'list', count: counts?.all || 0 },
@@ -23,7 +27,7 @@ const TaskFilter = ({ currentFilter, onFilterChange, counts }) => {
           key={filter.id}
           style={[
             styles.filterOption,
-            currentFilter === filter.id && styles.activeFilter,
+            currentFilter === filter.id && [styles.activeFilter, { backgroundColor: accent }],
           ]}
           onPress={() => onFilterChange(filter.id)}
         >
@@ -65,7 +69,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
   },
   activeFilter: {
-    backgroundColor: '#E67E22',
+    // backgroundColor will be applied dynamically from accent color
   },
   filterText: {
     color: '#AAA',

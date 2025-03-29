@@ -11,11 +11,19 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * Shop Screen - Displays available items, badges, and subscription options
  */
 const ShopScreen = () => {
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   // Mock user data instead of using Auth context
   const user = {
     name: 'John Doe',
@@ -80,7 +88,7 @@ const ShopScreen = () => {
                 {
                   transform: [{ scaleX }],
                   opacity,
-                  backgroundColor: activeTab === position ? '#FF9500' : '#666',
+                  backgroundColor: activeTab === position ? accentColor : '#666',
                 },
               ]}
             />
@@ -118,7 +126,7 @@ const ShopScreen = () => {
       </View>
       <Text style={styles.itemName}>{item.name}</Text>
       <View style={styles.priceContainer}>
-        <Ionicons name="logo-bitcoin" size={16} color="#FF9500" />
+        <Ionicons name="logo-bitcoin" size={16} color={accentColor} />
         <Text style={styles.itemPrice}>{item.price}</Text>
       </View>
       <TouchableOpacity style={styles.buyButton}>
@@ -144,7 +152,7 @@ const ShopScreen = () => {
     <SafeAreaView style={styles.container}>
       {/* Coins display */}
       <View style={styles.coinsContainer}>
-        <Ionicons name="logo-bitcoin" size={24} color="#FF9500" />
+        <Ionicons name="logo-bitcoin" size={24} color={accentColor} />
         <Text style={styles.coinsText}>{user.coins}</Text>
       </View>
       
@@ -222,27 +230,27 @@ const ShopScreen = () => {
             
             <View style={styles.proFeaturesContainer}>
               <View style={styles.proFeature}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF9500" />
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
                 <Text style={styles.proFeatureText}>Exclusive Pro Badges</Text>
               </View>
               
               <View style={styles.proFeature}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF9500" />
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
                 <Text style={styles.proFeatureText}>2X XP on all activities</Text>
               </View>
               
               <View style={styles.proFeature}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF9500" />
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
                 <Text style={styles.proFeatureText}>Exclusive learning paths</Text>
               </View>
               
               <View style={styles.proFeature}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF9500" />
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
                 <Text style={styles.proFeatureText}>Ad-free experience</Text>
               </View>
               
               <View style={styles.proFeature}>
-                <Ionicons name="checkmark-circle" size={24} color="#FF9500" />
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
                 <Text style={styles.proFeatureText}>OG Status Badge</Text>
               </View>
               
@@ -296,14 +304,14 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#FF9500',
+    borderBottomColor: DEFAULT_ACCENT_COLOR,
   },
   tabText: {
     color: '#999',
     fontWeight: 'bold',
   },
   activeTabText: {
-    color: '#FF9500',
+    color: DEFAULT_ACCENT_COLOR,
   },
   dotsContainer: {
     flexDirection: 'row',
@@ -377,10 +385,11 @@ const styles = StyleSheet.create({
     marginLeft: 5,
   },
   buyButton: {
-    backgroundColor: '#FF9500',
-    paddingHorizontal: 20,
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     paddingVertical: 8,
+    paddingHorizontal: 15,
     borderRadius: 20,
+    marginTop: 10,
   },
   buyButtonText: {
     color: '#fff',
@@ -402,7 +411,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     width: 100,
     height: 60,
-    backgroundColor: '#FF9500',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     borderRadius: 30,
   },
   proContent: {
@@ -411,7 +420,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   proTitle: {
-    color: '#FF9500',
+    color: DEFAULT_ACCENT_COLOR,
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 5,
@@ -436,7 +445,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   subscribeButton: {
-    backgroundColor: '#FF9500',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     paddingVertical: 15,
     borderRadius: 10,
     alignItems: 'center',
@@ -454,10 +463,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
     borderWidth: 1,
-    borderColor: '#FF9500',
+    borderColor: DEFAULT_ACCENT_COLOR,
   },
   annualButtonText: {
-    color: '#FF9500',
+    color: DEFAULT_ACCENT_COLOR,
     fontWeight: 'bold',
     fontSize: 16,
   },

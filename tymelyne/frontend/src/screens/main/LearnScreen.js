@@ -12,13 +12,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * LearnScreen - Shows available learning paths and progress
  */
 const LearnScreen = () => {
   const navigation = useNavigation();
-  const accent = '#FF9500';
+  
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   const scrollX = useRef(new Animated.Value(0)).current;
   const { width } = Dimensions.get('window');
   
@@ -110,7 +118,7 @@ const LearnScreen = () => {
           <View style={styles.pathCardHeader}>
             <Text style={styles.pathTitle}>{item.title}</Text>
             {item.isNew && (
-              <View style={[styles.newBadge, { backgroundColor: accent }]}>
+              <View style={[styles.newBadge, { backgroundColor: accentColor }]}>
                 <Text style={styles.newBadgeText}>NEW</Text>
               </View>
             )}
@@ -124,7 +132,7 @@ const LearnScreen = () => {
                 <View 
                   style={[
                     styles.progressFill, 
-                    { width: `${item.progress}%`, backgroundColor: accent }
+                    { width: `${item.progress}%`, backgroundColor: accentColor }
                   ]} 
                 />
               </View>
@@ -160,7 +168,7 @@ const LearnScreen = () => {
               styles.activityBar, 
               { 
                 height: `${heightRatio * 100}%`,
-                backgroundColor: item.completed > 0 ? accent : '#333'
+                backgroundColor: item.completed > 0 ? accentColor : '#333'
               }
             ]} 
           />
@@ -201,7 +209,7 @@ const LearnScreen = () => {
                 {
                   transform: [{ scaleX }],
                   opacity,
-                  backgroundColor: accent,
+                  backgroundColor: accentColor,
                 },
               ]}
             />
@@ -222,8 +230,8 @@ const LearnScreen = () => {
               style={styles.addButton}
               onPress={() => console.log('Add new learning path')}
             >
-              <Ionicons name="add-circle" size={24} color={accent} />
-              <Text style={[styles.addButtonText, { color: accent }]}>New</Text>
+              <Ionicons name="add-circle" size={24} color={accentColor} />
+              <Text style={[styles.addButtonText, { color: accentColor }]}>New</Text>
             </TouchableOpacity>
           </View>
           
@@ -254,7 +262,7 @@ const LearnScreen = () => {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Activity</Text>
             <TouchableOpacity style={styles.viewAllButton}>
-              <Text style={[styles.viewAllText, { color: accent }]}>View All</Text>
+              <Text style={[styles.viewAllText, { color: accentColor }]}>View All</Text>
             </TouchableOpacity>
           </View>
           
@@ -271,10 +279,10 @@ const LearnScreen = () => {
           
           <View style={styles.streakContainer}>
             <View style={styles.streakInfo}>
-              <Ionicons name="flame" size={24} color={accent} />
+              <Ionicons name="flame" size={24} color={accentColor} />
               <Text style={styles.streakText}>Current streak: 5 days</Text>
             </View>
-            <TouchableOpacity style={[styles.streakButton, { backgroundColor: accent }]}>
+            <TouchableOpacity style={[styles.streakButton, { backgroundColor: accentColor }]}>
               <Text style={styles.streakButtonText}>Continue Learning</Text>
             </TouchableOpacity>
           </View>
@@ -493,7 +501,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,

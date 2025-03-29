@@ -1,6 +1,7 @@
 import React, { useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * TaskItem - A reusable component for displaying individual tasks
@@ -9,6 +10,9 @@ import { Ionicons } from '@expo/vector-icons';
  * @param {Function} onDelete - Function to call when deleting the task
  */
 const TaskItem = ({ task, onToggle, onDelete }) => {
+  // Get accent color from theme context
+  const { accent } = useTheme();
+  
   // Animation values
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const opacityAnim = useRef(new Animated.Value(1)).current;
@@ -78,7 +82,7 @@ const TaskItem = ({ task, onToggle, onDelete }) => {
         <Ionicons 
           name={task.completed ? "checkmark-circle" : "ellipse-outline"} 
           size={24} 
-          color={task.completed ? "#E67E22" : "#999"}
+          color={task.completed ? accent : "#999"}
         />
       </TouchableOpacity>
       

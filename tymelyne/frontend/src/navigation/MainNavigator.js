@@ -4,6 +4,7 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { TouchableOpacity, StyleSheet, View, Text, Modal, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, CommonActions } from '@react-navigation/native';
+import { useTheme } from '../context/ThemeContext';
 
 // Import screens
 import HomeScreen from '../screens/main/HomeScreen';
@@ -19,6 +20,13 @@ import MenuScreen from '../screens/main/MenuScreen';
 import LeaderboardsScreen from '../screens/main/LeaderboardsScreen';
 import TaskScreen from '../screens/main/TaskScreen';
 
+// Import module activity screens
+import ModuleDetailScreen from '../screens/learn/ModuleDetailScreen';
+import ReadingActivityScreen from '../screens/learn/ReadingActivityScreen';
+import QuizActivityScreen from '../screens/learn/QuizActivityScreen';
+import MatchingActivityScreen from '../screens/learn/MatchingActivityScreen';
+import WritingActivityScreen from '../screens/learn/WritingActivityScreen';
+
 // Create navigation stacks
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
@@ -27,16 +35,20 @@ const ShopStack = createStackNavigator();
 const ProfileStack = createStackNavigator();
 const MenuStack = createStackNavigator();
 const TaskStack = createStackNavigator();
+const RootStack = createStackNavigator(); // New root stack for app-level navigation
 
 // Custom header with menu button
-const HeaderLeft = ({ openMenu }) => (
-  <TouchableOpacity 
-    style={styles.menuButton}
-    onPress={openMenu}
-  >
-    <Ionicons name="menu" size={28} color="#E67E22" />
-  </TouchableOpacity>
-);
+const HeaderLeft = ({ openMenu }) => {
+  const { accent } = useTheme();
+  return (
+    <TouchableOpacity 
+      style={styles.menuButton}
+      onPress={openMenu}
+    >
+      <Ionicons name="menu" size={28} color={accent} />
+    </TouchableOpacity>
+  );
+};
 
 const HeaderRight = () => {
   const navigation = useNavigation();
@@ -55,10 +67,12 @@ const HeaderRight = () => {
 
 // Menu Modal component
 const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
+  const { accent } = useTheme();
+  
   const handleNavigate = (screen) => {
     closeMenu();
-    // Navigate to the MenuTab first, then to the nested screen
-    rootNavigation.navigate('MenuTab', {
+    // Navigate to Menu screens directly at the root level
+    rootNavigation.navigate('MenuScreens', {
       screen: screen
     });
   };
@@ -75,7 +89,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
           <View style={styles.menuHeader}>
             <Text style={styles.menuTitle}>Menu</Text>
             <TouchableOpacity onPress={closeMenu}>
-              <Ionicons name="close" size={28} color="#E67E22" />
+              <Ionicons name="close" size={28} color={accent} />
             </TouchableOpacity>
           </View>
           
@@ -84,7 +98,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
               style={styles.menuItem}
               onPress={() => handleNavigate('Leaderboards')}
             >
-              <Ionicons name="trophy" size={24} color="#E67E22" />
+              <Ionicons name="trophy" size={24} color={accent} />
               <Text style={styles.menuItemText}>Leaderboards</Text>
             </TouchableOpacity>
             
@@ -92,7 +106,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
               style={styles.menuItem}
               onPress={() => handleNavigate('Friends')}
             >
-              <Ionicons name="people" size={24} color="#E67E22" />
+              <Ionicons name="people" size={24} color={accent} />
               <Text style={styles.menuItemText}>View Friends</Text>
             </TouchableOpacity>
             
@@ -100,7 +114,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
               style={styles.menuItem}
               onPress={() => handleNavigate('Communities')}
             >
-              <Ionicons name="people-circle" size={24} color="#E67E22" />
+              <Ionicons name="people-circle" size={24} color={accent} />
               <Text style={styles.menuItemText}>Communities</Text>
             </TouchableOpacity>
             
@@ -108,7 +122,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
               style={styles.menuItem}
               onPress={() => handleNavigate('Settings')}
             >
-              <Ionicons name="settings" size={24} color="#E67E22" />
+              <Ionicons name="settings" size={24} color={accent} />
               <Text style={styles.menuItemText}>Settings</Text>
             </TouchableOpacity>
           </View>
@@ -122,6 +136,7 @@ const MenuModal = ({ visible, closeMenu, rootNavigation }) => {
 const HomeStackNavigator = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <>
@@ -169,6 +184,7 @@ const HomeStackNavigator = () => {
 const LearnStackNavigator = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <>
@@ -213,13 +229,55 @@ const LearnStackNavigator = () => {
                   navigation.goBack();
                 }}
               >
-                <Ionicons name="arrow-back" size={28} color="#E67E22" />
+                <Ionicons name="arrow-back" size={28} color={accent} />
               </TouchableOpacity>
             ),
             headerRight: () => (
               <HeaderRight />
             ),
           })}
+        />
+        
+        <LearnStack.Screen 
+          name="ModuleDetail" 
+          component={ModuleDetailScreen}
+          options={({ navigation, route }) => ({
+            headerTitle: route.params?.moduleTitle || 'Module Details',
+            headerLeft: () => (
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons name="arrow-back" size={28} color={accent} />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <LearnStack.Screen 
+          name="ReadingActivity" 
+          component={ReadingActivityScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="QuizActivity" 
+          component={QuizActivityScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="MatchingActivity" 
+          component={MatchingActivityScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="WritingActivity" 
+          component={WritingActivityScreen}
+          options={{ headerShown: false }}
         />
       </LearnStack.Navigator>
       
@@ -236,6 +294,7 @@ const LearnStackNavigator = () => {
 const ShopStackNavigator = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <>
@@ -283,6 +342,7 @@ const ShopStackNavigator = () => {
 const ProfileStackNavigator = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <>
@@ -325,7 +385,7 @@ const ProfileStackNavigator = () => {
                   navigation.goBack();
                 }}
               >
-                <Ionicons name="arrow-back" size={28} color="#E67E22" />
+                <Ionicons name="arrow-back" size={28} color={accent} />
               </TouchableOpacity>
             ),
           })}
@@ -344,6 +404,7 @@ const ProfileStackNavigator = () => {
 // Menu Stack Navigator
 const MenuStackNavigator = () => {
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <MenuStack.Navigator
@@ -372,7 +433,7 @@ const MenuStackNavigator = () => {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="arrow-back" size={28} color="#E67E22" />
+              <Ionicons name="arrow-back" size={28} color={accent} />
             </TouchableOpacity>
           ),
         }}
@@ -390,7 +451,7 @@ const MenuStackNavigator = () => {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="arrow-back" size={28} color="#E67E22" />
+              <Ionicons name="arrow-back" size={28} color={accent} />
             </TouchableOpacity>
           ),
         }}
@@ -408,7 +469,7 @@ const MenuStackNavigator = () => {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="arrow-back" size={28} color="#E67E22" />
+              <Ionicons name="arrow-back" size={28} color={accent} />
             </TouchableOpacity>
           ),
         }}
@@ -426,7 +487,7 @@ const MenuStackNavigator = () => {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="arrow-back" size={28} color="#E67E22" />
+              <Ionicons name="arrow-back" size={28} color={accent} />
             </TouchableOpacity>
           ),
         }}
@@ -444,7 +505,7 @@ const MenuStackNavigator = () => {
                 navigation.goBack();
               }}
             >
-              <Ionicons name="arrow-back" size={28} color="#E67E22" />
+              <Ionicons name="arrow-back" size={28} color={accent} />
             </TouchableOpacity>
           ),
         }}
@@ -457,6 +518,7 @@ const MenuStackNavigator = () => {
 const TaskStackNavigator = () => {
   const [menuVisible, setMenuVisible] = useState(false);
   const navigation = useNavigation();
+  const { accent } = useTheme();
   
   return (
     <>
@@ -501,83 +563,60 @@ const TaskStackNavigator = () => {
 };
 
 // Main Tab Navigator
-const MainNavigator = () => {
-  const { width } = useWindowDimensions();
+const TabNavigator = () => {
+  const { accent } = useTheme();
   
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
           let iconName;
-
+          
           if (route.name === 'Home') {
-            iconName = 'home';
+            iconName = focused ? 'home' : 'home-outline';
           } else if (route.name === 'Learn') {
-            iconName = 'school';
+            iconName = focused ? 'school' : 'school-outline';
           } else if (route.name === 'Tasks') {
-            iconName = 'checkbox';
+            iconName = focused ? 'checkmark-circle' : 'checkmark-circle-outline';
           } else if (route.name === 'Shop') {
-            iconName = 'cart';
+            iconName = focused ? 'cart' : 'cart-outline';
           } else if (route.name === 'Profile') {
-            iconName = 'person';
+            iconName = focused ? 'person' : 'person-outline';
           }
-
-          return <Ionicons name={iconName} size={size} color={color} />;
+          
+          return <Ionicons name={iconName} size={focused ? size + 4 : size} color={color} />;
         },
-        tabBarActiveTintColor: '#E67E22',
-        tabBarInactiveTintColor: '#767676',
+        tabBarActiveTintColor: accent,
+        tabBarInactiveTintColor: '#999',
         tabBarShowLabel: false,
         tabBarStyle: {
           backgroundColor: '#1E1E1E',
-          borderTopWidth: 0,
-          height: 60,
-          flexDirection: 'row',
-          alignItems: 'center',
-          justifyContent: 'space-around',
-          paddingHorizontal: 10,
+          borderTopWidth: 1,
+          borderTopColor: '#333',
+          height: 85,
+          paddingBottom: 15,
+          paddingTop: 6,
         },
-        tabBarItemStyle: {
-          flex: 1,
-          alignItems: 'center',
-          justifyContent: 'center',
-          paddingHorizontal: 8,
-        },
+        headerShown: false,
+        sceneContainerStyle: { backgroundColor: '#1E1E1E' },
       })}
     >
-      <Tab.Screen 
-        name="Home" 
-        component={HomeStackNavigator} 
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Learn" 
-        component={LearnStackNavigator} 
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Tasks" 
-        component={TaskStackNavigator} 
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Shop" 
-        component={ShopStackNavigator} 
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen 
-        name="Profile" 
-        component={ProfileStackNavigator} 
-        options={{ headerShown: false }}
-      />
-      <Tab.Screen 
-        name="MenuTab" 
-        component={MenuStackNavigator} 
-        options={{ 
-          headerShown: false,
-          tabBarButton: () => null, // Hide from tab bar
-        }}
-      />
+      <Tab.Screen name="Home" component={HomeStackNavigator} />
+      <Tab.Screen name="Learn" component={LearnStackNavigator} />
+      <Tab.Screen name="Tasks" component={TaskStackNavigator} />
+      <Tab.Screen name="Shop" component={ShopStackNavigator} />
+      <Tab.Screen name="Profile" component={ProfileStackNavigator} />
     </Tab.Navigator>
+  );
+};
+
+// Root Navigator
+const MainNavigator = () => {
+  return (
+    <RootStack.Navigator screenOptions={{ headerShown: false, presentation: 'containedModal' }}>
+      <RootStack.Screen name="MainTabs" component={TabNavigator} />
+      <RootStack.Screen name="MenuScreens" component={MenuStackNavigator} />
+    </RootStack.Navigator>
   );
 };
 

@@ -10,12 +10,15 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import SideMenu from '../../components/SideMenu';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * Home Screen - Main screen after authentication
  */
 const HomeScreen = ({ navigation }) => {
+  // Get accent color from theme context
+  const { accent } = useTheme();
+  
   // Mock user data instead of using Auth context
   const user = {
     name: 'John Doe',
@@ -26,12 +29,6 @@ const HomeScreen = ({ navigation }) => {
   };
   
   const [postText, setPostText] = useState('');
-  const [menuVisible, setMenuVisible] = useState(false);
-
-  // Toggle side menu
-  const toggleMenu = () => {
-    setMenuVisible(!menuVisible);
-  };
 
   // Demo posts
   const posts = [
@@ -67,29 +64,12 @@ const HomeScreen = ({ navigation }) => {
     // In a real app, this would open achievement selection
   };
 
-  // Override navigation options to include menu button
-  React.useLayoutEffect(() => {
-    navigation.setOptions({
-      headerLeft: () => (
-        <TouchableOpacity 
-          style={styles.menuButton}
-          onPress={toggleMenu}
-        >
-          <Ionicons name="menu" size={28} color="#E67E22" />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation]);
-
   return (
     <SafeAreaView style={styles.container}>
-      {/* Side Menu */}
-      <SideMenu visible={menuVisible} onClose={() => setMenuVisible(false)} />
-      
       <ScrollView style={styles.scrollView}>
         {/* Current Event Card */}
         <View style={styles.eventCard}>
-          <View style={styles.eventHeader}>
+          <View style={[styles.eventHeader, { backgroundColor: accent }]}>
             <Text style={styles.eventLabel}>Current Event:</Text>
             <Text style={styles.eventTitle}>Launch Celebration! 🎉</Text>
           </View>
@@ -127,8 +107,8 @@ const HomeScreen = ({ navigation }) => {
               onPress={handlePost}
               disabled={!postText.trim()}
             >
-              <Ionicons name="send-outline" size={24} color={postText.trim() ? "#E67E22" : "#666"} />
-              <Text style={[styles.postActionText, postText.trim() && { color: '#E67E22' }]}>Post</Text>
+              <Ionicons name="send-outline" size={24} color={postText.trim() ? accent : "#666"} />
+              <Text style={[styles.postActionText, postText.trim() && { color: accent }]}>Post</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -177,9 +157,6 @@ const styles = StyleSheet.create({
   scrollView: {
     flex: 1,
   },
-  menuButton: {
-    marginLeft: 15,
-  },
   eventCard: {
     backgroundColor: '#333',
     borderRadius: 15,
@@ -187,7 +164,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   eventHeader: {
-    backgroundColor: '#E67E22',
     padding: 15,
   },
   eventLabel: {

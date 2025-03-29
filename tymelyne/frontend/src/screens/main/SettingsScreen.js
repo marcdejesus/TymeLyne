@@ -15,12 +15,11 @@ import { useTheme } from '../../context/ThemeContext';
 
 // Accent color options
 const accentColors = [
-  { name: 'Orange', value: '#E67E22' }, // Default
-  { name: 'Blue', value: '#3498db' },
-  { name: 'Green', value: '#2ecc71' },
-  { name: 'Purple', value: '#9b59b6' },
-  { name: 'Red', value: '#e74c3c' },
-  { name: 'Teal', value: '#1abc9c' },
+  { name: 'Orange', value: '#FF9500' }, // Default
+  { name: 'Red', value: '#E74C3C' },
+  { name: 'Blue', value: '#3498DB' },
+  { name: 'Green', value: '#2ECC71' },
+  { name: 'Purple', value: '#9B59B6' },
 ];
 
 /**
@@ -51,6 +50,9 @@ const SettingsScreen = () => {
   
   // Handle change accent color
   const handleChangeAccentColor = (color) => {
+    console.log('Selected color:', color);
+    console.log('Current accent:', accent);
+    console.log('Available colors:', accentColors.map(c => c.value));
     changeAccentColor(color);
   };
   

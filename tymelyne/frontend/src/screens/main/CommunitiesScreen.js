@@ -13,12 +13,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * CommunitiesScreen - Shows and manages user communities
  */
 const CommunitiesScreen = () => {
   const navigation = useNavigation();
+  
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   const [searchText, setSearchText] = useState('');
   const [activeTab, setActiveTab] = useState('joined'); // 'joined', 'discover', 'created'
   const [modalVisible, setModalVisible] = useState(false);
@@ -115,7 +124,7 @@ const CommunitiesScreen = () => {
       onPress={() => handleViewCommunity(item.id)}
     >
       <View style={styles.communityInfo}>
-        <View style={styles.communityIcon}>
+        <View style={[styles.communityIcon, { backgroundColor: accentColor }]}>
           <Text style={styles.communityInitial}>{item.name.charAt(0)}</Text>
         </View>
         <View style={styles.communityDetails}>
@@ -128,19 +137,20 @@ const CommunitiesScreen = () => {
       
       {item.isCreator ? (
         <View style={styles.creatorBadge}>
-          <Text style={styles.creatorText}>Creator</Text>
+          <Text style={[styles.creatorText, { color: accentColor }]}>Creator</Text>
         </View>
       ) : (
         <TouchableOpacity 
           style={[
             styles.joinButton, 
-            item.joined && styles.leaveButton
+            item.joined && [styles.leaveButton, { borderColor: accentColor }],
+            !item.joined && { backgroundColor: accentColor }
           ]}
           onPress={() => handleToggleJoin(item.id, currentTab)}
         >
           <Text style={[
             styles.joinButtonText,
-            item.joined && styles.leaveButtonText
+            item.joined && { color: accentColor }
           ]}>
             {item.joined ? 'Leave' : 'Join'}
           </Text>
@@ -169,7 +179,7 @@ const CommunitiesScreen = () => {
       return (
         <>
           <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#E67E22" style={styles.searchIcon} />
+            <Ionicons name="search" size={20} color={accentColor} style={styles.searchIcon} />
             <TextInput
               style={styles.searchInput}
               placeholder="Search communities"
@@ -212,28 +222,28 @@ const CommunitiesScreen = () => {
       {/* Tab Buttons */}
       <View style={styles.tabContainer}>
         <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'joined' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'joined' && [styles.activeTabButton, { borderBottomColor: accentColor }]]}
           onPress={() => setActiveTab('joined')}
         >
-          <Text style={[styles.tabText, activeTab === 'joined' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === 'joined' && { color: accentColor, fontWeight: 'bold' }]}>
             Joined
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'discover' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'discover' && [styles.activeTabButton, { borderBottomColor: accentColor }]]}
           onPress={() => setActiveTab('discover')}
         >
-          <Text style={[styles.tabText, activeTab === 'discover' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === 'discover' && { color: accentColor, fontWeight: 'bold' }]}>
             Discover
           </Text>
         </TouchableOpacity>
         
         <TouchableOpacity 
-          style={[styles.tabButton, activeTab === 'created' && styles.activeTabButton]}
+          style={[styles.tabButton, activeTab === 'created' && [styles.activeTabButton, { borderBottomColor: accentColor }]]}
           onPress={() => setActiveTab('created')}
         >
-          <Text style={[styles.tabText, activeTab === 'created' && styles.activeTabText]}>
+          <Text style={[styles.tabText, activeTab === 'created' && { color: accentColor, fontWeight: 'bold' }]}>
             Created
           </Text>
         </TouchableOpacity>
@@ -244,7 +254,7 @@ const CommunitiesScreen = () => {
       
       {/* Create Community Button */}
       <TouchableOpacity 
-        style={styles.createButton}
+        style={[styles.createButton, { backgroundColor: accentColor }]}
         onPress={() => setModalVisible(true)}
       >
         <Ionicons name="add" size={32} color="#1E1E1E" />
@@ -262,7 +272,7 @@ const CommunitiesScreen = () => {
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Create New Community</Text>
               <TouchableOpacity onPress={() => setModalVisible(false)}>
-                <Ionicons name="close" size={24} color="#E67E22" />
+                <Ionicons name="close" size={24} color={accentColor} />
               </TouchableOpacity>
             </View>
             
@@ -295,7 +305,7 @@ const CommunitiesScreen = () => {
               <TouchableOpacity
                 style={[
                   styles.toggleButton,
-                  newCommunity.isPrivate && styles.toggleButtonActive
+                  newCommunity.isPrivate && [styles.toggleButtonActive, { backgroundColor: accentColor }]
                 ]}
                 onPress={() => setNewCommunity({
                   ...newCommunity,
@@ -310,7 +320,7 @@ const CommunitiesScreen = () => {
             </View>
             
             <TouchableOpacity 
-              style={styles.createCommunityButton}
+              style={[styles.createCommunityButton, { backgroundColor: accentColor }]}
               onPress={handleCreateCommunity}
             >
               <Text style={styles.createCommunityButtonText}>Create Community</Text>
@@ -339,15 +349,11 @@ const styles = StyleSheet.create({
   },
   activeTabButton: {
     borderBottomWidth: 2,
-    borderBottomColor: '#E67E22',
+    borderBottomColor: '#333',
   },
   tabText: {
     color: '#999',
     fontSize: 16,
-  },
-  activeTabText: {
-    color: '#E67E22',
-    fontWeight: 'bold',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -386,7 +392,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 15,
@@ -411,7 +417,7 @@ const styles = StyleSheet.create({
   joinButton: {
     paddingHorizontal: 15,
     paddingVertical: 8,
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     borderRadius: 20,
   },
   joinButtonText: {
@@ -421,10 +427,10 @@ const styles = StyleSheet.create({
   leaveButton: {
     backgroundColor: '#333',
     borderWidth: 1,
-    borderColor: '#E67E22',
+    borderColor: DEFAULT_ACCENT_COLOR,
   },
   leaveButtonText: {
-    color: '#E67E22',
+    color: DEFAULT_ACCENT_COLOR,
   },
   creatorBadge: {
     paddingHorizontal: 10,
@@ -433,7 +439,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   creatorText: {
-    color: '#E67E22',
+    color: DEFAULT_ACCENT_COLOR,
     fontSize: 12,
     fontWeight: 'bold',
   },
@@ -450,7 +456,7 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
@@ -524,7 +530,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   toggleButtonActive: {
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
   },
   toggleCircle: {
     width: 20,
@@ -536,7 +542,7 @@ const styles = StyleSheet.create({
     marginLeft: 'auto',
   },
   createCommunityButton: {
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     padding: 15,
     borderRadius: 10,
     alignItems: 'center',

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTask } from '../context/TaskContext';
+import { useTheme } from '../context/ThemeContext';
 
 /**
  * TaskStats - A component for displaying task statistics
@@ -9,6 +10,7 @@ import { useTask } from '../context/TaskContext';
  */
 const TaskStats = ({ minimal = false }) => {
   const { getStats } = useTask();
+  const { accent } = useTheme();
   const stats = getStats();
   
   // For minimal display (e.g. in headers, smaller components)
@@ -16,7 +18,7 @@ const TaskStats = ({ minimal = false }) => {
     return (
       <View style={styles.minimalContainer}>
         <Text style={styles.minimalStat}>
-          <Ionicons name="checkbox" size={14} color="#E67E22" /> {stats.completed}/{stats.total}
+          <Ionicons name="checkbox" size={14} color={accent} /> {stats.completed}/{stats.total}
         </Text>
       </View>
     );
@@ -30,7 +32,7 @@ const TaskStats = ({ minimal = false }) => {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Task Progress</Text>
-        <Text style={styles.count}>{stats.completed}/{stats.total}</Text>
+        <Text style={[styles.count, { color: accent }]}>{stats.completed}/{stats.total}</Text>
       </View>
       
       {/* Non-animated progress bar using absolute positioning */}
@@ -38,7 +40,10 @@ const TaskStats = ({ minimal = false }) => {
         <View 
           style={[
             styles.progressFill, 
-            { width: `${progressPercent}%` }
+            { 
+              width: `${progressPercent}%`,
+              backgroundColor: accent
+            }
           ]} 
         />
       </View>
@@ -84,7 +89,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   count: {
-    color: '#E67E22',
     fontSize: 16,
     fontWeight: 'bold',
   },
@@ -97,7 +101,6 @@ const styles = StyleSheet.create({
   },
   progressFill: {
     height: '100%',
-    backgroundColor: '#E67E22',
     borderRadius: 5,
     position: 'absolute',
     left: 0,

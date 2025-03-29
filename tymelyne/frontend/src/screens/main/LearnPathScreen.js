@@ -8,9 +8,14 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * LearnPathScreen - Shows details of a specific learning path
@@ -18,8 +23,13 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 const LearnPathScreen = () => {
   const navigation = useNavigation();
   const route = useRoute();
-  const { pathId } = route.params;
-  const accent = '#FF9500';
+  
+  // Safely access route.params with default values
+  const pathId = route.params?.pathId || '1';
+  
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
   
   // State to track expanded sections
   const [expandedSections, setExpandedSections] = useState({});
@@ -46,43 +56,80 @@ const LearnPathScreen = () => {
         id: 's1',
         title: 'Getting Started',
         completed: true,
-        lessons: [
-          { id: 'l1', title: 'Introduction', type: 'video', duration: '5m', completed: true },
-          { id: 'l2', title: 'Setup Environment', type: 'text', duration: '10m', completed: true },
-          { id: 'l3', title: 'First Program', type: 'interactive', duration: '15m', completed: true },
+        modules: [
+          { 
+            id: 'm1', 
+            title: 'Introduction to Python', 
+            description: 'Overview of Python and its applications',
+            completed: true,
+            progress: 100,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          },
+          { 
+            id: 'm2', 
+            title: 'Setting Up Your Environment', 
+            description: 'Install Python and setup your development environment',
+            completed: true,
+            progress: 100,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          }
         ]
       },
       {
         id: 's2',
         title: 'Core Concepts',
         completed: pathId === '1',
-        lessons: [
-          { id: 'l4', title: 'Variables & Types', type: 'video', duration: '8m', completed: pathId === '1' },
-          { id: 'l5', title: 'Control Flow', type: 'interactive', duration: '12m', completed: pathId === '1' },
-          { id: 'l6', title: 'Functions', type: 'text', duration: '10m', completed: pathId === '1' },
-          { id: 'l7', title: 'Mini Project', type: 'project', duration: '30m', completed: false },
+        modules: [
+          { 
+            id: 'm3', 
+            title: 'Variables and Data Types', 
+            description: 'Learn about different data types in Python',
+            completed: pathId === '1',
+            progress: pathId === '1' ? 100 : 0,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          },
+          { 
+            id: 'm4', 
+            title: 'Control Flow', 
+            description: 'Conditional statements and loops',
+            completed: false,
+            progress: 60,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          }
         ]
       },
       {
         id: 's3',
         title: 'Advanced Topics',
         completed: false,
-        lessons: [
-          { id: 'l8', title: 'Data Structures', type: 'video', duration: '15m', completed: false },
-          { id: 'l9', title: 'Error Handling', type: 'interactive', duration: '10m', completed: false },
-          { id: 'l10', title: 'Libraries & Packages', type: 'text', duration: '8m', completed: false },
-          { id: 'l11', title: 'Final Project', type: 'project', duration: '45m', completed: false },
+        modules: [
+          { 
+            id: 'm5', 
+            title: 'Functions and Modules', 
+            description: 'Creating reusable code with functions and modules',
+            completed: false,
+            progress: 0,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          },
+          { 
+            id: 'm6', 
+            title: 'Object-Oriented Programming', 
+            description: 'Classes, objects, inheritance, and polymorphism',
+            completed: false,
+            progress: 0,
+            image: 'https://reactnative.dev/img/tiny_logo.png'
+          }
         ]
-      },
+      }
     ]
   };
   
   // Calculate path progress
   const totalLessons = pathData.sections.reduce((count, section) => 
-    count + section.lessons.length, 0);
+    count + section.modules.length, 0);
   
   const completedLessons = pathData.sections.reduce((count, section) => 
-    count + section.lessons.filter(lesson => lesson.completed).length, 0);
+    count + section.modules.filter(module => module.completed).length, 0);
   
   const progressPercentage = Math.round((completedLessons / totalLessons) * 100);
   
@@ -97,74 +144,50 @@ const LearnPathScreen = () => {
     }
   };
   
-  // Render a section
-  const renderSection = (section, index) => {
-    const isExpanded = expandedSections[section.id];
-    
+  // Handle module press
+  const handleModulePress = (module) => {
+    // Navigate to the module detail screen
+    navigation.navigate('ModuleDetail', {
+      moduleId: module.id,
+      moduleTitle: module.title,
+      moduleDescription: module.description,
+      moduleImage: module.image,
+    });
+  };
+  
+  // Render a section with lessons
+  const renderSection = (section, sectionIndex) => {
     return (
-      <View style={styles.sectionContainer} key={section.id}>
-        <TouchableOpacity 
-          style={styles.sectionHeader}
-          onPress={() => toggleSection(section.id)}
-        >
-          <View style={styles.sectionTitleContainer}>
-            <View style={[styles.sectionNumberContainer, { backgroundColor: accent }]}>
-              <Text style={styles.sectionNumber}>{index + 1}</Text>
-            </View>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-          </View>
-          
-          <View style={styles.sectionRight}>
-            {section.completed && (
-              <Ionicons name="checkmark-circle" size={20} color={accent} style={styles.completedIcon} />
-            )}
-            <Ionicons 
-              name={isExpanded ? 'chevron-up' : 'chevron-down'} 
-              size={20} 
-              color="#999" 
-            />
-          </View>
-        </TouchableOpacity>
+      <View key={sectionIndex} style={styles.sectionContainer}>
+        <Text style={styles.sectionTitle}>{section.title}</Text>
         
-        {isExpanded && (
-          <View style={styles.lessonsList}>
-            {section.lessons.map(lesson => (
-              <TouchableOpacity 
-                key={lesson.id} 
-                style={styles.lessonItem}
-                onPress={() => console.log(`Open lesson: ${lesson.title}`)}
-              >
-                <View style={styles.lessonLeft}>
-                  <View style={[
-                    styles.lessonTypeIconContainer,
-                    { backgroundColor: lesson.completed ? accent : '#444' }
-                  ]}>
-                    <Ionicons 
-                      name={getLessonTypeIcon(lesson.type)} 
-                      size={14} 
-                      color="#fff" 
-                    />
-                  </View>
-                  <Text style={[
-                    styles.lessonTitle,
-                    lesson.completed && styles.completedText
-                  ]}>
-                    {lesson.title}
+        <View style={styles.modulesContainer}>
+          {section.modules.map((module, index) => (
+            <TouchableOpacity
+              key={module.id} 
+              style={styles.moduleCard}
+              onPress={() => handleModulePress(module)}
+            >
+              <View style={styles.moduleHeader}>
+                <Text style={styles.moduleNumber}>Module {index + 1}</Text>
+                {module.completed && (
+                  <Ionicons name="checkmark-circle" size={20} color="#4CD964" />
+                )}
+              </View>
+              <Text style={styles.moduleTitle}>{module.title}</Text>
+              <View style={styles.moduleFooter}>
+                <TouchableOpacity 
+                  style={styles.startButton}
+                  onPress={() => handleModulePress(module)}
+                >
+                  <Text style={styles.startButtonText}>
+                    {module.completed ? 'REVIEW' : 'START'}
                   </Text>
-                </View>
-                
-                <View style={styles.lessonRight}>
-                  <Text style={styles.lessonDuration}>{lesson.duration}</Text>
-                  {lesson.completed ? (
-                    <Ionicons name="checkmark-circle" size={18} color={accent} />
-                  ) : (
-                    <Ionicons name="chevron-forward" size={18} color="#999" />
-                  )}
-                </View>
-              </TouchableOpacity>
-            ))}
-          </View>
-        )}
+                </TouchableOpacity>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
     );
   };
@@ -195,7 +218,7 @@ const LearnPathScreen = () => {
   const renderDotIndicators = () => {
     return (
       <View style={styles.dotsContainer}>
-        {['overview', 'modules', 'contribution'].map((tab, index) => {
+        {['modules', 'activity'].map((tab, index) => {
           const inputRange = [
             (index - 1) * width,
             index * width,
@@ -222,7 +245,7 @@ const LearnPathScreen = () => {
                 {
                   transform: [{ scaleX }],
                   opacity,
-                  backgroundColor: activeTab === tab ? '#E67E22' : '#666',
+                  backgroundColor: activeTab === tab ? accentColor : '#666',
                 },
               ]}
             />
@@ -252,77 +275,119 @@ const LearnPathScreen = () => {
     [0, 0, 0, 1, 3, 2, 0],
   ];
   
-  // Render modules list
-  const renderModules = () => (
-    <View style={styles.modulesContainer}>
-      {modules.map((module, index) => (
-        <TouchableOpacity 
-          key={module.id} 
-          style={styles.moduleCard}
-          onPress={() => console.log(`Navigate to module: ${module.title}`)}
-        >
-          <View style={styles.moduleHeader}>
-            <Text style={styles.moduleNumber}>Module {index + 1}</Text>
-            {module.completed && (
-              <Ionicons name="checkmark-circle" size={20} color="#4CD964" />
-            )}
-          </View>
-          <Text style={styles.moduleTitle}>{module.title}</Text>
-          <View style={styles.moduleFooter}>
-            <TouchableOpacity style={styles.startButton}>
-              <Text style={styles.startButtonText}>
-                {module.completed ? 'REVIEW' : 'START'}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </TouchableOpacity>
-      ))}
-    </View>
-  );
+  // Helper function to darken a color
+  const adjustColor = (color, amount) => {
+    // Convert hex to RGB
+    let hex = color.replace('#', '');
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+
+    // Adjust the RGB values
+    r = Math.max(0, Math.min(255, r + amount));
+    g = Math.max(0, Math.min(255, g + amount));
+    b = Math.max(0, Math.min(255, b + amount));
+
+    // Convert back to hex
+    return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+  };
   
-  // Render the contribution grid
-  const renderContributionGrid = () => (
-    <View style={styles.contributionGrid}>
-      <Text style={styles.activityTitle}>Your Activity</Text>
-      <Text style={styles.activitySubtitle}>Last 4 weeks</Text>
-      
-      <View style={styles.gridContainer}>
-        {activityData.map((week, weekIndex) => (
-          <View key={`week-${weekIndex}`} style={styles.gridWeek}>
-            {week.map((count, dayIndex) => (
-              <View 
-                key={`day-${weekIndex}-${dayIndex}`}
-                style={[
-                  styles.gridDay,
-                  {
-                    backgroundColor: count === 0 
-                      ? '#333' 
-                      : count === 1 
-                        ? '#FF9500' 
-                        : count === 2 
-                          ? '#FF7B00' 
-                          : count === 3 
-                            ? '#FF5500' 
-                            : '#FF3700',
-                  },
-                ]}
-              />
+  // Render all modules for the modules tab
+  const renderModules = () => {
+    return (
+      <View>
+        {pathData.sections.map((section, sectionIndex) => (
+          <View key={section.id} style={styles.sectionBlock}>
+            <Text style={styles.sectionBlockTitle}>{section.title}</Text>
+            
+            {section.modules.map((module, moduleIndex) => (
+              <TouchableOpacity
+                key={module.id}
+                style={styles.moduleCard}
+                onPress={() => handleModulePress(module)}
+              >
+                <View style={styles.moduleHeader}>
+                  <Text style={styles.moduleNumber}>Module {moduleIndex + 1}</Text>
+                  {module.completed && (
+                    <Ionicons name="checkmark-circle" size={20} color="#4CD964" />
+                  )}
+                </View>
+                <Text style={styles.moduleTitle}>{module.title}</Text>
+                <Text style={styles.moduleDescription}>{module.description}</Text>
+                <View style={styles.moduleFooter}>
+                  <View style={styles.progressContainer}>
+                    <View style={styles.progressBar}>
+                      <View 
+                        style={[
+                          styles.progressFill, 
+                          { width: `${module.progress}%`, backgroundColor: accentColor }
+                        ]} 
+                      />
+                    </View>
+                    <Text style={styles.progressText}>{module.progress}%</Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={[styles.startButton, {backgroundColor: accentColor}]}
+                    onPress={() => handleModulePress(module)}
+                  >
+                    <Text style={styles.startButtonText}>
+                      {module.completed ? 'REVIEW' : 'START'}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              </TouchableOpacity>
             ))}
           </View>
         ))}
       </View>
-      
-      <View style={styles.gridLegend}>
-        <Text style={styles.legendText}>Less</Text>
-        <View style={[styles.legendDay, { backgroundColor: '#333' }]} />
-        <View style={[styles.legendDay, { backgroundColor: '#FF9500' }]} />
-        <View style={[styles.legendDay, { backgroundColor: '#FF7B00' }]} />
-        <View style={[styles.legendDay, { backgroundColor: '#FF5500' }]} />
-        <View style={[styles.legendDay, { backgroundColor: '#FF3700' }]} />
-        <Text style={styles.legendText}>More</Text>
+    );
+  };
+  
+  // Render the contribution grid
+  const renderContributionGrid = () => {
+    return (
+      <View style={styles.contributionGrid}>
+        <Text style={styles.activityTitle}>Your Activity</Text>
+        <Text style={styles.activitySubtitle}>Last 4 weeks</Text>
+        
+        <View style={styles.gridContainer}>
+          {activityData.map((week, weekIndex) => (
+            <View key={`week-${weekIndex}`} style={styles.gridWeek}>
+              {week.map((count, dayIndex) => (
+                <View 
+                  key={`day-${weekIndex}-${dayIndex}`}
+                  style={[
+                    styles.gridDay,
+                    {
+                      backgroundColor: count === 0 
+                        ? '#333' 
+                        : count === 1 
+                          ? accentColor 
+                          : count === 2 
+                            ? adjustColor(accentColor, -20) 
+                            : count === 3 
+                              ? adjustColor(accentColor, -40) 
+                              : adjustColor(accentColor, -60),
+                    },
+                  ]}
+                />
+              ))}
+            </View>
+          ))}
+        </View>
+        
+        <View style={styles.gridLegend}>
+          <Text style={styles.legendText}>Less</Text>
+          <View style={[styles.legendDay, { backgroundColor: '#333' }]} />
+          <View style={[styles.legendDay, { backgroundColor: accentColor }]} />
+          <View style={[styles.legendDay, { backgroundColor: adjustColor(accentColor, -20) }]} />
+          <View style={[styles.legendDay, { backgroundColor: adjustColor(accentColor, -40) }]} />
+          <View style={[styles.legendDay, { backgroundColor: adjustColor(accentColor, -60) }]} />
+          <Text style={styles.legendText}>More</Text>
+        </View>
       </View>
-    </View>
-  );
+    );
+  };
   
   // Render custom Python logo
   const renderPythonLogo = () => (
@@ -331,6 +396,33 @@ const LearnPathScreen = () => {
       <View style={styles.pythonLogoYellow} />
     </View>
   );
+  
+  // Find the next module to continue
+  const findNextModule = () => {
+    // Find first incomplete module across all sections
+    for (const section of pathData.sections) {
+      for (const module of section.modules) {
+        if (!module.completed) {
+          return module;
+        }
+      }
+    }
+    
+    // If all modules are completed, return first module
+    if (pathData.sections.length > 0 && pathData.sections[0].modules.length > 0) {
+      return pathData.sections[0].modules[0];
+    }
+    
+    return null;
+  };
+  
+  // Handle continue button press
+  const handleContinue = () => {
+    const nextModule = findNextModule();
+    if (nextModule) {
+      handleModulePress(nextModule);
+    }
+  };
   
   return (
     <SafeAreaView style={styles.container}>
@@ -350,7 +442,7 @@ const LearnPathScreen = () => {
                 <View 
                   style={[
                     styles.progressFill, 
-                    { transform: [{ scaleX: progressPercentage / 100 }], backgroundColor: accent }
+                    { transform: [{ scaleX: progressPercentage / 100 }], backgroundColor: accentColor }
                   ]} 
                 />
               </View>
@@ -365,16 +457,16 @@ const LearnPathScreen = () => {
         {/* Tab selector */}
         <View style={styles.tabSelector}>
           <TouchableOpacity 
-            style={[styles.tab, activeTab === 'modules' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'modules' && [styles.activeTab, { borderBottomColor: accentColor }]]}
             onPress={() => changeTab('modules')}
           >
-            <Text style={[styles.tabText, activeTab === 'modules' && styles.activeTabText]}>Modules</Text>
+            <Text style={[styles.tabText, activeTab === 'modules' && { color: accentColor }]}>Modules</Text>
           </TouchableOpacity>
           <TouchableOpacity 
-            style={[styles.tab, activeTab === 'activity' && styles.activeTab]}
+            style={[styles.tab, activeTab === 'activity' && [styles.activeTab, { borderBottomColor: accentColor }]]}
             onPress={() => changeTab('activity')}
           >
-            <Text style={[styles.tabText, activeTab === 'activity' && styles.activeTabText]}>Activity</Text>
+            <Text style={[styles.tabText, activeTab === 'activity' && { color: accentColor }]}>Activity</Text>
           </TouchableOpacity>
         </View>
         
@@ -424,17 +516,17 @@ const LearnPathScreen = () => {
           <Text style={styles.resourcesTitle}>Resources</Text>
           
           <TouchableOpacity style={styles.resourceItem}>
-            <Ionicons name="book" size={20} color={accent} />
+            <Ionicons name="book" size={20} color={accentColor} />
             <Text style={styles.resourceText}>Documentation</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.resourceItem}>
-            <Ionicons name="chatbubbles" size={20} color={accent} />
+            <Ionicons name="chatbubbles" size={20} color={accentColor} />
             <Text style={styles.resourceText}>Community Forum</Text>
           </TouchableOpacity>
           
           <TouchableOpacity style={styles.resourceItem}>
-            <Ionicons name="download" size={20} color={accent} />
+            <Ionicons name="download" size={20} color={accentColor} />
             <Text style={styles.resourceText}>Download Materials</Text>
           </TouchableOpacity>
         </View>
@@ -443,8 +535,8 @@ const LearnPathScreen = () => {
       {/* Sticky continue button */}
       <View style={styles.continueButtonContainer}>
         <TouchableOpacity 
-          style={[styles.continueButton, { backgroundColor: accent }]}
-          onPress={() => console.log('Continue learning')}
+          style={[styles.continueButton, { backgroundColor: accentColor }]}
+          onPress={handleContinue}
         >
           <Text style={styles.continueButtonText}>Continue Learning</Text>
           <Ionicons name="arrow-forward" size={20} color="#fff" />
@@ -694,14 +786,12 @@ const styles = StyleSheet.create({
   },
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: '#FF9500',
+    borderBottomColor: DEFAULT_ACCENT_COLOR,
   },
   tabText: {
-    color: '#999',
-    fontWeight: 'bold',
-  },
-  activeTabText: {
-    color: '#FF9500',
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '500',
   },
   scrollViewHorizontal: {
     flex: 1,
@@ -729,7 +819,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   moduleNumber: {
-    color: '#FF9500',
+    color: DEFAULT_ACCENT_COLOR,
     fontSize: 14,
     fontWeight: 'bold',
   },
@@ -743,7 +833,7 @@ const styles = StyleSheet.create({
     alignItems: 'flex-end',
   },
   startButton: {
-    backgroundColor: '#FF9500',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
@@ -807,6 +897,42 @@ const styles = StyleSheet.create({
     width: 8,
     marginHorizontal: 4,
     borderRadius: 4,
+  },
+  sectionBlock: {
+    marginBottom: 20,
+  },
+  sectionBlockTitle: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  moduleDescription: {
+    color: '#999',
+    fontSize: 12,
+  },
+  progressContainer: {
+    marginBottom: 10,
+  },
+  progressBar: {
+    height: 6,
+    backgroundColor: '#444',
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    width: '100%',
+    borderRadius: 3,
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    transformOrigin: 'left',
+  },
+  progressText: {
+    color: '#999',
+    fontSize: 12,
+    marginTop: 5,
   },
 });
 

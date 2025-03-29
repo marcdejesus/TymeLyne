@@ -16,6 +16,7 @@ import RewardPopup from '../../components/RewardPopup';
 import TaskFilter from '../../components/TaskFilter';
 import { useTask } from '../../context/TaskContext';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
  * TaskScreen - Screen for managing and tracking daily tasks
@@ -23,6 +24,9 @@ import { useAuth } from '../../context/AuthContext';
 const TaskScreen = ({ navigation }) => {
   // Get user data from auth context
   const { user } = useAuth();
+  
+  // Get accent color from theme context
+  const { accent } = useTheme();
   
   // Get tasks and task functions from task context
   const { 
@@ -105,7 +109,7 @@ const TaskScreen = ({ navigation }) => {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#E67E22" />
+        <ActivityIndicator size="large" color={accent} />
       </View>
     );
   }
@@ -143,7 +147,11 @@ const TaskScreen = ({ navigation }) => {
           onChangeText={setNewTask}
         />
         <TouchableOpacity 
-          style={[styles.addButton, !newTask.trim() && styles.addButtonDisabled]}
+          style={[
+            styles.addButton, 
+            { backgroundColor: accent },
+            !newTask.trim() && styles.addButtonDisabled
+          ]}
           onPress={handleAddTask}
           disabled={!newTask.trim()}
         >
@@ -236,12 +244,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   addButton: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: '#E67E22',
-    justifyContent: 'center',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
+    justifyContent: 'center',
     marginLeft: 10,
   },
   addButtonDisabled: {

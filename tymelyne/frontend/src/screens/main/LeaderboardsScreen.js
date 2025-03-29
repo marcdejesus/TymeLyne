@@ -9,11 +9,19 @@ import {
   Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * LeaderboardsScreen - Shows user rankings based on XP and achievements
  */
 const LeaderboardsScreen = () => {
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   // State for active leaderboard type
   const [activeLeaderboard, setActiveLeaderboard] = useState('daily');
   
@@ -61,22 +69,22 @@ const LeaderboardsScreen = () => {
   const renderLeaderboardTabs = () => (
     <View style={styles.tabsContainer}>
       <TouchableOpacity
-        style={[styles.tab, activeLeaderboard === 'daily' && styles.activeTab]}
+        style={[styles.tab, activeLeaderboard === 'daily' && [styles.activeTab, {borderBottomColor: accentColor}]]}
         onPress={() => setActiveLeaderboard('daily')}
       >
-        <Text style={[styles.tabText, activeLeaderboard === 'daily' && styles.activeTabText]}>Daily</Text>
+        <Text style={[styles.tabText, activeLeaderboard === 'daily' && {color: accentColor}]}>Daily</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.tab, activeLeaderboard === 'weekly' && styles.activeTab]}
+        style={[styles.tab, activeLeaderboard === 'weekly' && [styles.activeTab, {borderBottomColor: accentColor}]]}
         onPress={() => setActiveLeaderboard('weekly')}
       >
-        <Text style={[styles.tabText, activeLeaderboard === 'weekly' && styles.activeTabText]}>Weekly</Text>
+        <Text style={[styles.tabText, activeLeaderboard === 'weekly' && {color: accentColor}]}>Weekly</Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.tab, activeLeaderboard === 'allTime' && styles.activeTab]}
+        style={[styles.tab, activeLeaderboard === 'allTime' && [styles.activeTab, {borderBottomColor: accentColor}]]}
         onPress={() => setActiveLeaderboard('allTime')}
       >
-        <Text style={[styles.tabText, activeLeaderboard === 'allTime' && styles.activeTabText]}>All Time</Text>
+        <Text style={[styles.tabText, activeLeaderboard === 'allTime' && {color: accentColor}]}>All Time</Text>
       </TouchableOpacity>
     </View>
   );
@@ -236,14 +244,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   activeTab: {
-    backgroundColor: '#E67E22',
+    borderBottomWidth: 2,
+    borderBottomColor: DEFAULT_ACCENT_COLOR,
   },
   tabText: {
     color: '#AAA',
     fontWeight: 'bold',
   },
   activeTabText: {
-    color: '#FFF',
+    color: DEFAULT_ACCENT_COLOR,
   },
   listContainer: {
     paddingHorizontal: 20,

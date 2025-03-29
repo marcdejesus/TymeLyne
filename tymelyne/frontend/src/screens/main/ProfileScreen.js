@@ -10,12 +10,21 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '../../context/AuthContext';
+import { useTheme } from '../../context/ThemeContext';
+
+// Fallback accent color in case the theme isn't available
+const DEFAULT_ACCENT_COLOR = '#FF9500';
 
 /**
  * Profile Screen - Shows user profile, stats, and achievements
  */
 const ProfileScreen = ({ navigation, route }) => {
   const { user, logout } = useAuth();
+  
+  // Get the theme accent color with fallback
+  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
+  const accentColor = accent || DEFAULT_ACCENT_COLOR;
+  
   const isOwnProfile = !route.params; // If no params, it's the user's own profile
   
   // Demo user data
@@ -98,11 +107,11 @@ const ProfileScreen = ({ navigation, route }) => {
           {/* Edit Profile or Add Friend Button */}
           {isOwnProfile ? (
             <TouchableOpacity style={styles.actionButton} onPress={handleEditProfile}>
-              <Ionicons name="pencil" size={24} color="#E67E22" />
+              <Ionicons name="pencil" size={24} color={accentColor} />
             </TouchableOpacity>
           ) : (
             <TouchableOpacity style={styles.actionButton} onPress={handleAddFriend}>
-              <Ionicons name="add" size={24} color="#E67E22" />
+              <Ionicons name="add" size={24} color={accentColor} />
             </TouchableOpacity>
           )}
         </View>
@@ -131,7 +140,7 @@ const ProfileScreen = ({ navigation, route }) => {
             <View 
               style={[
                 styles.xpBarFill, 
-                { width: `${(userData.xp.current / userData.xp.total) * 100}%` }
+                { width: `${(userData.xp.current / userData.xp.total) * 100}%`, backgroundColor: accentColor }
               ]} 
             />
           </View>
@@ -147,7 +156,7 @@ const ProfileScreen = ({ navigation, route }) => {
             {userData.achievements.map(achievement => (
               <View key={achievement.id} style={styles.achievementItem}>
                 <View style={styles.achievementIconContainer}>
-                  <Ionicons name={achievement.icon} size={30} color="#E67E22" />
+                  <Ionicons name={achievement.icon} size={30} color={accentColor} />
                 </View>
               </View>
             ))}
@@ -204,10 +213,9 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   userTag: {
-    color: '#FFD700',
-    fontSize: 18,
-    fontWeight: 'bold',
+    color: DEFAULT_ACCENT_COLOR,
     marginTop: 5,
+    fontWeight: 'bold',
   },
   actionButton: {
     width: 40,
@@ -249,7 +257,8 @@ const styles = StyleSheet.create({
   },
   xpBarFill: {
     height: '100%',
-    backgroundColor: '#E67E22',
+    backgroundColor: DEFAULT_ACCENT_COLOR,
+    borderRadius: 5,
   },
   xpText: {
     color: '#E67E22',

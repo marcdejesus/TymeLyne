@@ -29,7 +29,7 @@ The simplest way to get started with Tymelyne is to use Docker:
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/tymelyne.git
+   git clone https://github.com/marcdejesus/tymelyne.git
    cd tymelyne
    ```
 

@@ -37,6 +37,7 @@ import ChallengeScreen from '../screens/learn/ChallengeScreen';
 import CourseProgressScreen from '../screens/learn/CourseProgressScreen';
 import ReflectionScreen from '../screens/learn/ReflectionScreen';
 import CourseCreatorScreen from '../screens/learn/CourseCreatorScreen';
+import BrowseCoursesScreen from '../screens/learn/BrowseCoursesScreen';
 
 // Create navigation stacks
 const Tab = createBottomTabNavigator();
@@ -272,6 +273,24 @@ const LearnStackNavigator = () => {
           component={CourseCreatorScreen}
           options={({ navigation }) => ({
             headerTitle: 'Create Course',
+            headerLeft: () => (
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons name="arrow-back" size={28} color={accent} />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <LearnStack.Screen 
+          name="BrowseCourses" 
+          component={BrowseCoursesScreen}
+          options={({ navigation }) => ({
+            headerTitle: 'Browse Courses',
             headerLeft: () => (
               <TouchableOpacity 
                 style={styles.backButton}

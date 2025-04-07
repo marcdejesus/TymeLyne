@@ -1,0 +1,31 @@
+# Use Node.js as the base image
+FROM node:18-alpine
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apk add --no-cache git netcat-openbsd
+
+# Copy package files first (for better layer caching)
+COPY ./frontend/package*.json ./
+
+# Create a temporary package.json that includes web dependencies
+RUN cp package.json package.json.orig && \
+    cat package.json | sed 's/"dependencies": {/"dependencies": {\n    "react-dom": "18.3.1",\n    "react-native-web": "~0.19.13",\n    "@expo\/metro-runtime": "~4.0.1",/' > package.json.new && \
+    mv package.json.new package.json
+
+# Install npm dependencies (including web packages)
+RUN npm install
+
+# Restore original package.json (so we don't mess with the source code)
+RUN mv package.json.orig package.json
+
+# Copy the rest of the app
+COPY ./frontend .
+
+# Create .env file at build time if needed
+RUN echo "# Auto-generated .env file for Docker" > .env
+
+# Expose ports for the app
+EXPOSE 19000 19001 19002 8081 

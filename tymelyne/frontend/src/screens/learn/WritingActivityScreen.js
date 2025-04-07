@@ -1,278 +1,185 @@
-import React, { useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ScrollView,
+import React, { useState } from 'react';
+import { 
+  View, 
+  Text, 
+  ScrollView, 
+  TouchableOpacity, 
+  StyleSheet, 
+  SafeAreaView, 
+  StatusBar,
   TextInput,
   KeyboardAvoidingView,
-  Platform,
-  Alert,
+  Platform
 } from 'react-native';
+import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation, useRoute } from '@react-navigation/native';
 import { useTheme } from '../../context/ThemeContext';
 
-// Fallback accent color in case the theme isn't available
-const DEFAULT_ACCENT_COLOR = '#FF9500';
-
-/**
- * WritingActivityScreen - Screen for written response activities
- */
-const WritingActivityScreen = () => {
+const WritingActivityScreen = ({ route }) => {
   const navigation = useNavigation();
-  const route = useRoute();
-  const scrollViewRef = useRef(null);
+  const { accent } = useTheme();
+  const { activity, moduleId } = route.params;
   
-  // Get activity data from navigation params
-  const { activityId, activityTitle } = route.params || {};
+  // State variables
+  const [solution, setSolution] = useState('');
+  const [feedback, setFeedback] = useState(null);
+  const [completed, setCompleted] = useState(false);
+  const [showSample, setShowSample] = useState(false);
   
-  // Get the theme accent color with fallback
-  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
-  const accentColor = accent || DEFAULT_ACCENT_COLOR;
-  
-  // Activity data state
-  const [responses, setResponses] = useState(['', '', '']);
-  const [wordCounts, setWordCounts] = useState([0, 0, 0]);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-  const [feedback, setFeedback] = useState('');
-  
-  // Sample activity data (in a real app, this would come from an API)
-  const activityData = {
-    title: activityTitle || "Python Reflection Exercise",
-    introduction: `In this activity, you'll reflect on what you've learned about Python programming so far. Answer the questions thoughtfully to reinforce your understanding.`,
-    prompts: [
-      {
-        question: "Explain the difference between a list and a tuple in Python. When would you use one over the other?",
-        minWords: 30,
-        placeholder: "Write your answer here...",
-      },
-      {
-        question: "Describe a real-world problem that could be solved using Python. What specific features of Python would be useful for solving this problem?",
-        minWords: 50,
-        placeholder: "Write your answer here...",
-      },
-      {
-        question: "Reflect on your experience learning Python so far. What concepts have you found most challenging, and what strategies have helped you understand them better?",
-        minWords: 40,
-        placeholder: "Write your answer here...",
-      }
-    ]
-  };
-  
-  // Calculate word count for a given text
-  const getWordCount = (text) => {
-    if (!text || text.trim() === '') return 0;
-    return text.trim().split(/\s+/).length;
-  };
-  
-  // Handle text input change
-  const handleTextChange = (text, index) => {
-    const newResponses = [...responses];
-    newResponses[index] = text;
-    setResponses(newResponses);
-    
-    const newWordCounts = [...wordCounts];
-    newWordCounts[index] = getWordCount(text);
-    setWordCounts(newWordCounts);
-  };
-  
-  // Check if all responses meet minimum word count
-  const areResponsesValid = () => {
-    return responses.every((response, index) => 
-      getWordCount(response) >= activityData.prompts[index].minWords
-    );
-  };
-  
-  // Handle submission
+  // Handle submitting solution
   const handleSubmit = () => {
-    if (!areResponsesValid()) {
-      Alert.alert(
-        "Incomplete Responses",
-        "Please make sure all of your responses meet the minimum word count requirements.",
-        [{ text: "OK" }]
-      );
+    if (solution.trim().length === 0) {
+      setFeedback({
+        type: 'error',
+        message: 'Please write your solution before submitting.'
+      });
       return;
     }
     
-    // In a real app, this would send the responses to an API
-    console.log('Submitting responses:', responses);
-    
-    // Show success message and generate feedback
-    setIsSubmitted(true);
-    
-    // Generate simple feedback (in a real app, this might come from an API or instructor)
-    const feedbackText = `
-Great work on completing this writing activity! 
-
-Your responses demonstrate thoughtful reflection on Python concepts and your learning journey. Your explanation of lists vs. tuples shows good technical understanding, and your example of a real-world application is practical and well-considered.
-
-Continue to practice these concepts and apply them in your own projects to deepen your understanding.
-
-Total words written: ${wordCounts.reduce((sum, count) => sum + count, 0)}
-    `;
-    
-    setFeedback(feedbackText);
+    // Here you would normally send the solution to a backend for evaluation
+    // For this example, we'll just mark it as completed if there's any content
+    setFeedback({
+      type: 'success',
+      message: 'Your solution has been submitted successfully!'
+    });
+    setCompleted(true);
   };
   
-  // Reset the form
-  const handleReset = () => {
-    if (responses.some(resp => resp.trim() !== '')) {
-      Alert.alert(
-        "Reset Responses?",
-        "This will clear all your answers. Are you sure you want to continue?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { 
-            text: "Reset", 
-            style: "destructive",
-            onPress: () => {
-              setResponses(['', '', '']);
-              setWordCounts([0, 0, 0]);
-              setIsSubmitted(false);
-              setFeedback('');
-            }
-          }
-        ]
-      );
-    }
+  // Handle showing sample solution
+  const toggleSampleSolution = () => {
+    setShowSample(!showSample);
   };
   
-  // Render each prompt and response field
-  const renderPrompts = () => {
-    return activityData.prompts.map((prompt, index) => (
-      <View key={index} style={styles.promptContainer}>
-        <Text style={styles.questionText}>{prompt.question}</Text>
-        
-        <View style={styles.textInputContainer}>
-          <TextInput
-            style={[
-              styles.textInput,
-              responses[index].length > 0 && styles.activeTextInput,
-              isSubmitted && styles.submittedTextInput
-            ]}
-            placeholder={prompt.placeholder}
-            placeholderTextColor="#777"
-            multiline
-            textAlignVertical="top"
-            value={responses[index]}
-            onChangeText={(text) => handleTextChange(text, index)}
-            editable={!isSubmitted}
-          />
-        </View>
-        
-        <View style={styles.wordCountContainer}>
-          <Text style={[
-            styles.wordCount,
-            wordCounts[index] >= prompt.minWords 
-              ? styles.validWordCount 
-              : styles.invalidWordCount
-          ]}>
-            {wordCounts[index]}/{prompt.minWords} words minimum
-          </Text>
-        </View>
-      </View>
-    ));
+  // Handle completing the activity
+  const handleComplete = () => {
+    // In a real app, you would save this to your backend/state management
+    navigation.goBack();
   };
   
-  // Render feedback after submission
+  // Render feedback message
   const renderFeedback = () => {
+    if (!feedback) return null;
+    
     return (
-      <View style={styles.feedbackContainer}>
-        <View style={[styles.feedbackHeader, { backgroundColor: accentColor }]}>
-          <Ionicons name="checkmark-circle" size={24} color="#fff" />
-          <Text style={styles.feedbackHeaderText}>Activity Completed</Text>
-        </View>
-        
-        <Text style={styles.feedbackText}>{feedback}</Text>
-        
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: accentColor }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.buttonText}>Return to Module</Text>
-        </TouchableOpacity>
+      <View style={[
+        styles.feedbackContainer,
+        feedback.type === 'success' ? styles.successFeedback : styles.errorFeedback
+      ]}>
+        <Ionicons 
+          name={feedback.type === 'success' ? 'checkmark-circle' : 'alert-circle'} 
+          size={24} 
+          color={feedback.type === 'success' ? '#4CAF50' : '#F44336'} 
+          style={styles.feedbackIcon}
+        />
+        <Text style={[
+          styles.feedbackText,
+          feedback.type === 'success' ? styles.successText : styles.errorText
+        ]}>
+          {feedback.message}
+        </Text>
       </View>
     );
   };
   
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={styles.keyboardContainer}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.backButton}
-            onPress={() => {
-              if (!isSubmitted && responses.some(resp => resp.trim() !== '')) {
-                Alert.alert(
-                  "Exit Activity?",
-                  "Your answers have not been submitted. Are you sure you want to exit?",
-                  [
-                    { text: "Stay", style: "cancel" },
-                    { text: "Exit", onPress: () => navigation.goBack() }
-                  ]
-                );
-              } else {
-                navigation.goBack();
-              }
-            }}
-          >
-            <Ionicons name="arrow-back" size={24} color="#fff" />
-          </TouchableOpacity>
-          <View style={styles.headerContent}>
-            <Ionicons name="create-outline" size={24} color={accentColor} />
-            <Text style={styles.headerTitle}>Writing Activity</Text>
-          </View>
-        </View>
-        
-        <ScrollView 
-          ref={scrollViewRef}
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
+      <StatusBar barStyle="light-content" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-          {/* Activity Information */}
-          <Text style={styles.title}>{activityData.title}</Text>
-          <Text style={styles.introText}>{activityData.introduction}</Text>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{activity.title}</Text>
+        <View style={styles.placeholderRight} />
+      </View>
+      
+      {/* Content */}
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      >
+        <ScrollView 
+          style={styles.contentContainer} 
+          contentContainerStyle={styles.content}
+        >
+          <Text style={styles.instructionsTitle}>Instructions</Text>
+          <Text style={styles.instructions}>{activity.content.instructions}</Text>
           
-          {/* Prompts and Input Fields */}
-          {renderPrompts()}
+          <View style={styles.taskContainer}>
+            {activity.content.tasks.map((task, index) => (
+              <View key={index} style={styles.taskItem}>
+                <Text style={styles.taskBullet}>•</Text>
+                <Text style={styles.taskText}>{task}</Text>
+              </View>
+            ))}
+          </View>
           
-          {/* Feedback Section */}
-          {isSubmitted && renderFeedback()}
+          <Text style={styles.solutionLabel}>Your Solution:</Text>
           
-          {/* Action Buttons */}
-          {!isSubmitted && (
-            <View style={styles.actionsContainer}>
-              <TouchableOpacity 
-                style={[styles.button, styles.resetButton]}
-                onPress={handleReset}
-              >
-                <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 5 }} />
-                <Text style={styles.buttonText}>Reset</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={[
-                  styles.button, 
-                  styles.submitButton, 
-                  { backgroundColor: accentColor },
-                  !areResponsesValid() && styles.disabledButton
-                ]}
-                onPress={handleSubmit}
-                disabled={!areResponsesValid()}
-              >
-                <Text style={styles.buttonText}>Submit</Text>
-                <Ionicons name="arrow-forward" size={18} color="#fff" style={{ marginLeft: 5 }} />
-              </TouchableOpacity>
+          <TextInput
+            style={[styles.solutionInput, { borderColor: accent }]}
+            value={solution}
+            onChangeText={setSolution}
+            placeholder="Write your solution here..."
+            placeholderTextColor="#666"
+            multiline
+            numberOfLines={10}
+            textAlignVertical="top"
+            editable={!completed}
+          />
+          
+          {renderFeedback()}
+          
+          <TouchableOpacity 
+            style={styles.sampleButton}
+            onPress={toggleSampleSolution}
+          >
+            <Text style={[styles.sampleButtonText, { color: accent }]}>
+              {showSample ? 'Hide Sample Solution' : 'Show Sample Solution'}
+            </Text>
+            <Ionicons 
+              name={showSample ? 'chevron-up' : 'chevron-down'} 
+              size={20} 
+              color={accent} 
+            />
+          </TouchableOpacity>
+          
+          {showSample && (
+            <View style={styles.sampleContainer}>
+              <Text style={styles.sampleTitle}>Sample Solution:</Text>
+              <View style={styles.codeBlock}>
+                <Text style={styles.codeText}>{activity.content.sampleSolution}</Text>
+              </View>
+              <Text style={styles.sampleNote}>
+                Note: This is just one possible solution. There are many ways to solve this problem correctly.
+              </Text>
             </View>
           )}
         </ScrollView>
+        
+        {/* Bottom Button */}
+        <View style={styles.bottomContainer}>
+          {completed ? (
+            <TouchableOpacity 
+              style={[styles.bottomButton, { backgroundColor: accent }]}
+              onPress={handleComplete}
+            >
+              <Text style={styles.bottomButtonText}>Complete</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={[styles.bottomButton, { backgroundColor: accent }]}
+              onPress={handleSubmit}
+            >
+              <Text style={styles.bottomButtonText}>Submit Solution</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
@@ -283,143 +190,172 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#1E1E1E',
   },
-  keyboardContainer: {
-    flex: 1,
-  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#2A2A2A',
   },
   backButton: {
-    marginRight: 15,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 8,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
   },
-  content: {
+  placeholderRight: {
+    width: 40,
+  },
+  keyboardAvoidingContainer: {
     flex: 1,
   },
   contentContainer: {
+    flex: 1,
+  },
+  content: {
     padding: 20,
-    paddingBottom: 40,
+    paddingBottom: 100,
   },
-  title: {
-    color: '#fff',
-    fontSize: 24,
+  instructionsTitle: {
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
-  introText: {
-    color: '#ddd',
+  instructions: {
     fontSize: 16,
-    lineHeight: 24,
+    color: '#EEEEEE',
     marginBottom: 20,
+    lineHeight: 24,
   },
-  promptContainer: {
-    marginBottom: 30,
+  taskContainer: {
+    marginBottom: 24,
   },
-  questionText: {
-    color: '#fff',
+  taskItem: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  taskBullet: {
+    fontSize: 16,
+    color: '#EEEEEE',
+    marginRight: 8,
+  },
+  taskText: {
+    fontSize: 16,
+    color: '#EEEEEE',
+    flex: 1,
+    lineHeight: 24,
+  },
+  solutionLabel: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
-  textInputContainer: {
-    marginBottom: 5,
-  },
-  textInput: {
-    backgroundColor: '#333',
-    borderRadius: 10,
-    borderWidth: 2,
-    borderColor: '#444',
-    padding: 15,
-    color: '#fff',
-    fontSize: 16,
-    minHeight: 150,
-    maxHeight: 300,
-    textAlignVertical: 'top',
-  },
-  activeTextInput: {
-    borderColor: DEFAULT_ACCENT_COLOR,
-  },
-  submittedTextInput: {
+  solutionInput: {
     backgroundColor: '#2A2A2A',
-    borderColor: '#444',
+    borderWidth: 1,
+    borderRadius: 8,
+    padding: 12,
+    color: '#FFFFFF',
+    fontSize: 16,
+    minHeight: 200,
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    lineHeight: 24,
   },
-  wordCountContainer: {
-    alignItems: 'flex-end',
+  feedbackContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 12,
+    borderRadius: 8,
+    marginTop: 16,
   },
-  wordCount: {
-    fontSize: 14,
-    marginTop: 5,
+  successFeedback: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+    borderWidth: 1,
+    borderColor: '#4CAF50',
   },
-  validWordCount: {
+  errorFeedback: {
+    backgroundColor: 'rgba(244, 67, 54, 0.1)',
+    borderWidth: 1,
+    borderColor: '#F44336',
+  },
+  feedbackIcon: {
+    marginRight: 8,
+  },
+  feedbackText: {
+    fontSize: 16,
+    flex: 1,
+  },
+  successText: {
     color: '#4CAF50',
   },
-  invalidWordCount: {
-    color: '#FF5252',
+  errorText: {
+    color: '#F44336',
   },
-  actionsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 20,
-  },
-  button: {
+  sampleButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 10,
-    minWidth: 120,
+    paddingVertical: 16,
   },
-  resetButton: {
-    backgroundColor: '#555',
-  },
-  submitButton: {
-    paddingHorizontal: 30,
-  },
-  disabledButton: {
-    opacity: 0.5,
-  },
-  buttonText: {
-    color: '#fff',
+  sampleButtonText: {
     fontSize: 16,
-    fontWeight: 'bold',
+    fontWeight: '500',
+    marginRight: 8,
   },
-  feedbackContainer: {
-    marginTop: 20,
-    marginBottom: 10,
-    backgroundColor: '#2A2A2A',
-    borderRadius: 10,
-    overflow: 'hidden',
+  sampleContainer: {
+    marginBottom: 24,
   },
-  feedbackHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 15,
-  },
-  feedbackHeaderText: {
-    color: '#fff',
+  sampleTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
-  feedbackText: {
-    color: '#fff',
+  codeBlock: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 12,
+  },
+  codeText: {
+    color: '#FFFFFF',
+    fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  sampleNote: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    padding: 16,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#3A3A3A',
+  },
+  bottomButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  bottomButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
     fontSize: 16,
-    lineHeight: 24,
-    padding: 15,
   },
 });
 

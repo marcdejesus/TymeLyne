@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   ScrollView,
   Animated,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -18,280 +19,283 @@ const DEFAULT_ACCENT_COLOR = '#FF9500';
 /**
  * QuizActivityScreen - Interactive quiz with multiple choice questions
  */
-const QuizActivityScreen = () => {
+const QuizActivityScreen = ({ route }) => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const { accent } = useTheme();
+  const { activity, moduleId } = route.params;
   
-  // Get module data from navigation params
-  const { activityId, activityTitle } = route.params || {};
-  
-  // Get the theme accent color with fallback
-  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
-  const accentColor = accent || DEFAULT_ACCENT_COLOR;
-  
-  // States for quiz progress
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [selectedAnswer, setSelectedAnswer] = useState(null);
-  const [correctAnswers, setCorrectAnswers] = useState(0);
+  // State variables
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState(Array(activity.content.questions.length).fill(null));
   const [quizCompleted, setQuizCompleted] = useState(false);
-  const [showResult, setShowResult] = useState(false);
+  const [score, setScore] = useState(0);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [fadeAnim] = useState(new Animated.Value(1));
   
-  // Animation value for progress bar
-  const [progressAnim] = useState(new Animated.Value(0));
+  // Get current question data
+  const questionData = activity.content.questions[currentQuestion];
   
-  // Sample quiz data (in a real app, this would come from an API)
-  const quizData = {
-    title: activityTitle || "Python Basics Quiz",
-    questions: [
-      {
-        question: "What is Python?",
-        options: [
-          "A type of snake",
-          "A high-level programming language",
-          "A database management system",
-          "A web browser"
-        ],
-        correctAnswer: 1,
-        explanation: "Python is a high-level, general-purpose programming language that emphasizes code readability."
-      },
-      {
-        question: "Which of the following is NOT a Python data type?",
-        options: [
-          "int",
-          "float",
-          "char",
-          "list"
-        ],
-        correctAnswer: 2,
-        explanation: "Python doesn't have a 'char' type. It uses 'str' for both single characters and strings."
-      },
-      {
-        question: "How do you create a comment in Python?",
-        options: [
-          "// This is a comment",
-          "/* This is a comment */",
-          "# This is a comment",
-          "<!-- This is a comment -->"
-        ],
-        correctAnswer: 2,
-        explanation: "In Python, comments start with the '#' symbol and extend to the end of the line."
-      },
-      {
-        question: "What will print(2 ** 3) output in Python?",
-        options: [
-          "6",
-          "8",
-          "5",
-          "Error"
-        ],
-        correctAnswer: 1,
-        explanation: "The '**' operator in Python is for exponentiation. 2 ** 3 = 2³ = 8."
-      },
-      {
-        question: "Which method is used to add an element at the end of a list in Python?",
-        options: [
-          "list.add()",
-          "list.append()",
-          "list.insert()",
-          "list.extend()"
-        ],
-        correctAnswer: 1,
-        explanation: "list.append(element) adds a single element to the end of a list."
+  // Check if all questions are answered
+  const allAnswered = selectedOptions.every(option => option !== null);
+  
+  // Handle option selection
+  const handleSelectOption = (optionIndex) => {
+    if (quizCompleted) return;
+    
+    const newSelectedOptions = [...selectedOptions];
+    newSelectedOptions[currentQuestion] = optionIndex;
+    setSelectedOptions(newSelectedOptions);
+  };
+  
+  // Calculate results when quiz is completed
+  const calculateResults = () => {
+    let correctCount = 0;
+    activity.content.questions.forEach((question, index) => {
+      if (selectedOptions[index] === question.correctAnswer) {
+        correctCount++;
       }
-    ]
+    });
+    
+    const finalScore = Math.round((correctCount / activity.content.questions.length) * 100);
+    setScore(finalScore);
   };
   
-  // Current question being displayed
-  const currentQuestion = quizData.questions[currentQuestionIndex];
-  
-  // Handle progress bar animation
-  useEffect(() => {
-    Animated.timing(progressAnim, {
-      toValue: (currentQuestionIndex + 1) / quizData.questions.length,
-      duration: 300,
-      useNativeDriver: false,
-    }).start();
-  }, [currentQuestionIndex]);
-  
-  // Handle answer selection
-  const handleAnswerSelect = (answerIndex) => {
-    if (selectedAnswer !== null || showResult) return; // Prevent multiple selections
-    
-    setSelectedAnswer(answerIndex);
-    setShowResult(true);
-    
-    // Update score if correct
-    if (answerIndex === currentQuestion.correctAnswer) {
-      setCorrectAnswers(correctAnswers + 1);
-    }
+  // Handle completing the quiz
+  const handleComplete = () => {
+    calculateResults();
+    setQuizCompleted(true);
   };
   
-  // Move to next question or complete quiz
-  const handleNext = () => {
-    if (currentQuestionIndex < quizData.questions.length - 1) {
-      setCurrentQuestionIndex(currentQuestionIndex + 1);
-      setSelectedAnswer(null);
-      setShowResult(false);
-    } else {
-      setQuizCompleted(true);
-    }
+  // Handle navigating to next question
+  const handleNextQuestion = () => {
+    // Animate transition
+    Animated.timing(fadeAnim, {
+      toValue: 0,
+      duration: 200,
+      useNativeDriver: true,
+    }).start(() => {
+      setCurrentQuestion(currentQuestion + 1);
+      setShowFeedback(false);
+      
+      // Animate back in
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 200,
+        useNativeDriver: true,
+      }).start();
+    });
   };
   
-  // Render the result screen
-  const renderResultScreen = () => {
-    const score = (correctAnswers / quizData.questions.length) * 100;
-    let resultMessage = "You need more practice!";
-    
-    if (score >= 80) {
-      resultMessage = "Excellent! You're a pro!";
-    } else if (score >= 60) {
-      resultMessage = "Good job! Keep learning!";
-    }
+  // Handle checking the answer
+  const handleCheckAnswer = () => {
+    setShowFeedback(true);
+  };
+  
+  // Handle finishing the quiz
+  const handleFinish = () => {
+    // In a real app, you would save this to your backend/state management
+    navigation.goBack();
+  };
+  
+  // Is the current selected option correct
+  const isCurrentSelectionCorrect = () => {
+    return selectedOptions[currentQuestion] === questionData.correctAnswer;
+  };
+  
+  // Render options
+  const renderOptions = () => {
+    return questionData.options.map((option, index) => {
+      const isSelected = selectedOptions[currentQuestion] === index;
+      const isCorrect = index === questionData.correctAnswer;
+      
+      // Determine option style based on selection and feedback state
+      let optionStyle = [styles.option];
+      let textStyle = [styles.optionText];
+      
+      if (isSelected) {
+        optionStyle.push(styles.selectedOption);
+        optionStyle.push({ borderColor: accent });
+        textStyle.push({ color: accent });
+      }
+      
+      if (showFeedback) {
+        if (isCorrect) {
+          optionStyle.push(styles.correctOption);
+          optionStyle.push({ borderColor: '#4CAF50' });
+          textStyle.push({ color: '#4CAF50' });
+        } else if (isSelected && !isCorrect) {
+          optionStyle.push(styles.incorrectOption);
+          optionStyle.push({ borderColor: '#F44336' });
+          textStyle.push({ color: '#F44336' });
+        }
+      }
+      
+      return (
+        <TouchableOpacity 
+          key={index}
+          style={optionStyle}
+          onPress={() => handleSelectOption(index)}
+          disabled={showFeedback}
+        >
+          <Text style={textStyle}>{option}</Text>
+          
+          {showFeedback && isCorrect && (
+            <Ionicons name="checkmark-circle" size={24} color="#4CAF50" style={styles.feedbackIcon} />
+          )}
+          
+          {showFeedback && isSelected && !isCorrect && (
+            <Ionicons name="close-circle" size={24} color="#F44336" style={styles.feedbackIcon} />
+          )}
+        </TouchableOpacity>
+      );
+    });
+  };
+  
+  // Render question content
+  const renderQuestionContent = () => {
+    return (
+      <Animated.View style={[styles.questionContainer, { opacity: fadeAnim }]}>
+        <View style={styles.progressIndicator}>
+          {activity.content.questions.map((_, index) => (
+            <View 
+              key={index} 
+              style={[
+                styles.progressDot, 
+                currentQuestion === index && { backgroundColor: accent },
+                selectedOptions[index] !== null && { backgroundColor: '#666' }
+              ]} 
+            />
+          ))}
+        </View>
+        
+        <Text style={styles.questionNumber}>
+          Question {currentQuestion + 1} of {activity.content.questions.length}
+        </Text>
+        <Text style={styles.questionText}>{questionData.question}</Text>
+        
+        <View style={styles.optionsContainer}>
+          {renderOptions()}
+        </View>
+        
+        {showFeedback && (
+          <View style={styles.feedbackContainer}>
+            <Text style={[
+              styles.feedbackText, 
+              isCurrentSelectionCorrect() ? styles.correctFeedbackText : styles.incorrectFeedbackText
+            ]}>
+              {isCurrentSelectionCorrect() 
+                ? 'Correct!' 
+                : `Incorrect. The correct answer is: ${questionData.options[questionData.correctAnswer]}`}
+            </Text>
+          </View>
+        )}
+      </Animated.View>
+    );
+  };
+  
+  // Render results
+  const renderResults = () => {
+    const isHighScore = score >= 80;
+    const isMediumScore = score >= 60 && score < 80;
     
     return (
-      <View style={styles.resultContainer}>
-        <Text style={styles.resultTitle}>Quiz Completed!</Text>
-        <View style={[styles.scoreCircle, { borderColor: accentColor }]}>
-          <Text style={[styles.scoreText, { color: accentColor }]}>
-            {Math.round(score)}%
-          </Text>
+      <View style={styles.resultsContainer}>
+        <View style={[styles.scoreCircle, { borderColor: accent }]}>
+          <Text style={styles.scoreText}>{score}%</Text>
         </View>
-        <Text style={styles.resultMessage}>{resultMessage}</Text>
-        <Text style={styles.scoreDetails}>
-          You got {correctAnswers} out of {quizData.questions.length} questions correct.
+        
+        <Text style={styles.resultTitle}>
+          {isHighScore ? 'Great job!' : isMediumScore ? 'Good effort!' : 'Keep practicing!'}
         </Text>
         
-        <TouchableOpacity 
-          style={[styles.button, { backgroundColor: accentColor }]}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.buttonText}>Return to Module</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.button, styles.retryButton]}
-          onPress={() => {
-            setCurrentQuestionIndex(0);
-            setSelectedAnswer(null);
-            setCorrectAnswers(0);
-            setQuizCompleted(false);
-            setShowResult(false);
-          }}
-        >
-          <Text style={styles.buttonText}>Retry Quiz</Text>
-        </TouchableOpacity>
+        <Text style={styles.resultDescription}>
+          You answered {activity.content.questions.filter((q, i) => 
+            selectedOptions[i] === q.correctAnswer
+          ).length} out of {activity.content.questions.length} questions correctly.
+        </Text>
       </View>
     );
   };
   
-  // Render the question screen
-  const renderQuestionScreen = () => {
-    return (
-      <View style={styles.questionContainer}>
-        {/* Progress bar */}
-        <View style={styles.progressContainer}>
-          <Animated.View 
-            style={[
-              styles.progressBar, 
-              { 
-                backgroundColor: accentColor,
-                width: progressAnim.interpolate({
-                  inputRange: [0, 1],
-                  outputRange: ['0%', '100%']
-                }) 
-              }
-            ]} 
-          />
-        </View>
-        
-        {/* Question counter */}
-        <Text style={styles.counter}>
-          Question {currentQuestionIndex + 1} of {quizData.questions.length}
-        </Text>
-        
-        {/* Question */}
-        <Text style={styles.questionText}>{currentQuestion.question}</Text>
-        
-        {/* Answer options */}
-        <View style={styles.optionsContainer}>
-          {currentQuestion.options.map((option, index) => {
-            const isSelected = selectedAnswer === index;
-            const isCorrect = index === currentQuestion.correctAnswer;
-            
-            let optionStyle = styles.option;
-            if (showResult) {
-              if (isCorrect) {
-                optionStyle = [styles.option, styles.correctOption];
-              } else if (isSelected && !isCorrect) {
-                optionStyle = [styles.option, styles.incorrectOption];
-              }
-            } else if (isSelected) {
-              optionStyle = [styles.option, { borderColor: accentColor }];
-            }
-            
-            return (
-              <TouchableOpacity
-                key={index}
-                style={optionStyle}
-                onPress={() => handleAnswerSelect(index)}
-                disabled={selectedAnswer !== null}
-              >
-                <Text style={styles.optionText}>{option}</Text>
-                
-                {showResult && isCorrect && (
-                  <Ionicons name="checkmark-circle" size={24} color="#4CAF50" style={styles.resultIcon} />
-                )}
-                
-                {showResult && isSelected && !isCorrect && (
-                  <Ionicons name="close-circle" size={24} color="#F44336" style={styles.resultIcon} />
-                )}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-        
-        {/* Explanation */}
-        {showResult && (
-          <View style={styles.explanationContainer}>
-            <Text style={styles.explanationTitle}>Explanation:</Text>
-            <Text style={styles.explanationText}>{currentQuestion.explanation}</Text>
-          </View>
-        )}
-        
-        {/* Next button */}
-        {showResult && (
+  // Render bottom button
+  const renderBottomButton = () => {
+    if (quizCompleted) {
+      return (
+        <TouchableOpacity 
+          style={[styles.bottomButton, { backgroundColor: accent }]}
+          onPress={handleFinish}
+        >
+          <Text style={styles.bottomButtonText}>Finish</Text>
+        </TouchableOpacity>
+      );
+    }
+    
+    if (showFeedback) {
+      if (currentQuestion < activity.content.questions.length - 1) {
+        return (
           <TouchableOpacity 
-            style={[styles.button, { backgroundColor: accentColor }]}
-            onPress={handleNext}
+            style={[styles.bottomButton, { backgroundColor: accent }]}
+            onPress={handleNextQuestion}
           >
-            <Text style={styles.buttonText}>
-              {currentQuestionIndex < quizData.questions.length - 1 ? 'Next Question' : 'See Results'}
-            </Text>
+            <Text style={styles.bottomButtonText}>Next Question</Text>
           </TouchableOpacity>
-        )}
-      </View>
+        );
+      } else {
+        return (
+          <TouchableOpacity 
+            style={[styles.bottomButton, { backgroundColor: accent }]}
+            onPress={handleComplete}
+          >
+            <Text style={styles.bottomButtonText}>See Results</Text>
+          </TouchableOpacity>
+        );
+      }
+    }
+    
+    return (
+      <TouchableOpacity 
+        style={[
+          styles.bottomButton, 
+          { backgroundColor: accent },
+          selectedOptions[currentQuestion] === null && styles.disabledButton
+        ]}
+        onPress={handleCheckAnswer}
+        disabled={selectedOptions[currentQuestion] === null}
+      >
+        <Text style={styles.bottomButtonText}>Check Answer</Text>
+      </TouchableOpacity>
     );
   };
   
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Ionicons name="help-circle" size={24} color={accentColor} />
-          <Text style={styles.headerTitle}>Quiz</Text>
-        </View>
+        <Text style={styles.headerTitle}>{activity.title}</Text>
+        <View style={styles.placeholderRight} />
       </View>
       
-      <ScrollView style={styles.content}>
-        {quizCompleted ? renderResultScreen() : renderQuestionScreen()}
+      {/* Content */}
+      <ScrollView 
+        style={styles.contentContainer} 
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        {!quizCompleted ? renderQuestionContent() : renderResults()}
       </ScrollView>
+      
+      {/* Bottom Button */}
+      <View style={styles.bottomContainer}>
+        {renderBottomButton()}
+      </View>
     </SafeAreaView>
   );
 };
@@ -304,147 +308,157 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#2A2A2A',
   },
   backButton: {
-    marginRight: 15,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 8,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
+    color: '#FFFFFF',
+    flex: 1,
+    textAlign: 'center',
   },
-  content: {
+  placeholderRight: {
+    width: 40,
+  },
+  contentContainer: {
     flex: 1,
   },
-  progressContainer: {
-    height: 8,
-    backgroundColor: '#333',
-    borderRadius: 4,
-    marginVertical: 15,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    borderRadius: 4,
-  },
-  counter: {
-    color: '#aaa',
-    fontSize: 14,
-    marginBottom: 10,
+  content: {
+    padding: 20,
+    paddingBottom: 100,
   },
   questionContainer: {
-    padding: 20,
+    flex: 1,
+  },
+  progressIndicator: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    marginBottom: 20,
+  },
+  progressDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#444',
+    marginHorizontal: 4,
+  },
+  questionNumber: {
+    fontSize: 14,
+    color: '#999',
+    marginBottom: 10,
   },
   questionText: {
-    color: '#fff',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: 'bold',
-    marginBottom: 20,
+    color: '#FFFFFF',
+    marginBottom: 30,
   },
   optionsContainer: {
     marginBottom: 20,
   },
   option: {
-    backgroundColor: '#333',
-    padding: 15,
-    borderRadius: 10,
-    marginBottom: 10,
+    backgroundColor: '#2A2A2A',
     borderWidth: 2,
-    borderColor: '#333',
+    borderColor: '#444',
+    borderRadius: 10,
+    padding: 16,
+    marginBottom: 12,
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'space-between',
   },
-  optionText: {
-    color: '#fff',
-    fontSize: 16,
-    flex: 1,
+  selectedOption: {
+    backgroundColor: 'rgba(100, 100, 255, 0.1)',
   },
   correctOption: {
-    borderColor: '#4CAF50',
     backgroundColor: 'rgba(76, 175, 80, 0.1)',
   },
   incorrectOption: {
-    borderColor: '#F44336',
     backgroundColor: 'rgba(244, 67, 54, 0.1)',
   },
-  resultIcon: {
+  optionText: {
+    fontSize: 16,
+    color: '#EEEEEE',
+    flex: 1,
+  },
+  feedbackIcon: {
     marginLeft: 10,
   },
-  explanationContainer: {
-    backgroundColor: '#333',
-    padding: 15,
+  feedbackContainer: {
+    backgroundColor: '#2A2A2A',
     borderRadius: 10,
-    marginBottom: 20,
+    padding: 16,
+    marginTop: 10,
   },
-  explanationTitle: {
-    color: DEFAULT_ACCENT_COLOR,
+  feedbackText: {
     fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
   },
-  explanationText: {
-    color: '#ddd',
-    fontSize: 14,
-    lineHeight: 20,
+  correctFeedbackText: {
+    color: '#4CAF50',
   },
-  button: {
-    padding: 15,
-    borderRadius: 10,
+  incorrectFeedbackText: {
+    color: '#F44336',
+  },
+  resultsContainer: {
     alignItems: 'center',
-    marginVertical: 10,
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  resultContainer: {
-    padding: 20,
-    alignItems: 'center',
-  },
-  resultTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    paddingVertical: 40,
   },
   scoreCircle: {
     width: 150,
     height: 150,
     borderRadius: 75,
     borderWidth: 8,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
+    justifyContent: 'center',
+    marginBottom: 30,
   },
   scoreText: {
     fontSize: 40,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
-  resultMessage: {
-    color: '#fff',
-    fontSize: 20,
+  resultTitle: {
+    fontSize: 24,
     fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+    color: '#FFFFFF',
+    marginBottom: 16,
   },
-  scoreDetails: {
-    color: '#ccc',
+  resultDescription: {
     fontSize: 16,
-    marginBottom: 30,
+    color: '#CCCCCC',
     textAlign: 'center',
+    paddingHorizontal: 20,
   },
-  retryButton: {
-    backgroundColor: '#555',
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    padding: 16,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#3A3A3A',
+  },
+  bottomButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
+  },
+  bottomButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
 });
 

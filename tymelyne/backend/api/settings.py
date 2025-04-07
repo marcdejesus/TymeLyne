@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 from pathlib import Path
+import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -23,7 +24,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-orb1@zbo456&3hiyt74z*1k#&b%ny#n=*et17^iz4oey7cdihj'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == '1'
 
 ALLOWED_HOSTS = ['*']  # In development only - change to specific IPs in production
 
@@ -145,10 +146,19 @@ CORS_ALLOWED_ORIGINS = [
     "http://192.168.1.60:19000", # Your local IP with Expo port
     "http://192.168.1.60:19006", # Your local IP with Expo web port
     "exp://192.168.1.60:19000",  # Expo Go format for your IP
+    "http://frontend:19000",    # Docker container service name
+    "http://frontend:19001",
+    "http://frontend:19002", 
+    "http://frontend:8081",
 ]
 
-# Allow all origins for development
-CORS_ALLOW_ALL_ORIGINS = True
+# Read CORS whitelist from environment if provided
+cors_origins_env = os.environ.get('CORS_ORIGIN_WHITELIST', '')
+if cors_origins_env:
+    CORS_ALLOWED_ORIGINS.extend(cors_origins_env.split(','))
+
+# Allow all origins for development - use with caution
+CORS_ALLOW_ALL_ORIGINS = os.environ.get('CORS_ALLOW_ALL_ORIGINS', 'True') == 'True'
 
 # Additional CORS settings
 CORS_ALLOW_CREDENTIALS = True

@@ -9,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Alert,
+  StatusBar,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -23,323 +24,379 @@ const { width } = Dimensions.get('window');
 /**
  * MatchingActivityScreen - Interactive matching pairs game
  */
-const MatchingActivityScreen = () => {
+const MatchingActivityScreen = ({ route }) => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const { accent } = useTheme();
+  const { activity, moduleId } = route.params;
   
-  // Get activity data from navigation params
-  const { activityId, activityTitle } = route.params || {};
-  
-  // Get the theme accent color with fallback
-  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
-  const accentColor = accent || DEFAULT_ACCENT_COLOR;
-  
-  // Game state
+  // State variables
   const [pairs, setPairs] = useState([]);
-  const [selectedItems, setSelectedItems] = useState([]);
+  const [selectedTerm, setSelectedTerm] = useState(null);
+  const [selectedDefinition, setSelectedDefinition] = useState(null);
   const [matchedPairs, setMatchedPairs] = useState([]);
+  const [shuffledDefinitions, setShuffledDefinitions] = useState([]);
+  const [completed, setCompleted] = useState(false);
+  const [score, setScore] = useState(0);
   const [attempts, setAttempts] = useState(0);
-  const [gameCompleted, setGameCompleted] = useState(false);
-  const [startTime, setStartTime] = useState(null);
-  const [endTime, setEndTime] = useState(null);
+  const [animations] = useState({
+    terms: activity.content.pairs.map(() => new Animated.Value(1)),
+    definitions: activity.content.pairs.map(() => new Animated.Value(1))
+  });
   
-  // Sample data for matching pairs (in a real app, this would come from an API)
-  const sampleData = {
-    title: activityTitle || "Match Python Terms",
-    pairs: [
-      { id: 1, term: "list", definition: "Ordered collection of items" },
-      { id: 2, term: "tuple", definition: "Immutable sequence of items" },
-      { id: 3, term: "dictionary", definition: "Key-value pairs collection" },
-      { id: 4, term: "set", definition: "Unordered collection of unique items" },
-      { id: 5, term: "int", definition: "Whole number without decimal point" },
-      { id: 6, term: "str", definition: "Sequence of characters" },
-    ]
-  };
-  
-  // Initialize the game
+  // Initialize game
   useEffect(() => {
-    initializeGame();
+    // Set pairs
+    setPairs(activity.content.pairs);
+    
+    // Shuffle definitions
+    const shuffled = [...activity.content.pairs].map(p => p.definition);
+    shuffleArray(shuffled);
+    setShuffledDefinitions(shuffled);
   }, []);
   
-  // Initialize the game board
-  const initializeGame = () => {
-    // Create pairs by duplicating each item as term and definition
-    const itemPairs = [];
-    
-    sampleData.pairs.forEach(pair => {
-      itemPairs.push({
-        id: `term_${pair.id}`,
-        pairId: pair.id,
-        content: pair.term,
-        type: 'term',
-        isMatched: false,
-      });
-      
-      itemPairs.push({
-        id: `def_${pair.id}`,
-        pairId: pair.id,
-        content: pair.definition,
-        type: 'definition',
-        isMatched: false,
-      });
-    });
-    
-    // Shuffle the pairs
-    const shuffledPairs = shuffleArray(itemPairs);
-    setPairs(shuffledPairs);
-    setStartTime(new Date());
-    setMatchedPairs([]);
-    setSelectedItems([]);
-    setAttempts(0);
-    setGameCompleted(false);
-    setEndTime(null);
-  };
+  // Check if all pairs are matched
+  useEffect(() => {
+    if (matchedPairs.length === pairs.length && pairs.length > 0) {
+      const accuracy = Math.round((pairs.length / attempts) * 100);
+      setScore(accuracy > 100 ? 100 : accuracy);
+      setCompleted(true);
+    }
+  }, [matchedPairs, pairs]);
   
-  // Shuffle array using Fisher-Yates algorithm
-  const shuffleArray = (array) => {
-    const newArray = [...array];
-    for (let i = newArray.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [newArray[i], newArray[j]] = [newArray[j], newArray[i]];
-    }
-    return newArray;
-  };
-  
-  // Handle item selection
-  const handleItemPress = (item) => {
-    // If already matched or already selected, do nothing
-    if (item.isMatched || selectedItems.some(i => i.id === item.id)) {
-      return;
-    }
+  // Handle selecting a term
+  const handleSelectTerm = (index) => {
+    if (matchedPairs.includes(index)) return;
     
-    // If we already have 2 selected items, do nothing
-    if (selectedItems.length === 2) {
-      return;
-    }
+    // Highlight the selected term
+    setSelectedTerm(index);
     
-    // Add item to selected items
-    const newSelectedItems = [...selectedItems, item];
-    setSelectedItems(newSelectedItems);
-    
-    // Check for match if we now have 2 selected items
-    if (newSelectedItems.length === 2) {
-      // Increment attempts
+    // If definition is already selected, check for match
+    if (selectedDefinition !== null) {
       setAttempts(attempts + 1);
       
-      // Check if the items match (same pairId but different types)
-      const [firstItem, secondItem] = newSelectedItems;
+      const definitionIndex = pairs.findIndex(p => p.definition === shuffledDefinitions[selectedDefinition]);
       
-      if (firstItem.pairId === secondItem.pairId && firstItem.type !== secondItem.type) {
-        // Items match!
-        setTimeout(() => {
-          // Update the pairs list to mark these items as matched
-          const newPairs = pairs.map(p => {
-            if (p.pairId === firstItem.pairId) {
-              return { ...p, isMatched: true };
-            }
-            return p;
-          });
-          
-          setPairs(newPairs);
-          setMatchedPairs([...matchedPairs, firstItem.pairId]);
-          setSelectedItems([]);
-          
-          // Check if game is completed
-          if (matchedPairs.length + 1 === sampleData.pairs.length) {
-            setGameCompleted(true);
-            setEndTime(new Date());
-          }
-        }, 500);
+      if (definitionIndex === index) {
+        // Match found
+        handleMatch(index, selectedDefinition);
       } else {
-        // Items don't match, clear selection after a delay
-        setTimeout(() => {
-          setSelectedItems([]);
-        }, 1000);
+        // No match, reset selections
+        flashIncorrect(index, selectedDefinition);
       }
     }
   };
   
-  // Get item style based on state
-  const getItemStyle = (item) => {
-    if (item.isMatched) {
-      return [styles.item, styles.matchedItem, item.type === 'term' ? { borderColor: accentColor } : {}];
-    }
+  // Handle selecting a definition
+  const handleSelectDefinition = (index) => {
+    if (matchedPairs.includes(pairs.findIndex(p => p.definition === shuffledDefinitions[index]))) return;
     
-    if (selectedItems.some(i => i.id === item.id)) {
-      return [styles.item, styles.selectedItem, item.type === 'term' ? { borderColor: accentColor } : {}];
-    }
+    // Highlight the selected definition
+    setSelectedDefinition(index);
     
-    return [styles.item, item.type === 'term' ? { borderColor: accentColor } : {}];
+    // If term is already selected, check for match
+    if (selectedTerm !== null) {
+      setAttempts(attempts + 1);
+      
+      const definitionIndex = pairs.findIndex(p => p.definition === shuffledDefinitions[index]);
+      
+      if (definitionIndex === selectedTerm) {
+        // Match found
+        handleMatch(selectedTerm, index);
+      } else {
+        // No match, reset selections
+        flashIncorrect(selectedTerm, index);
+      }
+    }
   };
   
-  // Calculate game statistics
-  const getGameStats = () => {
-    const duration = Math.floor((endTime - startTime) / 1000); // in seconds
-    const minutes = Math.floor(duration / 60);
-    const seconds = duration % 60;
-    const timeString = `${minutes}m ${seconds}s`;
+  // Handle a match
+  const handleMatch = (termIndex, definitionIndex) => {
+    // Add to matched pairs
+    setMatchedPairs([...matchedPairs, termIndex]);
     
-    // Calculate score based on attempts and time
-    const perfectAttempts = sampleData.pairs.length; // One attempt per pair
-    const attemptFactor = perfectAttempts / attempts;
-    const timeFactor = Math.max(0.5, Math.min(1, 300 / duration)); // Cap time factor between 0.5 and 1
+    // Animate matched pair
+    animateMatch(termIndex, definitionIndex);
     
-    const score = Math.round(100 * attemptFactor * timeFactor);
-    
-    return {
-      time: timeString,
-      attempts,
-      score: Math.min(100, score), // Cap score at 100
-    };
+    // Reset selections
+    setSelectedTerm(null);
+    setSelectedDefinition(null);
   };
   
-  // Render game board
-  const renderGameBoard = () => {
+  // Flash incorrect
+  const flashIncorrect = (termIndex, definitionIndex) => {
+    // Animate incorrect selections
+    Animated.sequence([
+      Animated.timing(animations.terms[termIndex], {
+        toValue: 0.6,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.terms[termIndex], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.terms[termIndex], {
+        toValue: 0.6,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.terms[termIndex], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true
+      })
+    ]).start();
+    
+    Animated.sequence([
+      Animated.timing(animations.definitions[definitionIndex], {
+        toValue: 0.6,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.definitions[definitionIndex], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.definitions[definitionIndex], {
+        toValue: 0.6,
+        duration: 100,
+        useNativeDriver: true
+      }),
+      Animated.timing(animations.definitions[definitionIndex], {
+        toValue: 1,
+        duration: 100,
+        useNativeDriver: true
+      })
+    ]).start(() => {
+      // Reset selections after animation
+      setSelectedTerm(null);
+      setSelectedDefinition(null);
+    });
+  };
+  
+  // Animate match
+  const animateMatch = (termIndex, definitionIndex) => {
+    Animated.parallel([
+      Animated.sequence([
+        Animated.timing(animations.terms[termIndex], {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true
+        }),
+        Animated.timing(animations.terms[termIndex], {
+          toValue: 1.1,
+          duration: 200,
+          useNativeDriver: true
+        }),
+        Animated.timing(animations.terms[termIndex], {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true
+        })
+      ]),
+      Animated.sequence([
+        Animated.timing(animations.definitions[definitionIndex], {
+          toValue: 0.8,
+          duration: 100,
+          useNativeDriver: true
+        }),
+        Animated.timing(animations.definitions[definitionIndex], {
+          toValue: 1.1,
+          duration: 200,
+          useNativeDriver: true
+        }),
+        Animated.timing(animations.definitions[definitionIndex], {
+          toValue: 1,
+          duration: 100,
+          useNativeDriver: true
+        })
+      ])
+    ]).start();
+  };
+  
+  // Handle completing the activity
+  const handleComplete = () => {
+    // In a real app, you would save this to your backend/state management
+    navigation.goBack();
+  };
+  
+  // Shuffle array helper
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  };
+  
+  // Render term card
+  const renderTerm = (pair, index) => {
+    const isMatched = matchedPairs.includes(index);
+    const isSelected = selectedTerm === index;
+    
+    return (
+      <Animated.View 
+        key={`term-${index}`}
+        style={{ 
+          opacity: animations.terms[index],
+          transform: [{ scale: animations.terms[index] }]
+        }}
+      >
+        <TouchableOpacity 
+          style={[
+            styles.card,
+            styles.termCard,
+            isMatched && [styles.matchedCard, { borderColor: accent }],
+            isSelected && [styles.selectedCard, { borderColor: accent }]
+          ]}
+          onPress={() => handleSelectTerm(index)}
+          disabled={isMatched || completed}
+        >
+          <Text style={[
+            styles.cardText, 
+            isMatched && styles.matchedText,
+            isSelected && { color: accent }
+          ]}>
+            {pair.term}
+          </Text>
+          
+          {isMatched && (
+            <Ionicons name="checkmark-circle" size={24} color={accent} style={styles.matchIcon} />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+  
+  // Render definition card
+  const renderDefinition = (definition, index) => {
+    const originalIndex = pairs.findIndex(p => p.definition === definition);
+    const isMatched = matchedPairs.includes(originalIndex);
+    const isSelected = selectedDefinition === index;
+    
+    return (
+      <Animated.View 
+        key={`def-${index}`}
+        style={{ 
+          opacity: animations.definitions[index],
+          transform: [{ scale: animations.definitions[index] }]
+        }}
+      >
+        <TouchableOpacity 
+          style={[
+            styles.card,
+            styles.definitionCard,
+            isMatched && [styles.matchedCard, { borderColor: accent }],
+            isSelected && [styles.selectedCard, { borderColor: accent }]
+          ]}
+          onPress={() => handleSelectDefinition(index)}
+          disabled={isMatched || completed}
+        >
+          <Text style={[
+            styles.cardText, 
+            isMatched && styles.matchedText,
+            isSelected && { color: accent }
+          ]}>
+            {definition}
+          </Text>
+          
+          {isMatched && (
+            <Ionicons name="checkmark-circle" size={24} color={accent} style={styles.matchIcon} />
+          )}
+        </TouchableOpacity>
+      </Animated.View>
+    );
+  };
+  
+  // Render game content
+  const renderGameContent = () => {
     return (
       <View style={styles.gameContainer}>
-        <View style={styles.statsContainer}>
-          <View style={styles.stat}>
-            <Ionicons name="time-outline" size={20} color="#ddd" />
-            <Text style={styles.statText}>Pairs: {matchedPairs.length}/{sampleData.pairs.length}</Text>
-          </View>
-          <View style={styles.stat}>
-            <Ionicons name="refresh-outline" size={20} color="#ddd" />
-            <Text style={styles.statText}>Attempts: {attempts}</Text>
-          </View>
+        <Text style={styles.instructions}>
+          Match each term with its correct definition by tapping on a term, then tapping on its corresponding definition.
+        </Text>
+        
+        <View style={styles.progressContainer}>
+          <Text style={styles.progressText}>
+            Matches: {matchedPairs.length}/{pairs.length}
+          </Text>
+          <Text style={styles.progressText}>
+            Attempts: {attempts}
+          </Text>
         </View>
         
-        <View style={styles.gameBoard}>
-          {pairs.map((item) => (
-            <TouchableOpacity
-              key={item.id}
-              style={getItemStyle(item)}
-              onPress={() => handleItemPress(item)}
-              disabled={item.isMatched}
-            >
-              <Text style={[
-                styles.itemText,
-                item.isMatched ? styles.matchedItemText : {},
-                selectedItems.some(i => i.id === item.id) ? styles.selectedItemText : {},
-                item.type === 'term' ? styles.termText : {}
-              ]}>
-                {item.content}
-              </Text>
-              
-              {item.isMatched && (
-                <Ionicons 
-                  name="checkmark-circle" 
-                  size={18} 
-                  color="#4CAF50" 
-                  style={styles.matchedIcon} 
-                />
-              )}
-            </TouchableOpacity>
-          ))}
+        <View style={styles.matchingContainer}>
+          <View style={styles.column}>
+            <Text style={styles.columnHeader}>Terms</Text>
+            {pairs.map(renderTerm)}
+          </View>
+          
+          <View style={styles.column}>
+            <Text style={styles.columnHeader}>Definitions</Text>
+            {shuffledDefinitions.map(renderDefinition)}
+          </View>
         </View>
-        
-        <TouchableOpacity
-          style={[styles.button, { backgroundColor: '#555' }]}
-          onPress={initializeGame}
-        >
-          <Ionicons name="refresh" size={18} color="#fff" style={{ marginRight: 5 }} />
-          <Text style={styles.buttonText}>Restart Game</Text>
-        </TouchableOpacity>
       </View>
     );
   };
   
-  // Render result screen
-  const renderResultScreen = () => {
-    const stats = getGameStats();
+  // Render completed screen
+  const renderCompletedScreen = () => {
+    const isHighScore = score >= 80;
     
     return (
-      <View style={styles.resultContainer}>
-        <Text style={styles.resultTitle}>Game Completed!</Text>
-        
-        <View style={[styles.scoreCircle, { borderColor: accentColor }]}>
-          <Text style={[styles.scoreText, { color: accentColor }]}>
-            {stats.score}%
-          </Text>
+      <View style={styles.resultsContainer}>
+        <View style={[styles.scoreCircle, { borderColor: accent }]}>
+          <Text style={styles.scoreText}>{score}%</Text>
         </View>
         
-        <View style={styles.resultStats}>
-          <View style={styles.resultStat}>
-            <Ionicons name="time-outline" size={24} color={accentColor} />
-            <Text style={styles.resultStatLabel}>Time:</Text>
-            <Text style={styles.resultStatValue}>{stats.time}</Text>
-          </View>
-          
-          <View style={styles.resultStat}>
-            <Ionicons name="refresh-outline" size={24} color={accentColor} />
-            <Text style={styles.resultStatLabel}>Attempts:</Text>
-            <Text style={styles.resultStatValue}>{stats.attempts}</Text>
-          </View>
-          
-          <View style={styles.resultStat}>
-            <Ionicons name="checkmark-circle-outline" size={24} color={accentColor} />
-            <Text style={styles.resultStatLabel}>Pairs Matched:</Text>
-            <Text style={styles.resultStatValue}>{sampleData.pairs.length}/{sampleData.pairs.length}</Text>
-          </View>
-        </View>
+        <Text style={styles.resultTitle}>
+          {isHighScore ? 'Great job!' : 'Good effort!'}
+        </Text>
         
-        <View style={styles.resultButtonsContainer}>
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: accentColor }]}
-            onPress={() => navigation.goBack()}
-          >
-            <Text style={styles.buttonText}>Return to Module</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.button, { backgroundColor: '#555' }]}
-            onPress={initializeGame}
-          >
-            <Text style={styles.buttonText}>Play Again</Text>
-          </TouchableOpacity>
-        </View>
+        <Text style={styles.resultDescription}>
+          You matched all {pairs.length} pairs in {attempts} attempts.
+        </Text>
       </View>
     );
   };
   
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="light-content" />
+      
       {/* Header */}
       <View style={styles.header}>
         <TouchableOpacity 
           style={styles.backButton}
-          onPress={() => {
-            if (!gameCompleted && matchedPairs.length > 0) {
-              Alert.alert(
-                "Exit Game?",
-                "Your progress will be lost. Are you sure you want to exit?",
-                [
-                  { text: "Stay", style: "cancel" },
-                  { text: "Exit", onPress: () => navigation.goBack() }
-                ]
-              );
-            } else {
-              navigation.goBack();
-            }
-          }}
+          onPress={() => navigation.goBack()}
         >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-        <View style={styles.headerContent}>
-          <Ionicons name="grid-outline" size={24} color={accentColor} />
-          <Text style={styles.headerTitle}>Matching Activity</Text>
-        </View>
+        <Text style={styles.headerTitle}>{activity.title}</Text>
+        <View style={styles.placeholderRight} />
       </View>
       
-      <ScrollView style={styles.content}>
-        <View style={styles.contentContainer}>
-          <Text style={styles.title}>{sampleData.title}</Text>
-          <Text style={styles.instructions}>
-            Match each term with its correct definition by tapping on cards.
-          </Text>
-          
-          {gameCompleted ? renderResultScreen() : renderGameBoard()}
-        </View>
+      {/* Content */}
+      <ScrollView 
+        style={styles.contentContainer} 
+        contentContainerStyle={styles.content}
+      >
+        {completed ? renderCompletedScreen() : renderGameContent()}
       </ScrollView>
+      
+      {/* Bottom Button */}
+      {completed && (
+        <View style={styles.bottomContainer}>
+          <TouchableOpacity 
+            style={[styles.bottomButton, { backgroundColor: accent }]}
+            onPress={handleComplete}
+          >
+            <Text style={styles.bottomButtonText}>Complete</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 };
@@ -352,166 +409,149 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    justifyContent: 'space-between',
+    padding: 16,
+    backgroundColor: '#2A2A2A',
   },
   backButton: {
-    marginRight: 15,
-  },
-  headerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    padding: 8,
   },
   headerTitle: {
-    color: '#fff',
     fontSize: 18,
     fontWeight: 'bold',
-    marginLeft: 10,
-  },
-  content: {
+    color: '#FFFFFF',
     flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-  },
-  instructions: {
-    color: '#ddd',
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-  stat: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statText: {
-    color: '#ddd',
-    fontSize: 16,
-    marginLeft: 5,
-  },
-  gameContainer: {
-    marginBottom: 20,
-  },
-  gameBoard: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  item: {
-    width: (width - 60) / 2,
-    height: 90,
-    backgroundColor: '#333',
-    borderRadius: 10,
-    marginBottom: 10,
-    padding: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#444',
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  selectedItem: {
-    backgroundColor: '#3C3C3C',
-  },
-  matchedItem: {
-    backgroundColor: 'rgba(76, 175, 80, 0.1)',
-    borderColor: '#4CAF50',
-  },
-  itemText: {
-    color: '#fff',
-    fontSize: 14,
     textAlign: 'center',
   },
-  termText: {
-    fontWeight: 'bold',
+  placeholderRight: {
+    width: 40,
   },
-  selectedItemText: {
-    color: '#fff',
+  contentContainer: {
+    flex: 1,
   },
-  matchedItemText: {
-    color: '#4CAF50',
+  content: {
+    padding: 20,
+    paddingBottom: 100,
   },
-  matchedIcon: {
-    position: 'absolute',
-    top: 5,
-    right: 5,
+  gameContainer: {
+    flex: 1,
   },
-  button: {
+  instructions: {
+    fontSize: 16,
+    color: '#CCCCCC',
+    marginBottom: 20,
+    lineHeight: 24,
+  },
+  progressContainer: {
     flexDirection: 'row',
-    padding: 15,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 10,
+    justifyContent: 'space-between',
+    marginBottom: 20,
   },
-  buttonText: {
-    color: '#fff',
+  progressText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    fontWeight: '500',
+  },
+  matchingContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  column: {
+    width: (width - 60) / 2,
+  },
+  columnHeader: {
     fontSize: 16,
     fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 12,
+    textAlign: 'center',
   },
-  // Result screen styles
-  resultContainer: {
+  card: {
+    backgroundColor: '#2A2A2A',
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: '#444',
+    padding: 12,
+    marginBottom: 10,
+    minHeight: 80,
+    justifyContent: 'center',
+  },
+  termCard: {
+    borderRightWidth: 4,
+  },
+  definitionCard: {
+    borderLeftWidth: 4,
+  },
+  selectedCard: {
+    backgroundColor: 'rgba(100, 100, 255, 0.1)',
+  },
+  matchedCard: {
+    backgroundColor: 'rgba(76, 175, 80, 0.1)',
+  },
+  cardText: {
+    fontSize: 15,
+    color: '#EEEEEE',
+    textAlign: 'center',
+  },
+  matchedText: {
+    color: '#4CAF50',
+  },
+  matchIcon: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+  },
+  resultsContainer: {
     alignItems: 'center',
-    padding: 20,
-  },
-  resultTitle: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 20,
+    paddingVertical: 40,
   },
   scoreCircle: {
     width: 150,
     height: 150,
     borderRadius: 75,
     borderWidth: 8,
-    justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 20,
+    justifyContent: 'center',
+    marginBottom: 30,
   },
   scoreText: {
     fontSize: 40,
     fontWeight: 'bold',
+    color: '#FFFFFF',
   },
-  resultStats: {
-    width: '100%',
-    marginBottom: 30,
+  resultTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 16,
   },
-  resultStat: {
+  resultDescription: {
+    fontSize: 16,
+    color: '#CCCCCC',
+    textAlign: 'center',
+  },
+  bottomContainer: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(30, 30, 30, 0.9)',
+    padding: 16,
+    paddingBottom: 30,
+    borderTopWidth: 1,
+    borderTopColor: '#3A3A3A',
+  },
+  bottomButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 10,
-    padding: 15,
-    backgroundColor: '#333',
-    borderRadius: 10,
+    justifyContent: 'center',
+    paddingVertical: 14,
+    borderRadius: 8,
   },
-  resultStatLabel: {
-    color: '#fff',
-    fontSize: 16,
-    marginLeft: 10,
+  bottomButtonText: {
+    color: '#FFFFFF',
     fontWeight: 'bold',
-    width: 120,
-  },
-  resultStatValue: {
-    color: '#fff',
     fontSize: 16,
-    marginLeft: 'auto',
-  },
-  resultButtonsContainer: {
-    width: '100%',
   },
 });
 

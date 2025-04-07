@@ -9,6 +9,7 @@ import {
   Animated,
   Dimensions,
   Image,
+  useWindowDimensions,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -20,15 +21,16 @@ const DEFAULT_ACCENT_COLOR = '#FF9500';
 /**
  * LearnPathScreen - Shows details of a specific learning path
  */
-const LearnPathScreen = () => {
+const LearnPathScreen = ({ route }) => {
   const navigation = useNavigation();
-  const route = useRoute();
+  const { accent } = useTheme();
+  const { width } = useWindowDimensions();
+  const routeParams = route.params;
   
   // Safely access route.params with default values
-  const pathId = route.params?.pathId || '1';
+  const pathId = routeParams?.pathId || '1';
   
   // Get the theme accent color with fallback
-  const { accent } = useTheme() || { accent: DEFAULT_ACCENT_COLOR };
   const accentColor = accent || DEFAULT_ACCENT_COLOR;
   
   // State to track expanded sections
@@ -192,24 +194,27 @@ const LearnPathScreen = () => {
     );
   };
   
-  const { width } = Dimensions.get('window');
-  const [activeTab, setActiveTab] = useState('modules');
+  const { width: windowWidth } = Dimensions.get('window');
+  const [activeTab, setActiveTab] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const scrollViewRef = useRef(null);
   
   // Handle tab change
-  const changeTab = (tab) => {
-    setActiveTab(tab);
+  const changeTab = (index) => {
+    setActiveTab(index);
+    
+    // Scroll to corresponding section
     if (scrollViewRef.current) {
-      const index = tab === 'modules' ? 0 : 1;
-      scrollViewRef.current.scrollTo({ x: index * width, animated: true });
+      // Calculate position to scroll to
+      const sectionPosition = index * 300; // Approximate height of a section
+      scrollViewRef.current.scrollTo({ y: sectionPosition, animated: true });
     }
   };
   
   // Handle scroll end to update active tab
   const handleScrollEnd = (event) => {
     const contentOffsetX = event.nativeEvent.contentOffset.x;
-    const index = Math.round(contentOffsetX / width);
+    const index = Math.round(contentOffsetX / windowWidth);
     if (index === 0) setActiveTab('modules');
     else setActiveTab('activity');
   };
@@ -218,11 +223,11 @@ const LearnPathScreen = () => {
   const renderDotIndicators = () => {
     return (
       <View style={styles.dotsContainer}>
-        {['modules', 'activity'].map((tab, index) => {
+        {pathData.sections.map((_, index) => {
           const inputRange = [
-            (index - 1) * width,
-            index * width,
-            (index + 1) * width,
+            (index - 1) * windowWidth,
+            index * windowWidth,
+            (index + 1) * windowWidth,
           ];
           
           const scaleX = scrollX.interpolate({
@@ -239,13 +244,13 @@ const LearnPathScreen = () => {
           
           return (
             <Animated.View
-              key={tab}
+              key={index}
               style={[
                 styles.dot,
                 {
                   transform: [{ scaleX }],
                   opacity,
-                  backgroundColor: activeTab === tab ? accentColor : '#666',
+                  backgroundColor: activeTab === index ? accentColor : '#666',
                 },
               ]}
             />
@@ -399,18 +404,20 @@ const LearnPathScreen = () => {
   
   // Find the next module to continue
   const findNextModule = () => {
-    // Find first incomplete module across all sections
     for (const section of pathData.sections) {
       for (const module of section.modules) {
-        if (!module.completed) {
-          return module;
+        if (!module.completed || module.progress < 100) {
+          return { module, sectionTitle: section.title };
         }
       }
     }
     
-    // If all modules are completed, return first module
+    // If all modules are completed, return the first module
     if (pathData.sections.length > 0 && pathData.sections[0].modules.length > 0) {
-      return pathData.sections[0].modules[0];
+      return { 
+        module: pathData.sections[0].modules[0],
+        sectionTitle: pathData.sections[0].title 
+      };
     }
     
     return null;
@@ -420,7 +427,7 @@ const LearnPathScreen = () => {
   const handleContinue = () => {
     const nextModule = findNextModule();
     if (nextModule) {
-      handleModulePress(nextModule);
+      handleModulePress(nextModule.module);
     }
   };
   
@@ -456,18 +463,25 @@ const LearnPathScreen = () => {
         
         {/* Tab selector */}
         <View style={styles.tabSelector}>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'modules' && [styles.activeTab, { borderBottomColor: accentColor }]]}
-            onPress={() => changeTab('modules')}
-          >
-            <Text style={[styles.tabText, activeTab === 'modules' && { color: accentColor }]}>Modules</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.tab, activeTab === 'activity' && [styles.activeTab, { borderBottomColor: accentColor }]]}
-            onPress={() => changeTab('activity')}
-          >
-            <Text style={[styles.tabText, activeTab === 'activity' && { color: accentColor }]}>Activity</Text>
-          </TouchableOpacity>
+          {pathData.sections.map((section, index) => (
+            <TouchableOpacity 
+              key={section.id}
+              style={[
+                styles.tab, 
+                activeTab === index && [styles.activeTab, { borderBottomColor: accentColor }]
+              ]}
+              onPress={() => changeTab(index)}
+            >
+              <Text 
+                style={[
+                  styles.tabText, 
+                  activeTab === index && [styles.activeTabText, { color: accentColor }]
+                ]}
+              >
+                {section.title}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
         
         {/* Dot indicators */}
@@ -792,6 +806,9 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
     fontWeight: '500',
+  },
+  activeTabText: {
+    fontWeight: 'bold',
   },
   scrollViewHorizontal: {
     flex: 1,

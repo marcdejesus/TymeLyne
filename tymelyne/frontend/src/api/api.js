@@ -12,11 +12,15 @@ const API_URLS = {
   androidEmulator: 'http://10.0.2.2:8000',  // Android emulator
   iosSimulator: 'http://localhost:8000',     // iOS simulator
   localDevice: `http://${LOCAL_IP}:8000`,    // Real device using local network
-  expoDevelopment: `exp://${LOCAL_IP}:8081`  // Alternative Expo format
+  expoDevelopment: `exp://${LOCAL_IP}:8081`, // Alternative Expo format
+  docker: 'http://backend:8000'              // Docker container service name
 };
 
 // Choose which API URL to use - TRY SWITCHING TO ANOTHER IF ONE DOESN'T WORK
-const API_URL = API_URLS.localDevice; // Using local device over WiFi network
+// Read environment variable or default to localDevice
+const API_URL = process.env.REACT_APP_API_URL 
+  ? API_URLS[process.env.REACT_APP_API_URL] 
+  : API_URLS.localDevice;
 
 console.log('API_URL set to:', API_URL);
 

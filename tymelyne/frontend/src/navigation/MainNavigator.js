@@ -27,6 +27,17 @@ import QuizActivityScreen from '../screens/learn/QuizActivityScreen';
 import MatchingActivityScreen from '../screens/learn/MatchingActivityScreen';
 import WritingActivityScreen from '../screens/learn/WritingActivityScreen';
 
+// Import our new screens
+import CourseOverviewScreen from '../screens/learn/CourseOverviewScreen';
+import LessonScreen from '../screens/learn/LessonScreen';
+import ConceptCheckScreen from '../screens/learn/ConceptCheckScreen';
+import PracticeActivityScreen from '../screens/learn/PracticeActivityScreen';
+import NewQuizScreen from '../screens/learn/NewQuizScreen';
+import ChallengeScreen from '../screens/learn/ChallengeScreen';
+import CourseProgressScreen from '../screens/learn/CourseProgressScreen';
+import ReflectionScreen from '../screens/learn/ReflectionScreen';
+import CourseCreatorScreen from '../screens/learn/CourseCreatorScreen';
+
 // Create navigation stacks
 const Tab = createBottomTabNavigator();
 const HomeStack = createStackNavigator();
@@ -254,6 +265,84 @@ const LearnStackNavigator = () => {
               </TouchableOpacity>
             ),
           })}
+        />
+        
+        <LearnStack.Screen 
+          name="CourseCreator" 
+          component={CourseCreatorScreen}
+          options={({ navigation }) => ({
+            headerTitle: 'Create Course',
+            headerLeft: () => (
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons name="arrow-back" size={28} color={accent} />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <LearnStack.Screen 
+          name="CourseOverview" 
+          component={CourseOverviewScreen}
+          options={({ route, navigation }) => ({
+            headerTitle: route.params?.title || 'Course Overview',
+            headerLeft: () => (
+              <TouchableOpacity 
+                style={styles.backButton}
+                onPress={() => {
+                  navigation.goBack();
+                }}
+              >
+                <Ionicons name="arrow-back" size={28} color={accent} />
+              </TouchableOpacity>
+            ),
+          })}
+        />
+        
+        <LearnStack.Screen 
+          name="Lesson" 
+          component={LessonScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="ConceptCheck" 
+          component={ConceptCheckScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="PracticeActivity" 
+          component={PracticeActivityScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="NewQuiz" 
+          component={NewQuizScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="Challenge" 
+          component={ChallengeScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="CourseProgress" 
+          component={CourseProgressScreen}
+          options={{ headerShown: false }}
+        />
+        
+        <LearnStack.Screen 
+          name="Reflection" 
+          component={ReflectionScreen}
+          options={{ headerShown: false }}
         />
         
         <LearnStack.Screen 

@@ -1,12 +1,13 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  ScrollView, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
   SafeAreaView,
-  StatusBar 
+  StatusBar,
+  Image
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
@@ -14,125 +15,168 @@ import { useTheme } from '../../context/ThemeContext';
 /**
  * AchievementDetailScreen - Displays detailed information about an achievement
  * 
- * @param {Object} route - Navigation route containing the achievement data
- * @param {Object} navigation - Navigation object for navigating back
+ * @param {Object} route - Route object containing the achievement data
+ * @param {Object} navigation - Navigation object for screen navigation
  */
 const AchievementDetailScreen = ({ route, navigation }) => {
   const { achievement } = route.params;
   const { accent, current } = useTheme();
   
-  // Format the date earned (if available)
-  const formattedDate = achievement.earned_at 
-    ? new Date(achievement.earned_at).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      })
-    : 'Not earned yet';
-
+  // Format the date
+  const formatDate = (dateString) => {
+    if (!dateString) return 'Not earned yet';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+  
+  // Calculate progress percentage
+  const progressPercentage = achievement.progress || 0;
+  const completed = achievement.earned_at !== null;
+  
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: current.background }]}>
+    <SafeAreaView style={[styles.safeArea, { backgroundColor: current.background }]}>
       <StatusBar barStyle="light-content" />
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.backButton}
           onPress={() => navigation.goBack()}
         >
           <Ionicons name="arrow-back" size={24} color={accent} />
         </TouchableOpacity>
-        <Text style={[styles.headerTitle, { color: current.text }]}>Achievement Details</Text>
+        <Text style={[styles.headerTitle, { color: current.text }]}>Achievement</Text>
         <View style={styles.placeholder} />
       </View>
       
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.content}>
-        {/* Achievement Icon */}
-        <View style={[
-          styles.iconContainer,
-          { 
-            backgroundColor: `${accent}20`,
-            borderColor: accent 
-          }
-        ]}>
-          <Ionicons 
-            name={achievement.icon || 'trophy'} 
-            size={64} 
-            color={accent} 
-          />
-        </View>
-        
-        {/* Achievement Title */}
-        <Text style={[styles.title, { color: current.text }]}>
-          {achievement.name}
-        </Text>
-        
-        {/* Achievement Category */}
-        <View style={[styles.categoryContainer, { backgroundColor: `${accent}20` }]}>
-          <Text style={[styles.category, { color: accent }]}>
-            {achievement.category || 'Achievement'}
-          </Text>
-        </View>
-        
-        {/* Achievement Description */}
-        <View style={[styles.sectionContainer, { backgroundColor: current.card }]}>
-          <Text style={[styles.sectionTitle, { color: current.text }]}>Description</Text>
-          <Text style={[styles.description, { color: current.textSecondary }]}>
-            {achievement.description || 'No description available'}
-          </Text>
-        </View>
-        
-        {/* Achievement Stats */}
-        <View style={[styles.sectionContainer, { backgroundColor: current.card }]}>
-          <Text style={[styles.sectionTitle, { color: current.text }]}>Details</Text>
+      <ScrollView style={styles.scrollView}>
+        {/* Achievement Card */}
+        <View style={[styles.achievementCard, { backgroundColor: current.card }]}>
+          {/* Icon */}
+          <View 
+            style={[
+              styles.iconContainer, 
+              { 
+                backgroundColor: completed ? accent : current.cardSecondary,
+                opacity: completed ? 1 : 0.7
+              }
+            ]}
+          >
+            <Ionicons 
+              name={achievement.icon || 'trophy'} 
+              size={50} 
+              color={completed ? '#fff' : current.textSecondary} 
+            />
+          </View>
           
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: current.textSecondary }]}>Status</Text>
-            <View style={styles.statValue}>
-              {achievement.earned_at ? (
-                <View style={styles.statusContainer}>
-                  <View style={[styles.statusDot, { backgroundColor: accent }]} />
-                  <Text style={[styles.statusText, { color: accent }]}>Completed</Text>
-                </View>
-              ) : (
-                <View style={styles.statusContainer}>
-                  <View style={[styles.statusDot, { backgroundColor: '#888' }]} />
-                  <Text style={[styles.statusText, { color: '#888' }]}>Incomplete</Text>
-                </View>
-              )}
+          {/* Title and Status */}
+          <Text style={[styles.achievementTitle, { color: current.text }]}>
+            {achievement.name}
+          </Text>
+          
+          <View style={styles.statusContainer}>
+            <View 
+              style={[
+                styles.statusBadge, 
+                { backgroundColor: completed ? accent + '20' : current.cardSecondary }
+              ]}
+            >
+              <Text style={[styles.statusText, { color: completed ? accent : current.textSecondary }]}>
+                {completed ? 'COMPLETED' : 'IN PROGRESS'}
+              </Text>
             </View>
           </View>
           
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: current.textSecondary }]}>XP Reward</Text>
-            <Text style={[styles.statValue, { color: current.text }]}>
-              {achievement.xp_reward || 0} XP
+          {/* Date Earned */}
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailLabel, { color: current.textSecondary }]}>
+              {completed ? 'Earned on' : 'Status'}
+            </Text>
+            <Text style={[styles.detailValue, { color: current.text }]}>
+              {completed 
+                ? formatDate(achievement.earned_at) 
+                : `${progressPercentage}% complete`
+              }
             </Text>
           </View>
           
-          <View style={styles.statRow}>
-            <Text style={[styles.statLabel, { color: current.textSecondary }]}>Date Earned</Text>
-            <Text style={[styles.statValue, { color: current.text }]}>
-              {formattedDate}
+          {/* XP Reward */}
+          <View style={styles.detailItem}>
+            <Text style={[styles.detailLabel, { color: current.textSecondary }]}>
+              XP Reward
+            </Text>
+            <Text style={[styles.detailValue, { color: current.text }]}>
+              {achievement.xp_reward} XP
             </Text>
           </View>
           
-          {achievement.progress !== undefined && (
-            <View style={styles.statRow}>
-              <Text style={[styles.statLabel, { color: current.textSecondary }]}>Progress</Text>
-              <Text style={[styles.statValue, { color: current.text }]}>
-                {`${achievement.progress}%`}
-              </Text>
+          {/* Progress Bar (if not completed) */}
+          {!completed && (
+            <View style={styles.progressContainer}>
+              <View style={[styles.progressBar, { backgroundColor: current.border }]}>
+                <View 
+                  style={[
+                    styles.progressFill, 
+                    { 
+                      backgroundColor: accent,
+                      width: `${progressPercentage}%` 
+                    }
+                  ]}
+                />
+              </View>
             </View>
           )}
         </View>
+        
+        {/* Description Section */}
+        <View style={[styles.section, { backgroundColor: current.card }]}>
+          <Text style={[styles.sectionTitle, { color: current.text }]}>Description</Text>
+          <Text style={[styles.description, { color: current.textSecondary }]}>
+            {achievement.description || 'No description available.'}
+          </Text>
+        </View>
+        
+        {/* Criteria Section */}
+        <View style={[styles.section, { backgroundColor: current.card }]}>
+          <Text style={[styles.sectionTitle, { color: current.text }]}>How to Earn</Text>
+          <Text style={[styles.description, { color: current.textSecondary }]}>
+            {achievement.criteria || achievement.description || 'Complete the required tasks to earn this achievement.'}
+          </Text>
+        </View>
+        
+        {/* Category Badge */}
+        <View style={[styles.section, { backgroundColor: current.card }]}>
+          <Text style={[styles.sectionTitle, { color: current.text }]}>Category</Text>
+          <View style={styles.categoryContainer}>
+            <View style={[styles.categoryBadge, { backgroundColor: accent + '30' }]}>
+              <Text style={[styles.categoryText, { color: accent }]}>
+                {achievement.category || 'General'}
+              </Text>
+            </View>
+          </View>
+        </View>
+        
+        {/* Share Button */}
+        <TouchableOpacity 
+          style={[styles.shareButton, { backgroundColor: completed ? accent : current.border }]}
+          disabled={!completed}
+        >
+          <Ionicons name="share-social" size={20} color="#fff" />
+          <Text style={styles.shareText}>
+            {completed ? 'Share Achievement' : 'Earn to Share'}
+          </Text>
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
   },
   header: {
@@ -140,9 +184,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
+    paddingVertical: 10,
   },
   backButton: {
     padding: 8,
@@ -156,81 +198,116 @@ const styles = StyleSheet.create({
   },
   scrollView: {
     flex: 1,
+    padding: 16,
   },
-  content: {
-    paddingBottom: 32,
+  achievementCard: {
+    borderRadius: 12,
+    padding: 20,
     alignItems: 'center',
+    marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   iconContainer: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 90,
+    height: 90,
+    borderRadius: 45,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    marginTop: 32,
     marginBottom: 16,
   },
-  title: {
-    fontSize: 24,
+  achievementTitle: {
+    fontSize: 22,
     fontWeight: 'bold',
     textAlign: 'center',
-    marginHorizontal: 24,
+    marginBottom: 10,
   },
-  categoryContainer: {
+  statusContainer: {
+    marginBottom: 20,
+  },
+  statusBadge: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginTop: 12,
-    marginBottom: 24,
   },
-  category: {
+  statusText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  detailItem: {
+    width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
+  detailLabel: {
+    fontSize: 14,
+  },
+  detailValue: {
     fontSize: 14,
     fontWeight: '600',
   },
-  sectionContainer: {
+  progressContainer: {
     width: '100%',
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    marginTop: 8,
+  },
+  progressBar: {
+    height: 8,
+    width: '100%',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  section: {
+    borderRadius: 12,
+    padding: 16,
     marginBottom: 16,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 12,
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
   },
   description: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: 14,
+    lineHeight: 22,
   },
-  statRow: {
+  categoryContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#333',
   },
-  statLabel: {
-    fontSize: 16,
+  categoryBadge: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
   },
-  statValue: {
-    fontSize: 16,
-    fontWeight: '500',
+  categoryText: {
+    fontSize: 14,
+    fontWeight: '600',
   },
-  statusContainer: {
+  shareButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 16,
+    borderRadius: 12,
+    marginBottom: 32,
   },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusText: {
+  shareText: {
+    color: '#fff',
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    marginLeft: 8,
   },
 });
 

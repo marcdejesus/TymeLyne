@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { TouchableOpacity, StyleSheet, View, Text, Modal, useWindowDimensions } from 'react-native';
+import { TouchableOpacity, StyleSheet, View, Text, Modal, useWindowDimensions, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation, CommonActions } from '@react-navigation/native';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 
 // Import screens
 import HomeScreen from '../screens/main/HomeScreen';
@@ -65,6 +66,7 @@ const HeaderLeft = ({ openMenu }) => {
 
 const HeaderRight = () => {
   const navigation = useNavigation();
+  const { profile } = useAuth();
   
   return (
     <TouchableOpacity 
@@ -73,7 +75,14 @@ const HeaderRight = () => {
         navigation.navigate('Profile');
       }}
     >
-      <View style={styles.profileCircle} />
+      <Image
+        source={
+          profile && profile.avatar 
+            ? { uri: profile.avatar } 
+            : require('../assets/images/default-avatar.png')
+        }
+        style={styles.profileCircle}
+      />
     </TouchableOpacity>
   );
 };
@@ -454,62 +463,65 @@ const ProfileStackNavigator = () => {
   const { accent } = useTheme();
   
   return (
-    <>
-      <ProfileStack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#1E1E1E',
-            elevation: 0,
-            shadowOpacity: 0,
-          },
-          headerTintColor: '#fff',
-          headerTitleStyle: {
-            fontWeight: 'bold',
-            fontSize: 24,
-          },
+    <ProfileStack.Navigator
+      screenOptions={{
+        headerShown: true,
+        headerStyle: {
+          backgroundColor: '#1E1E1E',
+          shadowColor: 'transparent',
+          elevation: 0,
+        },
+        headerTintColor: '#FFFFFF',
+        headerTitleStyle: {
+          fontWeight: 'bold',
+        },
+      }}
+    >
+      <ProfileStack.Screen
+        name="ProfileMain"
+        component={ProfileScreen}
+        options={{
+          headerShown: false,
         }}
-      >
-        <ProfileStack.Screen 
-          name="ProfileMain" 
-          component={ProfileScreen}
-          options={() => ({
-            headerShown: false, // Our new profile screen has its own header
-          })}
-        />
-        <ProfileStack.Screen 
-          name="AchievementDetail" 
-          component={AchievementDetailScreen}
-          options={{
-            headerShown: false,
-            presentation: 'modal',
-            cardStyle: { backgroundColor: 'transparent' },
-          }}
-        />
-        <ProfileStack.Screen 
-          name="Settings" 
-          component={SettingsScreen}
-          options={{ 
-            headerTitle: 'Settings',
-            headerLeft: () => (
-              <TouchableOpacity 
-                style={styles.backButton}
-                onPress={() => {
-                  navigation.goBack();
-                }}
-              >
-                <Ionicons name="arrow-back" size={28} color={accent} />
-              </TouchableOpacity>
-            ),
-          }}
-        />
-      </ProfileStack.Navigator>
-      
-      <MenuModal 
-        visible={menuVisible}
-        closeMenu={() => setMenuVisible(false)}
-        rootNavigation={navigation}
       />
-    </>
+      <ProfileStack.Screen
+        name="AchievementDetail"
+        component={AchievementDetailScreen}
+        options={{
+          presentation: 'modal',
+          headerShown: false,
+        }}
+      />
+      <ProfileStack.Screen
+        name="ProfileEdit"
+        component={ProfileEditScreen}
+        options={({ navigation }) => ({
+          headerTitle: 'Edit Profile',
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{ marginLeft: 16 }}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+      <ProfileStack.Screen
+        name="Settings"
+        component={SettingsScreen}
+        options={({ navigation }) => ({
+          headerLeft: () => (
+            <TouchableOpacity
+              style={{ marginLeft: 16 }}
+              onPress={() => navigation.goBack()}
+            >
+              <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
+            </TouchableOpacity>
+          ),
+        })}
+      />
+    </ProfileStack.Navigator>
   );
 };
 

@@ -4,97 +4,107 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
 
 /**
- * AchievementCard - Displays a single achievement in a grid
+ * AchievementCard - Tappable card showing an achievement with icon and title
  * 
- * @param {Object} achievement - The achievement data
- * @param {Function} onPress - Function to call when pressed
- * @param {Boolean} completed - Whether this achievement has been earned
+ * @param {Object} achievement - Achievement data object
+ * @param {Boolean} completed - Whether the achievement has been completed
+ * @param {Function} onPress - Function to call when card is pressed
  */
-const AchievementCard = ({ achievement, onPress, completed = false }) => {
+const AchievementCard = ({ achievement, completed = false, onPress }) => {
   const { accent, current } = useTheme();
   
-  // Default icon if none provided
-  const iconName = achievement?.icon || 'trophy';
+  // Determine icon name (with fallback)
+  const iconName = achievement.icon || 'trophy';
   
   return (
-    <TouchableOpacity 
-      style={[
-        styles.container,
-        { backgroundColor: current.card }
-      ]}
-      onPress={onPress}
+    <TouchableOpacity
+      style={styles.container}
+      onPress={() => onPress(achievement)}
       activeOpacity={0.7}
     >
-      <View style={[
-        styles.iconContainer,
-        { 
-          backgroundColor: completed ? `${accent}40` : '#44444440',
-          borderColor: completed ? accent : '#666666'
-        }
-      ]}>
-        <Ionicons 
-          name={iconName} 
-          size={32} 
-          color={completed ? accent : '#888888'} 
-        />
-      </View>
-      
-      <Text 
+      <View 
         style={[
-          styles.title,
-          { color: current.text }
+          styles.card, 
+          { 
+            backgroundColor: completed ? accent + '10' : current.cardSecondary,
+            borderColor: completed ? accent + '40' : 'transparent',
+          }
         ]}
-        numberOfLines={2}
       >
-        {achievement?.name || 'Achievement'}
-      </Text>
-      
-      {completed && (
-        <View style={[styles.completedBadge, { backgroundColor: accent }]}>
-          <Ionicons name="checkmark" size={12} color="#FFFFFF" />
+        {/* Icon */}
+        <View 
+          style={[
+            styles.iconContainer, 
+            { 
+              backgroundColor: completed ? accent : current.border,
+              opacity: completed ? 1 : 0.6 
+            }
+          ]}
+        >
+          <Ionicons 
+            name={iconName} 
+            size={22} 
+            color={completed ? 'white' : current.textSecondary} 
+          />
         </View>
-      )}
+        
+        {/* Title */}
+        <Text 
+          style={[
+            styles.title,
+            { color: completed ? current.text : current.textSecondary }
+          ]}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {achievement.name}
+        </Text>
+        
+        {/* Completed Badge */}
+        {completed && (
+          <View style={[styles.completedBadge, { backgroundColor: accent }]}>
+            <Ionicons name="checkmark" size={10} color="white" />
+          </View>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    width: '100%',
-    aspectRatio: 1,
+    width: '33.33%',
+    padding: 6,
+  },
+  card: {
     borderRadius: 12,
     padding: 12,
-    justifyContent: 'space-between',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    height: 110,
+    borderWidth: 1,
   },
   iconContainer: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    alignSelf: 'center',
-    marginTop: 10,
+    marginBottom: 8,
   },
   title: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '500',
     textAlign: 'center',
-    marginTop: 10,
+    paddingHorizontal: 2,
   },
   completedBadge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    width: 20,
-    height: 20,
-    borderRadius: 10,
+    top: -4,
+    right: -4,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     justifyContent: 'center',
     alignItems: 'center',
   },

@@ -6,6 +6,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -16,7 +17,7 @@ import { useAuth } from '../../context/AuthContext';
  */
 const MenuScreen = () => {
   const navigation = useNavigation();
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   
   // Navigate to a screen
   const navigateTo = (screen) => {
@@ -96,9 +97,16 @@ const MenuScreen = () => {
         {/* User Info */}
         <View style={styles.userSection}>
           <View style={styles.userInfo}>
-            <View style={styles.avatar} />
+            <Image
+              source={
+                profile && profile.avatar 
+                  ? { uri: profile.avatar } 
+                  : require('../../assets/images/default-avatar.png')
+              }
+              style={styles.avatar}
+            />
             <View>
-              <Text style={styles.userName}>{user?.name || 'Full Name'}</Text>
+              <Text style={styles.userName}>{user?.first_name ? `${user.first_name} ${user.last_name || ''}` : 'Full Name'}</Text>
               <Text style={styles.userTag}>OG</Text>
             </View>
           </View>
@@ -145,7 +153,6 @@ const styles = StyleSheet.create({
     width: 60,
     height: 60,
     borderRadius: 30,
-    backgroundColor: '#DDDDDD',
     marginRight: 15,
   },
   userName: {

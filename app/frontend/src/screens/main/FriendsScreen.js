@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   FlatList,
   TextInput,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
@@ -97,7 +98,10 @@ const FriendsScreen = () => {
         style={styles.friendInfo}
         onPress={() => handleViewProfile(item.id)}
       >
-        <View style={styles.avatar} />
+        <Image 
+          source={item.avatar ? { uri: item.avatar } : require('../../assets/images/default-avatar.png')}
+          style={styles.avatar}
+        />
         <View style={styles.friendDetails}>
           <Text style={styles.friendName}>{item.name}</Text>
           <Text style={styles.friendUsername}>@{item.username}</Text>
@@ -123,7 +127,10 @@ const FriendsScreen = () => {
         style={styles.friendInfo}
         onPress={() => handleViewProfile(item.id)}
       >
-        <View style={styles.avatar} />
+        <Image 
+          source={item.avatar ? { uri: item.avatar } : require('../../assets/images/default-avatar.png')}
+          style={styles.avatar}
+        />
         <View style={styles.friendDetails}>
           <Text style={styles.friendName}>{item.name}</Text>
           <Text style={styles.friendUsername}>@{item.username}</Text>
@@ -154,7 +161,10 @@ const FriendsScreen = () => {
         style={styles.friendInfo}
         onPress={() => handleViewProfile(item.id)}
       >
-        <View style={styles.avatar} />
+        <Image 
+          source={item.avatar ? { uri: item.avatar } : require('../../assets/images/default-avatar.png')}
+          style={styles.avatar}
+        />
         <View style={styles.friendDetails}>
           <Text style={styles.friendName}>{item.name}</Text>
           <Text style={styles.friendUsername}>@{item.username}</Text>

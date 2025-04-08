@@ -11,6 +11,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../context/ThemeContext';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * Home Screen - Main screen after authentication
@@ -18,11 +19,11 @@ import { useTheme } from '../../context/ThemeContext';
 const HomeScreen = ({ navigation }) => {
   // Get accent color from theme context
   const { accent } = useTheme();
+  // Get user data from auth context
+  const { user, profile } = useAuth();
   
-  // Mock user data instead of using Auth context
-  const user = {
-    name: 'John Doe',
-    username: 'johndoe',
+  // Mock user data for fields not in auth context
+  const userData = {
     coins: 120,
     xp: 500,
     level: 5
@@ -83,7 +84,14 @@ const HomeScreen = ({ navigation }) => {
         {/* Post Creation Area */}
         <View style={styles.createPostCard}>
           <View style={styles.createPostHeader}>
-            <View style={styles.avatarCircle} />
+            <Image
+              source={
+                profile && profile.avatar 
+                  ? { uri: profile.avatar } 
+                  : require('../../assets/images/default-avatar.png')
+              }
+              style={styles.avatarCircle}
+            />
             <TextInput
               style={styles.postInput}
               placeholder="What's on your mind?"
@@ -118,7 +126,14 @@ const HomeScreen = ({ navigation }) => {
           <View key={post.id} style={styles.postCard}>
             <View style={styles.postHeader}>
               <View style={styles.postAuthor}>
-                <View style={styles.avatarCircle} />
+                <Image
+                  source={
+                    post.author.avatar 
+                      ? { uri: post.author.avatar } 
+                      : require('../../assets/images/default-avatar.png')
+                  }
+                  style={styles.avatarCircle}
+                />
                 <View style={styles.authorInfo}>
                   <Text style={styles.authorName}>{post.author.name}</Text>
                   <Text style={styles.authorUsername}>@{post.author.username} | {post.timeAgo}</Text>

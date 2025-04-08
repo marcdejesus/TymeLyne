@@ -286,3 +286,74 @@ class Certificate(models.Model):
         
     def __str__(self):
         return f"{self.user.username} - {self.course.title} Certificate"
+
+
+class Task(models.Model):
+    """
+    Task model for user tasks and assignments
+    """
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='tasks')
+    title = models.CharField(max_length=200)
+    description = models.TextField()
+    
+    TASK_TYPE_CHOICES = [
+        ('course', 'Course Related'),
+        ('lesson', 'Lesson Related'),
+        ('activity', 'Activity Related'),
+        ('profile', 'Profile Related'),
+        ('streak', 'Streak Related'),
+        ('goal', 'Goal Related'),
+        ('onboarding', 'Onboarding'),
+        ('other', 'Other'),
+    ]
+    task_type = models.CharField(max_length=20, choices=TASK_TYPE_CHOICES, default='other')
+    
+    PRIORITY_CHOICES = [
+        ('low', 'Low'),
+        ('medium', 'Medium'),
+        ('high', 'High'),
+    ]
+    priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
+    
+    due_date = models.DateTimeField(blank=True, null=True)
+    
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('skipped', 'Skipped'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
+    
+    xp_reward = models.PositiveIntegerField(default=10)
+    
+    # References to related objects (if applicable)
+    related_object_id = models.UUIDField(blank=True, null=True)
+    related_object_type = models.CharField(max_length=20, blank=True, null=True)
+    
+    completed_at = models.DateTimeField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['-priority', 'due_date', '-created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.title} ({self.status})"
+    
+    def complete(self):
+        """Mark task as completed and award XP"""
+        from django.utils import timezone
+        
+        if self.status == 'completed':
+            return False
+        
+        self.status = 'completed'
+        self.completed_at = timezone.now()
+        self.save()
+        
+        # Award XP
+        profile = self.user.profile
+        profile.add_xp(self.xp_reward)
+        
+        return True

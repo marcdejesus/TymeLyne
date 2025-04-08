@@ -97,9 +97,11 @@ const LeaderboardsScreen = () => {
       </View>
       
       <View style={styles.avatarContainer}>
-        <View style={styles.avatar}>
-          <Text style={styles.avatarText}>{item.name.charAt(0)}</Text>
-        </View>
+        <Image
+          source={item.avatar ? { uri: item.avatar } : require('../../assets/images/default-avatar.png')}
+          style={styles.avatar}
+          defaultSource={require('../../assets/images/default-avatar.png')}
+        />
       </View>
       
       <View style={styles.userInfo}>
@@ -127,9 +129,11 @@ const LeaderboardsScreen = () => {
       <View style={styles.trophyContainer}>
         {leaderboardData[activeLeaderboard].slice(0, 3).map((user, index) => (
           <View key={user.id} style={[styles.trophyItem, styles[`trophy${index + 1}`]]}>
-            <View style={styles.trophyAvatar}>
-              <Text style={styles.trophyAvatarText}>{user.name.charAt(0)}</Text>
-            </View>
+            <Image
+              source={user.avatar ? { uri: user.avatar } : require('../../assets/images/default-avatar.png')}
+              style={styles.trophyAvatar}
+              defaultSource={require('../../assets/images/default-avatar.png')}
+            />
             <Ionicons 
               name="trophy" 
               size={24} 

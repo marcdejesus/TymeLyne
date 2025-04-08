@@ -13,16 +13,16 @@ const determineApiUrl = () => {
   // Get API URL based on environment
   if (isDocker) {
     // When running in Docker, use the service name
-    return 'http://backend:8000/api';
+    return 'http://backend:8000/';
   } else if (Platform.OS === 'android') {
     // Android emulator needs special IP for localhost
-    return 'http://10.0.2.2:8000/api';
+    return 'http://10.0.2.2:8000/';
   } else if (Platform.OS === 'ios') {
     // iOS simulator can use localhost
-    return 'http://localhost:8000/api';
+    return 'http://localhost:8000/';
   } else {
     // Web or fallback
-    return 'http://localhost:8000/api';
+    return 'http://localhost:8000/';
   }
 };
 
@@ -106,7 +106,7 @@ api.interceptors.response.use(
         console.log('Attempting to refresh token...');
         
         // Use a direct axios instance instead of our api instance to avoid infinite loop
-        const response = await axios.post(`${BASE_URL}/users/auth/refresh/`, {
+        const response = await axios.post(`${BASE_URL}api/users/auth/refresh/`, {
           refresh: refreshToken
         });
         
@@ -142,7 +142,7 @@ api.interceptors.response.use(
 export const authAPI = {
   login: async (username, password) => {
     try {
-      const response = await axios.post(`${BASE_URL}/users/auth/login/`, { 
+      const response = await axios.post(`${BASE_URL}api/users/auth/login/`, { 
         username, 
         password 
       });
@@ -155,7 +155,7 @@ export const authAPI = {
   
   register: async (userData) => {
     try {
-      const response = await axios.post(`${BASE_URL}/users/auth/register/`, userData);
+      const response = await axios.post(`${BASE_URL}api/users/auth/register/`, userData);
       return response;
     } catch (error) {
       console.error('Register error:', error.response?.data || error.message);
@@ -165,7 +165,7 @@ export const authAPI = {
   
   refreshToken: async (refreshToken) => {
     try {
-      const response = await axios.post(`${BASE_URL}/users/auth/refresh/`, { 
+      const response = await axios.post(`${BASE_URL}api/users/auth/refresh/`, { 
         refresh: refreshToken 
       });
       return response;
@@ -179,7 +179,7 @@ export const authAPI = {
     try {
       const refreshToken = await AsyncStorage.getItem('refresh_token');
       if (refreshToken) {
-        await axios.post(`${BASE_URL}/users/auth/logout/`, { refresh: refreshToken });
+        await axios.post(`${BASE_URL}api/users/auth/logout/`, { refresh: refreshToken });
       }
     } catch (error) {
       console.error('Logout error:', error.response?.data || error.message);
@@ -190,17 +190,17 @@ export const authAPI = {
   },
   
   requestPasswordReset: async (data) => {
-    const response = await axios.post(`${BASE_URL}/users/auth/password-reset/`, data);
+    const response = await axios.post(`${BASE_URL}api/users/auth/password-reset/`, data);
     return response.data;
   },
   
   confirmPasswordReset: async (data) => {
-    const response = await axios.post(`${BASE_URL}/users/auth/password-reset/confirm/`, data);
+    const response = await axios.post(`${BASE_URL}api/users/auth/password-reset/confirm/`, data);
     return response.data;
   },
   
   verifyEmail: async (data) => {
-    const response = await axios.post(`${BASE_URL}/users/auth/email/verify/`, data);
+    const response = await axios.post(`${BASE_URL}api/users/auth/email/verify/`, data);
     return response.data;
   },
 };
@@ -209,7 +209,7 @@ export const authAPI = {
 export const userAPI = {
   getCurrentUser: async () => {
     try {
-      const response = await api.get('/users/me/');
+      const response = await api.get('api/users/users/me/');
       return response.data;
     } catch (error) {
       console.error('Get current user error:', error.response?.data || error.message);
@@ -219,7 +219,7 @@ export const userAPI = {
   
   updateProfile: async (profileData) => {
     try {
-      const response = await api.put('/users/me/update/', { profile: profileData });
+      const response = await api.put('api/users/users/me/update/', { profile: profileData });
       return response.data;
     } catch (error) {
       console.error('Update profile error:', error.response?.data || error.message);
@@ -228,26 +228,51 @@ export const userAPI = {
   },
   
   getUserDashboard: () => 
-    api.get('/users/dashboard/'),
+    api.get('api/users/users/dashboard/'),
   
   uploadProfilePicture: async (imageUri) => {
-    const formData = new FormData();
-    const filename = imageUri.split('/').pop();
-    const match = /\.(\w+)$/.exec(filename);
-    const type = match ? `image/${match[1]}` : 'image';
-    
-    formData.append('avatar', {
-      uri: imageUri,
-      name: filename,
-      type,
-    });
-    
-    const response = await api.post('/users/me/avatar/', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    });
-    return response.data;
+    try {
+      // Create FormData object
+      const formData = new FormData();
+      const filename = imageUri.split('/').pop();
+      const match = /\.(\w+)$/.exec(filename);
+      const type = match ? `image/${match[1]}` : 'image';
+      
+      // Try the direct 'avatar' approach
+      const fileObj = {
+        uri: imageUri,
+        name: filename,
+        type,
+      };
+      
+      // Log the full request details
+      console.log('Uploading profile picture with URI:', imageUri);
+      console.log('FormData file object:', fileObj);
+      
+      // Add the file to formData
+      formData.append('avatar', fileObj);
+      
+      // Log the FormData object
+      for (const pair of formData._parts) {
+        console.log(`FormData part - ${pair[0]}:`, pair[1]);
+      }
+      
+      // Make the API request
+      const response = await api.post('api/users/users/me/update/', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+          'Accept': 'application/json',
+        },
+      });
+      
+      console.log('Profile picture upload response:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Upload profile picture error:',  
+        error.response?.status,
+        error.response?.data || error.message);
+      throw error;
+    }
   },
 };
 
@@ -262,8 +287,15 @@ export const courseAPI = {
   enrollInCourse: (courseId) => 
     api.post(`/users/courses/${courseId}/enroll/`),
   
-  getUserCourseProgress: () => 
-    api.get('/users/progress/courses/'),
+  getUserCourseProgress: async () => {
+    try {
+      const response = await api.get('api/users/progress/courses/');
+      return response;
+    } catch (error) {
+      console.error('Get course progress error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 // Activity API
@@ -280,8 +312,15 @@ export const achievementAPI = {
   getAllAchievements: () => 
     api.get('/users/achievements/'),
   
-  getUserAchievements: () => 
-    api.get('/users/user-achievements/'),
+  getUserAchievements: async () => {
+    try {
+      const response = await api.get('api/users/user-achievements/');
+      return response;
+    } catch (error) {
+      console.error('Get achievements error:', error.response?.data || error.message);
+      throw error;
+    }
+  },
 };
 
 // Certificate API

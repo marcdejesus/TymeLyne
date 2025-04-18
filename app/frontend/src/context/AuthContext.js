@@ -206,15 +206,24 @@ export const AuthProvider = ({ children }) => {
     setLoading(true);
     
     try {
-      // Call logout API
+      // Call logout API to clear tokens on client side
       await authAPI.logout();
-    } catch (error) {
-      console.log('Logout error:', error);
-    } finally {
-      // Clear storage and state
-      await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user']);
+      
+      // Ensure state is cleared
       setUser(null);
       setProfile(null);
+      
+      // Return success
+      return true;
+    } catch (error) {
+      console.log('Logout error:', error);
+      
+      // Force clear state even if API fails
+      setUser(null);
+      setProfile(null);
+      
+      return false;
+    } finally {
       setLoading(false);
     }
   };

@@ -18,11 +18,11 @@ const determineApiUrl = () => {
     // Android emulator needs special IP for localhost
     return 'http://10.0.2.2:8000/';
   } else if (Platform.OS === 'ios') {
-    // iOS simulator can use localhost
-    return 'http://localhost:8000/';
+    // iOS simulator needs to use the host IP address
+    return 'http://107.161.135.161:8000/';
   } else {
     // Web or fallback
-    return 'http://localhost:8000/';
+    return 'http://107.161.135.161:8000/';
   }
 };
 
@@ -39,7 +39,7 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
   // Add timeout to prevent hanging requests
-  timeout: 10000,
+  timeout: 30000,
 });
 
 // Add request interceptor to inject the auth token
@@ -177,15 +177,23 @@ export const authAPI = {
   
   logout: async () => {
     try {
+      // Use the new backend endpoint
       const refreshToken = await AsyncStorage.getItem('refresh_token');
       if (refreshToken) {
-        await axios.post(`${BASE_URL}api/users/auth/logout/`, { refresh: refreshToken });
+        try {
+          await axios.post(`${BASE_URL}api/users/auth/logout/`, { refresh: refreshToken });
+          console.log('Server logout successful');
+        } catch (serverError) {
+          // If server logout fails, continue with local logout
+          console.error('Server logout failed:', serverError.message);
+        }
       }
-    } catch (error) {
-      console.error('Logout error:', error.response?.data || error.message);
-    } finally {
-      // Always clear storage on logout, even if API call fails
+      
+      // Always clear client-side storage
       await AsyncStorage.multiRemove(['access_token', 'refresh_token', 'user']);
+      console.log('Logout successful: tokens cleared from storage');
+    } catch (error) {
+      console.error('Logout error:', error);
     }
   },
   

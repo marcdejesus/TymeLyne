@@ -35,11 +35,19 @@ The simplest way to get started with Tymelyne is to use Docker:
 
 2. Start the application using the provided script:
    ```bash
+   docker-compose up -d
    ./docker/start.sh
    ```
 
-3. Access the application:
-   - Backend API: http://localhost:8000
+3. Accessing Mobile Build:
+   cd frontend
+   ```bash
+   npx expo start
+   ```
+   Using your phone camera, scan the qr code
+
+5. Access the application:
+   - Backend API: http://localhost:8000 /admin for admin login
    - Frontend Expo: http://localhost:19000
 
 ### Option 2: Manual Setup

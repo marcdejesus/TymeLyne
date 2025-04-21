@@ -33,10 +33,24 @@ The simplest way to get started with Tymelyne is to use Docker:
    cd tymelyne
    ```
 
+2. Create A Root .env File:
+   - Duplicate the .env.example file to your root directory
+   - Rename it as .env
+   - Replace all instances of your public/private IP with your actual IP
+  
+3. Create A Backend .env File:
+   - Duplicate the .env.example file in the backend directory
+   - Rename it as .env.backend
+   - Replace all instances of IP with your actual IP
+  
+3. Create A app.js File:
+   - Duplicate the api.js.example file underneath app/frontend/src/services/
+   - Rename it to api.js
+   - Replace YOUR_LOCAL_IP_HERE with your local IP 
+
 2. Start the application using the provided script:
    ```bash
    docker-compose up -d
-   ./docker/start.sh
    ```
 
 3. Accessing Mobile Build:
@@ -48,7 +62,14 @@ The simplest way to get started with Tymelyne is to use Docker:
 
 5. Access the application:
    - Backend API: http://localhost:8000 /admin for admin login
-   - Frontend Expo: http://localhost:19000
+   - Frontend Expo: Scan terminal QR code
+  
+6. Close Build:
+   - ctrl + c in terminal to kill Expo
+   - ```bash
+     docker-compose down
+     ``` To shut down Docker
+
 
 ### Option 2: Manual Setup
 
@@ -195,4 +216,3 @@ If you're getting network errors when trying to connect from Expo Go to your bac
 
 1. Start both the backend and frontend servers
 2. Use the app to create, view, update, and delete tasks
-3. Check that changes are reflected in the Django admin at http://localhost:8000/admin/ 

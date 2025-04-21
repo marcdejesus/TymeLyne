@@ -7,22 +7,32 @@ import { Platform } from 'react-native';
 
 // Helper to determine the API URL based on environment
 const determineApiUrl = () => {
-  // Check if running in Docker from environment variable
-  const isDocker = process.env.REACT_APP_API_URL === 'docker';
+  // Log debugging information about the environment
+  console.log('Platform:', Platform.OS);
   
-  // Get API URL based on environment
-  if (isDocker) {
-    // When running in Docker, use the service name
-    return 'http://backend:8000/';
-  } else if (Platform.OS === 'android') {
-    // Android emulator needs special IP for localhost
-    return 'http://10.0.2.2:8000/';
+  // Try multiple endpoints in case one is not accessible
+  const endpoints = [
+    // Direct to host IP - most reliable for iOS
+    'http://YOUR_LOCAL_IP_HERE:8000/',
+    // Alternative if running local Docker backend
+    'http://localhost:8000/',
+    // Docker service name (when running both frontend and backend in Docker)
+    'http://backend:8000/',
+    // Android emulator special IP
+    'http://10.0.2.2:8000/'
+  ];
+  
+  // Select the appropriate endpoint based on platform and environment
+  if (Platform.OS === 'android') {
+    console.log('Using Android endpoint:', endpoints[3]);
+    return endpoints[3];
   } else if (Platform.OS === 'ios') {
-    // iOS simulator needs to use the host IP address
-    return 'http://107.161.135.161:8000/';
+    console.log('Using iOS endpoint:', endpoints[0]);
+    return endpoints[0];
   } else {
-    // Web or fallback
-    return 'http://107.161.135.161:8000/';
+    // Web or other platforms
+    console.log('Using Web endpoint:', endpoints[0]);
+    return endpoints[0];
   }
 };
 
@@ -38,11 +48,11 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Add timeout to prevent hanging requests
-  timeout: 30000,
+  // Set a shorter timeout for faster feedback
+  timeout: 8000,
 });
 
-// Add request interceptor to inject the auth token
+// Add more logging for request and response
 api.interceptors.request.use(
   async (config) => {
     try {
@@ -56,7 +66,8 @@ api.interceptors.request.use(
       
       // Log request for debugging (in development)
       if (__DEV__) {
-        console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`, config.data);
+        console.log(`API Request: ${config.method.toUpperCase()} ${config.url}`, 
+                   { data: config.data, headers: config.headers });
       }
       
       return config;

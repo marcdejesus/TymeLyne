@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   backend:
     build:
@@ -8,7 +6,7 @@ services:
     container_name: tymelyne-backend
     volumes:
       - ./backend:/app
-      - ./docker/start-django.sh:/start-django.sh
+      - ./docker/start-django.sh:/start-django.sh:ro
     ports:
       - "8000:8000"
     environment:
@@ -27,7 +25,7 @@ services:
       timeout: 5s
       retries: 3
       start_period: 15s
-    command: ["/start-django.sh"]
+    command: ["/bin/bash", "/start-django.sh"]
 
   frontend:
     build:

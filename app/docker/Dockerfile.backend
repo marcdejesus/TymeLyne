@@ -14,6 +14,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     libpq-dev \
     curl \
+    bash \
+    dos2unix \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
@@ -24,12 +26,13 @@ COPY ./backend/requirements.txt .
 RUN pip install --upgrade pip && \
     pip install -r requirements.txt
 
-# Make start script executable
+# Copy startup script directly into the container
 COPY ./docker/start-django.sh /start-django.sh
-RUN chmod +x /start-django.sh
+# Fix line endings and make executable
+RUN dos2unix /start-django.sh && chmod +x /start-django.sh
 
 # Expose port for the app
 EXPOSE 8000
 
-# Set a default command
-CMD ["/start-django.sh"] 
+# Set a default command using bash explicitly
+CMD ["/bin/bash", "/start-django.sh"] 

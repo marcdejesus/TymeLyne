@@ -1,4 +1,5 @@
 #!/bin/bash
+# Remove bash-specific flags
 set -e
 
 echo "Django server starting..."

@@ -2,10 +2,10 @@ import axios from 'axios';
 
 // Set the base URL for API requests
 // =====================================================================
-// Your local IP address has been detected as: 192.168.1.60
+// Your local IP address has been detected as: [YOUR_LOCAL_IP]
 // (This was set by running update_api_url.sh)
 // =====================================================================
-const LOCAL_IP = '192.168.1.60'; 
+const LOCAL_IP = '[YOUR_LOCAL_IP]'; 
 
 // Different API URLs for different environments
 const API_URLS = {

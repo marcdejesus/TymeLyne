@@ -10,10 +10,18 @@ const determineApiUrl = () => {
   // Log debugging information about the environment
   console.log('Platform:', Platform.OS);
   
+  // Check for environment variables first
+  if (process.env.REACT_APP_BACKEND_URL) {
+    console.log('Using environment variable backend URL:', process.env.REACT_APP_BACKEND_URL);
+    return process.env.REACT_APP_BACKEND_URL + '/';
+  }
+  
   // Try multiple endpoints in case one is not accessible
   const endpoints = [
+    // Server IP - detected from socket
+    'http://[DETECTED_SERVER_IP]:8000/',
     // Direct to host IP - most reliable for iOS
-    'http://YOUR_LOCAL_IP_HERE:8000/',
+    'http://[YOUR_LOCAL_IP]:8000/',
     // Alternative if running local Docker backend
     'http://localhost:8000/',
     // Docker service name (when running both frontend and backend in Docker)
@@ -24,8 +32,8 @@ const determineApiUrl = () => {
   
   // Select the appropriate endpoint based on platform and environment
   if (Platform.OS === 'android') {
-    console.log('Using Android endpoint:', endpoints[3]);
-    return endpoints[3];
+    console.log('Using Android endpoint:', endpoints[4]);
+    return endpoints[4];
   } else if (Platform.OS === 'ios') {
     console.log('Using iOS endpoint:', endpoints[0]);
     return endpoints[0];
@@ -48,8 +56,8 @@ const api = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
-  // Set a shorter timeout for faster feedback
-  timeout: 8000,
+  // Increase timeout for slower connections
+  timeout: 20000,
 });
 
 // Add more logging for request and response

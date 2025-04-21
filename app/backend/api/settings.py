@@ -22,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-orb1@zbo456&3hiyt74z*1k#&b%ny#n=*et17^iz4oey7cdihj'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-orb1@zbo456&3hiyt74z*1k#&b%ny#n=*et17^iz4oey7cdihj')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.environ.get('DEBUG', 'True') == '1'
@@ -181,15 +181,26 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:8000",
     "http://127.0.0.1:19000",
     "http://127.0.0.1:19006",
-    "http://192.168.1.60:8000",  # Your specific local IP
-    "http://192.168.1.60:19000", # Your local IP with Expo port
-    "http://192.168.1.60:19006", # Your local IP with Expo web port
-    "exp://192.168.1.60:19000",  # Expo Go format for your IP
     "http://frontend:19000",    # Docker container service name
     "http://frontend:19001",
     "http://frontend:19002", 
     "http://frontend:8081",
 ]
+
+# Read local IP from environment variable 
+local_ip = os.environ.get('LOCAL_IP', '')
+if local_ip:
+    ip_origins = [
+        f"http://{local_ip}:8000",
+        f"http://{local_ip}:19000",
+        f"http://{local_ip}:19001",
+        f"http://{local_ip}:19002",
+        f"http://{local_ip}:19006",
+        f"http://{local_ip}:8081",
+        f"exp://{local_ip}:19000",
+        f"exp://{local_ip}:19001",
+    ]
+    CORS_ALLOWED_ORIGINS.extend(ip_origins)
 
 # Read CORS whitelist from environment if provided
 cors_origins_env = os.environ.get('CORS_ORIGIN_WHITELIST', '')

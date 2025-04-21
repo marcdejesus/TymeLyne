@@ -13,7 +13,7 @@ const determineApiUrl = () => {
   // Try multiple endpoints in case one is not accessible
   const endpoints = [
     // Direct to host IP - most reliable for iOS
-    'http://107.161.133.215:8000/',
+    'http://YOUR_LOCAL_IP_HERE:8000/',
     // Alternative if running local Docker backend
     'http://localhost:8000/',
     // Docker service name (when running both frontend and backend in Docker)

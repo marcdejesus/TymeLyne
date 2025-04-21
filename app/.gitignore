@@ -1,8 +1,8 @@
 # Ignore local environment files
 .env
-.env.local
+.env.frontend
 .env.docker
-fix_ports.ps1
+
 
 # API files with hardcoded IPs
 frontend/src/services/api.js

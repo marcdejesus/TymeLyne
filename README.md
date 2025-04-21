@@ -38,14 +38,19 @@ The simplest way to get started with Tymelyne is to use Docker:
    - Rename it as .env
    - Replace all instances of your public/private IP with your actual IP
   
-3. Create A Backend .env File:
-   - Duplicate the .env.example file in the backend directory
-   - Rename it as .env.backend
+3. Create A Frontend .env File:
+   - Duplicate the .env.example file in the Frontend directory
+   - Rename it as .env.frontend
    - Replace all instances of IP with your actual IP
   
-3. Create A app.js File:
-   - Duplicate the api.js.example file underneath app/frontend/src/services/
-   - Rename it to api.js
+4. Create A Docker .env File:
+   - Duplicate the .env.docker.example file in the root directory
+   - Rename it as .env.docker
+   - Replace all instances of IP with your actual IP
+  
+3. Create two app.js Files:
+   - Duplicate the api.js.example file underneath app/frontend/src/services/ and src/api/
+   - Rename them to api.js
    - Replace YOUR_LOCAL_IP_HERE with your local IP 
 
 2. Start the application using the provided script:

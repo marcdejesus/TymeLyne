@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   Image,
   TouchableOpacity,
+  ScrollView,
   Dimensions
 } from 'react-native';
 import { 
@@ -15,6 +16,8 @@ import {
   Button,
   theme 
 } from '../components';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -24,90 +27,66 @@ const CourseDetailsScreen = ({ navigation, route }) => {
   const course = {
     id: 1,
     title: 'Digital Marketing',
-    description: 'Learn the fundamentals of digital marketing including SEO, social media, content marketing, and more.',
-    progress: 25,
-    totalModules: 4,
-    completedModules: 1,
-    quizzes: [
-      { id: 1, title: 'SEO Basics', questions: 10, completed: true },
-      { id: 2, title: 'Social Media Marketing', questions: 8, completed: false },
-      { id: 3, title: 'Content Marketing', questions: 12, completed: false },
-      { id: 4, title: 'Email Marketing', questions: 9, completed: false }
-    ],
-    icon: require('../../assets/course-icons/marketing.png')
+    sections: [
+      {
+        id: 1,
+        title: 'Section Title',
+        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+        isCompleted: false,
+        hasQuiz: true
+      },
+      {
+        id: 2,
+        title: 'Section Title',
+        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+        isCompleted: false,
+        hasQuiz: true
+      },
+      {
+        id: 3,
+        title: 'Section Title',
+        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+        isCompleted: false,
+        hasQuiz: true
+      }
+    ]
   };
 
   const handleBackPress = () => {
     navigation.goBack();
   };
 
-  // Handle taking a quiz
-  const handleTakeQuiz = (quizId) => {
-    // In a real app, navigate to the quiz screen with the quiz ID
-    navigation.navigate('Development');
+  const handleSectionPress = (sectionId) => {
+    navigation.navigate('SectionContent', { courseId: course.id, sectionId });
   };
 
   return (
     <Screen
-      title="Course Details"
+      title={course.title}
       onBackPress={handleBackPress}
-      backgroundColor={theme.colors.background.main}
+      backgroundColor="#F9F1E0"
       showBottomNav={false}
+      scrollable={true}
     >
-      {/* Course Banner */}
-      <View style={styles.courseHeader}>
-        <Image source={course.icon} style={styles.courseIcon} />
-        <Text style={styles.courseTitle}>{course.title}</Text>
-        
-        {/* Progress Bar */}
-        <View style={styles.progressContainer}>
-          <ProgressBar 
-            progress={course.progress} 
-            label={`${course.completedModules}/${course.totalModules} Modules Completed`}
-          />
-        </View>
-      </View>
-
-      {/* Course Description */}
-      <SectionTitle title="Description" />
-      <Card>
-        <Text style={styles.description}>{course.description}</Text>
-      </Card>
-
-      {/* Quizzes Section */}
-      <SectionTitle title="Practice Quizzes" />
-
-      {course.quizzes.map(quiz => (
+      {course.sections.map((section) => (
         <Card
-          key={quiz.id}
-          style={[
-            styles.quizCard,
-            quiz.completed && styles.completedQuizCard
-          ]}
-          onPress={() => handleTakeQuiz(quiz.id)}
+          key={section.id}
+          style={styles.sectionCard}
+          backgroundColor="#F9F1E0"
+          onPress={() => handleSectionPress(section.id)}
         >
-          <View style={styles.quizInfo}>
-            <Text style={styles.quizTitle}>{quiz.title}</Text>
-            <Text style={styles.quizQuestions}>{quiz.questions} Questions</Text>
-          </View>
-          <View style={styles.quizStatus}>
-            {quiz.completed ? (
-              <Text style={styles.completedText}>✓ Completed</Text>
-            ) : (
-              <Text style={styles.takeQuizText}>Take Quiz ›</Text>
-            )}
-          </View>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+          <Text style={styles.sectionDescription} numberOfLines={3}>
+            {section.description}
+          </Text>
+          {section.isCompleted && (
+            <View style={styles.completedBadge}>
+              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
+              <Text style={styles.completedText}>Completed</Text>
+            </View>
+          )}
         </Card>
       ))}
-
-      {/* Action buttons */}
-      <View style={styles.actionButtonsContainer}>
-        <Button 
-          title="Continue Learning" 
-          onPress={() => navigation.navigate('Development')}
-          style={styles.continueButton}
-        />
-      </View>
     </Screen>
   );
 };
@@ -167,9 +146,10 @@ const styles = StyleSheet.create({
     marginLeft: theme.spacing.m,
   },
   completedText: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.ui.success,
-    fontWeight: theme.typography.fontWeight.medium,
+    fontSize: 14,
+    color: colors.success,
+    marginLeft: 4,
+    fontWeight: '500',
   },
   takeQuizText: {
     fontSize: theme.typography.fontSize.small,
@@ -182,6 +162,27 @@ const styles = StyleSheet.create({
   },
   continueButton: {
     width: '100%',
+  },
+  sectionCard: {
+    borderRadius: 8,
+    marginBottom: 16,
+    padding: 16,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
+    marginBottom: 8,
+  },
+  sectionDescription: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    lineHeight: 20,
+  },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 12,
   },
 });
 

@@ -77,7 +77,7 @@ const HomeScreen = ({ navigation }) => {
         <SectionTitle 
           title="Active Courses" 
           rightText="View All" 
-          onRightPress={() => handleNavigation('Courses')} 
+          onRightPress={() => handleNavigation('Development')} 
         />
         <View style={styles.coursesContainer}>
           {activeCourses && activeCourses.length > 0 ? (
@@ -101,7 +101,7 @@ const HomeScreen = ({ navigation }) => {
           <Card
             variant="elevated"
             style={styles.addCourseCard}
-            onPress={() => handleNavigation('Community')}
+            onPress={() => handleNavigation('Development')}
           >
             <Ionicons name="people-outline" size={32} color={colors.primary} />
             <View style={styles.addCourseTextContainer}>
@@ -117,7 +117,7 @@ const HomeScreen = ({ navigation }) => {
           <Card
             variant="elevated"
             style={styles.addCourseCard}
-            onPress={() => handleNavigation('NewCourse')}
+            onPress={() => handleNavigation('Create')}
           >
             <Ionicons name="add-circle-outline" size={32} color={colors.primary} />
             <View style={styles.addCourseTextContainer}>
@@ -134,7 +134,7 @@ const HomeScreen = ({ navigation }) => {
         <SectionTitle 
           title="Friends' Courses" 
           rightText="See More" 
-          onRightPress={() => handleNavigation('FriendsCourses')} 
+          onRightPress={() => handleNavigation('Development')} 
         />
         {friendCourses && friendCourses.length > 0 ? (
           <FlatList

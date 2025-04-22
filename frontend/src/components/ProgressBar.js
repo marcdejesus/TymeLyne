@@ -1,53 +1,55 @@
 import React from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { View, StyleSheet } from 'react-native';
+import { colors, borderRadius } from '../constants/theme';
+import Typography from './Typography';
 
 /**
- * Reusable progress bar component
+ * ProgressBar component that displays visual progress with optional label
  * 
- * @param {number} progress - Progress value (0-100)
- * @param {boolean} showPercentage - Whether to show percentage text
- * @param {string} label - Optional label text to display below percentage
- * @param {string} color - Color of the progress bar (default: '#D35C34')
- * @param {number} height - Height of the progress bar (default: 8)
- * @param {object} style - Additional styles for the container
+ * @param {number} progress - Progress value between 0 and 100
+ * @param {number} height - Height of the progress bar
+ * @param {string} color - Color of the progress bar fill
+ * @param {boolean} showLabel - Whether to show progress percentage label
+ * @param {object} style - Additional style for the container
+ * @param {object} barStyle - Additional style for the bar itself
+ * @param {object} labelStyle - Additional style for the label
  */
 const ProgressBar = ({
   progress = 0,
-  showPercentage = true,
-  label,
-  color = '#D35C34',
   height = 8,
-  style
+  color = colors.primary,
+  showLabel = false,
+  style,
+  barStyle,
+  labelStyle
 }) => {
   // Ensure progress is between 0 and 100
-  const normalizedProgress = Math.min(Math.max(0, progress), 100);
+  const normalizedProgress = Math.min(Math.max(progress, 0), 100);
   
   return (
     <View style={[styles.container, style]}>
-      {showPercentage && (
-        <Text style={styles.percentText}>
-          {normalizedProgress}% {label ? 'COMPLETE' : ''}
-        </Text>
+      {showLabel && (
+        <Typography 
+          variant="caption" 
+          weight="medium" 
+          style={[styles.label, labelStyle]}
+        >
+          {normalizedProgress}%
+        </Typography>
       )}
       
-      <View style={[styles.progressBar, { height }]}>
+      <View style={[styles.track, { height }, barStyle]}>
         <View 
           style={[
-            styles.progress, 
+            styles.fill, 
             { 
               width: `${normalizedProgress}%`,
-              backgroundColor: color,
-              height: '100%' 
+              height,
+              backgroundColor: color
             }
           ]} 
         />
       </View>
-      
-      {label && !showPercentage && (
-        <Text style={styles.labelText}>{label}</Text>
-      )}
     </View>
   );
 };
@@ -55,26 +57,20 @@ const ProgressBar = ({
 const styles = StyleSheet.create({
   container: {
     width: '100%',
-    marginVertical: 5,
   },
-  percentText: {
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
+  label: {
     marginBottom: 4,
+    textAlign: 'right',
   },
-  progressBar: {
-    backgroundColor: '#E0D8C0',
-    borderRadius: 4,
+  track: {
+    width: '100%',
+    backgroundColor: colors.cardDark,
+    borderRadius: borderRadius.s,
     overflow: 'hidden',
   },
-  progress: {
-    borderRadius: 4,
-  },
-  labelText: {
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
-    marginTop: 4,
-  },
+  fill: {
+    borderRadius: borderRadius.s,
+  }
 });
 
 export default ProgressBar; 

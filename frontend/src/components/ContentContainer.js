@@ -1,106 +1,59 @@
 import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  ScrollView, 
-  Dimensions, 
-  Platform,
-  KeyboardAvoidingView 
-} from 'react-native';
+import { ScrollView, View, StyleSheet } from 'react-native';
 import { colors } from '../constants/theme';
 
-const { width, height } = Dimensions.get('window');
-const isIphoneWithNotch = Platform.OS === 'ios' && height > 800;
-
 /**
- * Reusable component for containing the main content of a screen
- * with consistent padding and scrolling behavior
+ * ContentContainer component that wraps content in a scrollable or static container
  * 
- * @param {node} children - Child components to render inside the container
+ * @param {ReactNode} children - Content to display
  * @param {boolean} scrollable - Whether content should be scrollable
+ * @param {object} style - Additional style for the container
+ * @param {object} contentContainerStyle - Style for the scroll view content container
  * @param {boolean} showsVerticalScrollIndicator - Whether to show scroll indicator
- * @param {boolean} keyboardAvoiding - Whether to add keyboard avoiding behavior
- * @param {object} style - Additional styles for the container
- * @param {object} contentContainerStyle - Additional styles for the scroll content container
+ * @param {boolean} keyboardShouldPersistTaps - How keyboard should behave when tapping outside of keyboard
+ * @param {object} props - Additional props to pass to ScrollView/View
  */
 const ContentContainer = ({
   children,
   scrollable = true,
-  showsVerticalScrollIndicator = false,
-  keyboardAvoiding = false,
   style,
-  contentContainerStyle
+  contentContainerStyle,
+  showsVerticalScrollIndicator = false,
+  keyboardShouldPersistTaps = 'handled',
+  ...props
 }) => {
-  // Base content with appropriate padding
-  const Content = ({ children, containerStyle }) => (
-    <View style={[styles.container, containerStyle]}>
-      {children}
-    </View>
-  );
-  
-  // If content needs keyboard avoiding behavior
-  if (keyboardAvoiding) {
-    return (
-      <KeyboardAvoidingView
-        style={styles.keyboardAvoidingView}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? (isIphoneWithNotch ? 40 : 20) : 0}
-      >
-        {scrollable ? (
-          <ScrollView
-            style={[styles.scrollView, style]}
-            contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
-            showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-            keyboardShouldPersistTaps="handled"
-            bounces={true}
-          >
-            <Content>{children}</Content>
-          </ScrollView>
-        ) : (
-          <Content containerStyle={style}>{children}</Content>
-        )}
-      </KeyboardAvoidingView>
-    );
-  }
-  
-  // If content should be scrollable
   if (scrollable) {
     return (
       <ScrollView
-        style={[styles.scrollView, style]}
-        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+        style={[styles.scrollContainer, style]}
+        contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        bounces={true}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        {...props}
       >
         {children}
       </ScrollView>
     );
   }
-  
-  // Otherwise render as a plain View
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style]} {...props}>
       {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  keyboardAvoidingView: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: width * 0.05,
-    paddingVertical: 16,
-    paddingBottom: isIphoneWithNotch ? 40 : 32, // Extra padding at the bottom for better scrolling on notched devices
-  },
   container: {
     flex: 1,
-    paddingHorizontal: width * 0.05,
-    paddingVertical: 16,
+    backgroundColor: colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
   }
 });
 

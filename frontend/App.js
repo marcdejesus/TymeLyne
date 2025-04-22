@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from './src/constants/theme';
+import * as Font from 'expo-font';
 import { 
   useFonts,
   Montserrat_300Light,

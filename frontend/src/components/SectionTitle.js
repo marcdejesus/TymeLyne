@@ -1,42 +1,45 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Dimensions 
-} from 'react-native';
-import { colors } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import Typography from './Typography';
+import { colors, spacing } from '../constants/theme';
 
 /**
- * Reusable component for section titles across the app
+ * SectionTitle component for section headers with optional right action
  * 
- * @param {string} title - The section title text
- * @param {string} rightText - Optional text to show on the right (e.g., "See All")
+ * @param {string} title - The title text for the section
+ * @param {string} rightText - Optional text to display on the right side
  * @param {function} onRightPress - Function to call when right text is pressed
- * @param {object} style - Additional styles for the container
- * @param {object} titleStyle - Additional styles for the title text
+ * @param {object} style - Additional style for the container
+ * @param {object} titleStyle - Additional style for the title text
+ * @param {object} rightTextStyle - Additional style for the right text
  */
 const SectionTitle = ({
   title,
   rightText,
   onRightPress,
   style,
-  titleStyle
+  titleStyle,
+  rightTextStyle
 }) => {
   return (
     <View style={[styles.container, style]}>
-      <Text style={[styles.title, titleStyle]}>{title}</Text>
+      <Typography 
+        variant="subheading" 
+        weight="semiBold" 
+        style={[styles.title, titleStyle]}
+      >
+        {title}
+      </Typography>
       
       {rightText && onRightPress && (
-        <TouchableOpacity 
-          onPress={onRightPress}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Text style={styles.rightText}>{rightText}</Text>
+        <TouchableOpacity onPress={onRightPress} activeOpacity={0.7}>
+          <Typography 
+            variant="button" 
+            color={colors.primary}
+            style={[styles.rightText, rightTextStyle]}
+          >
+            {rightText}
+          </Typography>
         </TouchableOpacity>
       )}
     </View>
@@ -48,19 +51,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingTop: 20,
-    paddingBottom: 12,
+    marginBottom: spacing.s,
+    marginTop: spacing.m,
+    paddingHorizontal: spacing.m,
   },
   title: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
+    flex: 1,
   },
   rightText: {
-    fontSize: 14,
-    color: colors.primary,
-    fontWeight: '500',
-  },
+    marginLeft: spacing.s,
+  }
 });
 
 export default SectionTitle; 

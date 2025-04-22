@@ -14,7 +14,7 @@ import { useFonts,
  * Uses Montserrat font with various preset styles.
  * 
  * @param {Object} props - Component props.
- * @param {string} props.variant - Text variant. Options: 'caption', 'body', 'button', 'subheading', 'title', 'heading', 'largeHeading'.
+ * @param {string} props.variant - Text variant. Options: 'caption', 'body', 'button', 'subheading', 'title', 'heading', 'h1', 'h2', 'largeHeading'.
  * @param {string} props.weight - Font weight. Options: 'light', 'regular', 'medium', 'semiBold', 'bold'.
  * @param {string} props.color - Text color. Use predefined colors from theme or hex value.
  * @param {Object} props.style - Additional text styles.
@@ -61,7 +61,28 @@ const Typography = ({
 
   // Get the corresponding styles based on variant and weight
   const variantStyle = styles[variant] || styles.body;
-  const fontFamily = typography.fontFamily[weight] || typography.fontFamily.regular;
+  
+  // Map weight to specific font
+  let fontFamily;
+  switch(weight) {
+    case 'light':
+      fontFamily = 'Montserrat_300Light';
+      break;
+    case 'medium':
+      fontFamily = 'Montserrat_500Medium';
+      break;
+    case 'semiBold':
+      fontFamily = 'Montserrat_600SemiBold';
+      break;
+    case 'bold':
+      fontFamily = 'Montserrat_700Bold';
+      break;
+    case 'regular':
+    default:
+      fontFamily = 'Montserrat_400Regular';
+  }
+  
+  // Determine text color
   const textColor = color ? 
     (colors.text[color] || color) : 
     colors.text.primary;
@@ -91,6 +112,10 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSize.body,
     lineHeight: typography.lineHeight.body
   },
+  body2: {
+    fontSize: typography.fontSize.body - 2,
+    lineHeight: typography.lineHeight.body - 2
+  },
   button: {
     fontSize: typography.fontSize.button,
     lineHeight: typography.lineHeight.button
@@ -106,6 +131,18 @@ const styles = StyleSheet.create({
   heading: {
     fontSize: typography.fontSize.heading,
     lineHeight: typography.lineHeight.heading
+  },
+  h1: {
+    fontSize: 28,
+    lineHeight: 34
+  },
+  h2: {
+    fontSize: 24,
+    lineHeight: 30
+  },
+  label: {
+    fontSize: 12,
+    lineHeight: 16
   },
   largeHeading: {
     fontSize: typography.fontSize.largeHeading,

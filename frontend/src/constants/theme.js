@@ -1,4 +1,5 @@
 import { Dimensions, Platform } from 'react-native';
+import { Montserrat_300Light, Montserrat_400Regular, Montserrat_500Medium, Montserrat_600SemiBold, Montserrat_700Bold } from '@expo-google-fonts/montserrat';
 
 const { width, height } = Dimensions.get('window');
 
@@ -68,15 +69,29 @@ export const typography = {
     light: 'Montserrat_300Light',
   },
   
+  // Font weights
+  fontWeight: {
+    light: '300',
+    regular: '400',
+    medium: '500',
+    semiBold: '600',
+    bold: '700',
+  },
+  
   // Font sizes - with responsive scaling for different devices
   fontSize: {
+    small: Math.min(10, width * 0.025),     // Very small text
     caption: Math.min(12, width * 0.03),     // Small captions, labels
+    regular: Math.min(16, width * 0.04),     // Regular text (same as body)
     body: Math.min(16, width * 0.04),        // Body text
     button: Math.min(14, width * 0.035),     // Button text
+    medium: Math.min(16, width * 0.04),      // Medium text (same as body)
     subheading: Math.min(18, width * 0.045), // Subheadings
     title: Math.min(20, width * 0.05),       // Titles
+    large: Math.min(22, width * 0.055),      // Large text
     heading: Math.min(24, width * 0.06),     // Headings
-    largeHeading: Math.min(28, width * 0.07) // Large headings
+    largeHeading: Math.min(28, width * 0.07), // Large headings
+    xxlarge: Math.min(32, width * 0.08)      // Extra large text
   },
   
   // Line heights - for better readability

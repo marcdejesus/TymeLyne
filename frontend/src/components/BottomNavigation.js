@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
   TouchableOpacity, 
   Dimensions,
@@ -9,7 +8,8 @@ import {
   SafeAreaView 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, typography } from '../constants/theme';
+import { colors, spacing } from '../constants/theme';
+import Typography from './Typography';
 
 const { width, height } = Dimensions.get('window');
 const isIphoneX = Platform.OS === 'ios' && (height > 800 || width > 800);
@@ -19,7 +19,7 @@ const isIphoneX = Platform.OS === 'ios' && (height > 800 || width > 800);
  * 
  * @param {string} activeScreen - The currently active screen ('Home', 'Leaderboards', 'Profile')
  * @param {function} onHomePress - Function to call when Home tab is pressed
- * @param {function} onAchievementsPress - Function to call when Leaderboards tab is pressed
+ * @param {function} onAchievementsPress - Function to call when Achievements tab is pressed
  * @param {function} onProfilePress - Function to call when Profile tab is pressed
  * @param {object} style - Additional styles for the navigation container
  */
@@ -75,16 +75,16 @@ const BottomNavigation = ({
               <Ionicons 
                 name={iconName} 
                 size={24} 
-                color={isActive ? colors.primary : colors.textSecondary} 
+                color={isActive ? colors.primary : colors.text.secondary} 
               />
-              <Text 
-                style={[
-                  styles.navLabel,
-                  isActive && styles.activeNavLabel
-                ]}
+              <Typography 
+                variant="caption"
+                weight={isActive ? "semiBold" : "regular"}
+                color={isActive ? "primary" : "secondary"}
+                style={styles.navLabel}
               >
                 {item.label}
-              </Text>
+              </Typography>
             </TouchableOpacity>
           );
         })}
@@ -115,13 +115,7 @@ const styles = StyleSheet.create({
     paddingTop: 0, // Adjust for the added border
   },
   navLabel: {
-    fontSize: 12,
-    color: colors.textSecondary,
     marginTop: 4,
-  },
-  activeNavLabel: {
-    color: colors.primary,
-    fontWeight: '600',
   }
 });
 

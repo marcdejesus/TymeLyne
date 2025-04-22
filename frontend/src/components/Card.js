@@ -1,44 +1,54 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
-import { colors, shadows, borderRadius, spacing } from '../constants/theme';
+import { 
+  View, 
+  TouchableOpacity, 
+  StyleSheet 
+} from 'react-native';
+import { colors, shadows, spacing, borderRadius } from '../constants/theme';
 
 /**
- * Card component with consistent styling across the app.
- * Can be made touchable with onPress prop.
+ * Card component with different variants based on our design system
  * 
- * @param {Object} props - Component props.
- * @param {ReactNode} props.children - Card content.
- * @param {string} props.variant - Card variant. Options: 'elevated', 'outlined', 'flat'.
- * @param {Function} props.onPress - Function to call when card is pressed.
- * @param {Object} props.style - Additional card styles.
- * @param {boolean} props.noPadding - Whether to remove default padding.
- * @returns {ReactNode} - Card component.
+ * @param {string} variant - Card variant: 'flat', 'elevated', 'outlined'
+ * @param {function} onPress - Function to call when card is pressed
+ * @param {ReactNode} children - Card content
+ * @param {object} style - Additional style for the card
+ * @param {string} backgroundColor - Background color of the card
+ * @param {boolean} disabled - Whether the card is disabled/inactive
+ * @param {number} activeOpacity - Opacity when pressed (0 to 1)
+ * @param {object} props - Additional props to pass to View/TouchableOpacity
  */
-const Card = ({ 
-  children, 
-  variant = 'elevated', 
-  onPress, 
+const Card = ({
+  variant = 'flat',
+  onPress,
+  children,
   style,
-  noPadding = false,
-  ...props 
+  backgroundColor,
+  disabled = false,
+  activeOpacity = 0.8,
+  ...props
 }) => {
-  // Determine container styles based on variant
-  const containerStyles = [
-    styles.container,
-    variant === 'elevated' && styles.elevated,
-    variant === 'outlined' && styles.outlined,
-    variant === 'flat' && styles.flat,
-    !noPadding && styles.padding,
+  // Determine the background color
+  const bgColor = backgroundColor || 
+    (variant === 'outlined' ? 'transparent' : colors.card);
+
+  // Base card styles based on variant
+  const cardStyles = [
+    styles.card,
+    styles[variant],
+    { backgroundColor: bgColor },
+    disabled && styles.disabled,
     style
   ];
 
-  // Render a touchable or non-touchable card
+  // If onPress is provided, render a TouchableOpacity, otherwise render a View
   if (onPress) {
     return (
-      <TouchableOpacity 
-        style={containerStyles} 
-        onPress={onPress}
-        activeOpacity={0.7}
+      <TouchableOpacity
+        style={cardStyles}
+        onPress={disabled ? null : onPress}
+        activeOpacity={activeOpacity}
+        disabled={disabled}
         {...props}
       >
         {children}
@@ -47,31 +57,36 @@ const Card = ({
   }
 
   return (
-    <View style={containerStyles} {...props}>
+    <View style={cardStyles} {...props}>
       {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  card: {
     borderRadius: borderRadius.m,
+    padding: spacing.m,
     backgroundColor: colors.card,
-    overflow: 'hidden',
-    marginVertical: spacing.s
   },
-  padding: {
-    padding: spacing.m
+  
+  // Variant styles
+  flat: {
+    // Just the base style
   },
+  
   elevated: {
     ...shadows.medium,
   },
+  
   outlined: {
     borderWidth: 1,
     borderColor: colors.border,
   },
-  flat: {
-    // No additional styles for flat variant
+  
+  // State styles
+  disabled: {
+    opacity: 0.6,
   }
 });
 

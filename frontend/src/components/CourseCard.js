@@ -1,15 +1,9 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  Dimensions,
-  Platform 
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { colors, spacing, shadows, borderRadius } from '../constants/theme';
+import Typography from './Typography';
+import Card from './Card';
 
 const { width } = Dimensions.get('window');
 
@@ -32,40 +26,57 @@ const CourseCard = ({
   // For grid layout style
   if (variant === 'grid') {
     return (
-      <TouchableOpacity 
+      <Card 
+        variant="elevated"
         style={[styles.gridCard, style]}
         onPress={onPress}
-        activeOpacity={0.7}
+        noPadding={false}
       >
         <Image source={course.icon} style={styles.gridIcon} />
-        <Text style={styles.gridTitle} numberOfLines={2}>
+        <Typography 
+          variant="subheading" 
+          weight="semiBold" 
+          center 
+          numberOfLines={2}
+          style={styles.gridTitle}
+        >
           {course.title}
-        </Text>
-      </TouchableOpacity>
+        </Typography>
+      </Card>
     );
   }
   
   // For horizontal layout (default)
   return (
-    <TouchableOpacity 
+    <Card 
+      variant="elevated"
       style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={0.7}
+      noPadding={false}
     >
       <View style={styles.iconContainer}>
         <Image source={course.icon} style={styles.icon} />
       </View>
       
       <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Typography 
+          variant="subheading" 
+          weight="semiBold" 
+          numberOfLines={1}
+          style={styles.title}
+        >
           {course.title}
-        </Text>
+        </Typography>
         
         {course.progress !== undefined && (
           <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>
+            <Typography 
+              variant="caption" 
+              color={colors.text.secondary}
+              style={styles.progressText}
+            >
               {course.progress}% COMPLETE
-            </Text>
+            </Typography>
             <View style={styles.progressBar}>
               <View 
                 style={[
@@ -85,29 +96,24 @@ const CourseCard = ({
           activeOpacity={0.7}
           hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.text.tertiary} />
         </TouchableOpacity>
       )}
-    </TouchableOpacity>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   // Horizontal card styles
   card: {
-    backgroundColor: colors.card,
-    borderRadius: 12,
-    padding: 16,
+    padding: 0, // Card component has its own padding
     flexDirection: 'row',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    marginBottom: spacing.m,
+    borderRadius: borderRadius.m,
+    padding: spacing.m,
   },
   iconContainer: {
-    marginRight: 16,
+    marginRight: spacing.m,
     justifyContent: 'center',
   },
   icon: {
@@ -121,19 +127,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   title: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
   progressContainer: {
-    marginTop: 4,
+    marginTop: spacing.xs,
     width: '90%', // Avoid overlap with options dots
   },
   progressText: {
-    fontSize: 12,
-    color: colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   progressBar: {
     height: 6,
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   optionsButton: {
-    padding: 4,
+    padding: spacing.xs,
     justifyContent: 'center',
     alignItems: 'center',
     height: 40,
@@ -158,30 +159,20 @@ const styles = StyleSheet.create({
   gridCard: {
     width: '46%',
     margin: '2%',
-    padding: 16,
-    backgroundColor: colors.card,
-    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     aspectRatio: 1,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.08,
-    shadowRadius: 3,
-    elevation: 2,
+    padding: spacing.m,
   },
   gridIcon: {
     width: width * 0.1,
     height: width * 0.1,
     maxWidth: 40,
     maxHeight: 40,
-    marginBottom: 12,
+    marginBottom: spacing.s,
   },
   gridTitle: {
-    fontSize: 16,
-    fontWeight: '600',
     textAlign: 'center',
-    color: colors.text,
   },
 });
 

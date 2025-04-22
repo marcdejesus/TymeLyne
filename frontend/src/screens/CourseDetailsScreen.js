@@ -1,92 +1,119 @@
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  Image,
-  TouchableOpacity,
-  ScrollView,
-  Dimensions
-} from 'react-native';
-import { 
-  Screen, 
-  Card, 
-  ProgressBar, 
-  SectionTitle,
-  Button,
-  theme 
-} from '../components';
+import React from 'react';
+import { View, StyleSheet, Dimensions } from 'react-native';
+import Screen from '../components/Screen';
+import Card from '../components/Card';
+import SectionTitle from '../components/SectionTitle';
+import Typography from '../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { colors, spacing } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
 const CourseDetailsScreen = ({ navigation, route }) => {
   // In a real app, we would get the course details from the route params or fetch from API
   // For now, we'll use some mock data
-  const course = {
+  const mockCourse = {
     id: 1,
     title: 'Digital Marketing',
+    description: 'Master the essential skills and strategies needed for effective digital marketing campaigns.',
     sections: [
       {
         id: 1,
-        title: 'Section Title',
-        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+        title: 'Introduction to Digital Marketing',
+        description: 'Learn the fundamentals of digital marketing including key concepts, channels, and metrics for measuring success.',
         isCompleted: false,
         hasQuiz: true
       },
       {
         id: 2,
-        title: 'Section Title',
-        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
-        isCompleted: false,
+        title: 'Content Marketing Strategy',
+        description: 'Develop effective content marketing strategies that drive engagement and conversions across different platforms.',
+        isCompleted: true,
         hasQuiz: true
       },
       {
         id: 3,
-        title: 'Section Title',
-        description: 'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis.',
+        title: 'Social Media Marketing',
+        description: 'Master social media marketing tactics for the major platforms including content creation, community management, and paid advertising.',
         isCompleted: false,
         hasQuiz: true
       }
     ]
   };
+  
+  const defaultCourse = {
+    id: 0,
+    title: 'Course Not Found',
+    description: 'This course could not be loaded.',
+    sections: []
+  };
+  
+  // Use course from route params, or mockCourse for development, or defaultCourse as a fallback
+  const course = route.params?.course || mockCourse;
 
   const handleBackPress = () => {
-    navigation.goBack();
+    navigation && navigation.goBack();
   };
 
   const handleSectionPress = (sectionId) => {
-    navigation.navigate('SectionContent', { courseId: course.id, sectionId });
+    if (navigation) {
+      navigation.navigate('SectionContent', { courseId: course.id, sectionId });
+    }
   };
 
   return (
     <Screen
       title={course.title}
       onBackPress={handleBackPress}
-      backgroundColor="#F9F1E0"
+      backgroundColor={colors.background}
       showBottomNav={false}
       scrollable={true}
     >
-      {course.sections.map((section) => (
-        <Card
-          key={section.id}
-          style={styles.sectionCard}
-          backgroundColor="#F9F1E0"
-          onPress={() => handleSectionPress(section.id)}
-        >
-          <Text style={styles.sectionTitle}>{section.title}</Text>
-          <Text style={styles.sectionDescription} numberOfLines={3}>
-            {section.description}
-          </Text>
-          {section.isCompleted && (
-            <View style={styles.completedBadge}>
-              <Ionicons name="checkmark-circle" size={20} color={colors.success} />
-              <Text style={styles.completedText}>Completed</Text>
-            </View>
-          )}
+      <View style={styles.courseHeader}>
+        <Typography variant="h1" weight="bold" style={styles.courseTitle}>
+          {course.title}
+        </Typography>
+        
+        <Typography variant="body1" style={styles.courseDescription}>
+          {course.description}
+        </Typography>
+      </View>
+
+      <SectionTitle title="Course Content" />
+      
+      {course.sections && course.sections.length > 0 ? (
+        course.sections.map((section) => (
+          <Card
+            key={section.id}
+            style={styles.sectionCard}
+            variant="elevated"
+            onPress={() => handleSectionPress(section.id)}
+          >
+            <Typography variant="subheading" weight="semiBold" style={styles.sectionTitle}>
+              {section.title}
+            </Typography>
+            
+            <Typography variant="body2" color={colors.text.secondary} style={styles.sectionDescription} numberOfLines={3}>
+              {section.description}
+            </Typography>
+            
+            {section.isCompleted && (
+              <View style={styles.completedBadge}>
+                <Ionicons name="checkmark-circle" size={20} color={colors.status.success} />
+                <Typography variant="label" color={colors.status.success} style={styles.completedText}>
+                  Completed
+                </Typography>
+              </View>
+            )}
+          </Card>
+        ))
+      ) : (
+        <Card style={styles.sectionCard}>
+          <Typography variant="body" style={styles.noContentMessage}>
+            No course content available yet.
+          </Typography>
         </Card>
-      ))}
+      )}
     </Screen>
   );
 };
@@ -94,95 +121,38 @@ const CourseDetailsScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   courseHeader: {
     alignItems: 'center',
-    marginVertical: theme.spacing.m,
-  },
-  courseIcon: {
-    width: width * 0.2,
-    height: width * 0.2,
-    marginBottom: theme.spacing.m,
+    marginVertical: spacing.m,
+    paddingHorizontal: spacing.m,
   },
   courseTitle: {
-    fontSize: theme.typography.fontSize.xxlarge,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.m,
+    marginBottom: spacing.s,
     textAlign: 'center',
   },
-  progressContainer: {
-    width: '100%',
-    marginTop: theme.spacing.s,
-  },
-  description: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.primary,
-    lineHeight: 24,
-  },
-  quizCard: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: theme.spacing.m,
-    marginBottom: theme.spacing.s,
-    marginTop: 0,
-  },
-  completedQuizCard: {
-    borderLeftWidth: 4,
-    borderLeftColor: theme.colors.ui.success,
-  },
-  quizInfo: {
-    flex: 1,
-  },
-  quizTitle: {
-    fontSize: theme.typography.fontSize.regular,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.text.primary,
-    marginBottom: 4,
-  },
-  quizQuestions: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
-  },
-  quizStatus: {
-    marginLeft: theme.spacing.m,
-  },
-  completedText: {
-    fontSize: 14,
-    color: colors.success,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-  takeQuizText: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.medium,
-  },
-  actionButtonsContainer: {
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.l,
-  },
-  continueButton: {
-    width: '100%',
+  courseDescription: {
+    textAlign: 'center',
+    marginBottom: spacing.m,
   },
   sectionCard: {
-    borderRadius: 8,
-    marginBottom: 16,
-    padding: 16,
+    marginBottom: spacing.m,
+    marginHorizontal: spacing.m,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
   sectionDescription: {
-    fontSize: 14,
-    color: colors.textSecondary,
     lineHeight: 20,
   },
   completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginTop: 12,
+    marginTop: spacing.s,
+  },
+  completedText: {
+    marginLeft: spacing.xs,
+  },
+  noContentMessage: {
+    textAlign: 'center',
+    marginVertical: spacing.m,
   },
 });
 

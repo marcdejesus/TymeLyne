@@ -1,7 +1,6 @@
 import React from 'react';
 import { 
   View, 
-  Text, 
   StyleSheet, 
   TouchableOpacity, 
   Dimensions,
@@ -9,7 +8,8 @@ import {
   StatusBar
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '../constants/theme';
+import { colors, spacing } from '../constants/theme';
+import Typography from './Typography';
 
 const { width, height } = Dimensions.get('window');
 const isIphoneWithNotch = Platform.OS === 'ios' && height > 800;
@@ -36,102 +36,87 @@ const Header = ({
   useLightIcons = false,
   style
 }) => {
-  const iconColor = useLightIcons ? colors.textInverted : colors.text;
-  
-  // Determine what to show on the left side of the header
-  const renderLeftSide = () => {
-    if (onBackPress) {
-      return (
-        <TouchableOpacity 
-          style={styles.touchableIcon} 
-          onPress={onBackPress}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="arrow-back" size={24} color={iconColor} />
-        </TouchableOpacity>
-      );
-    }
-    
-    if (onMenuPress) {
-      return (
-        <TouchableOpacity 
-          style={styles.touchableIcon} 
-          onPress={onMenuPress}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name="menu-outline" size={24} color={iconColor} />
-        </TouchableOpacity>
-      );
-    }
-    
-    // Empty view for spacing when no button
-    return <View style={styles.touchableIcon} />;
-  };
-  
-  // Determine what to show on the right side of the header
-  const renderRightSide = () => {
-    if (onRightPress) {
-      return (
-        <TouchableOpacity 
-          style={styles.touchableIcon} 
-          onPress={onRightPress}
-          activeOpacity={0.7}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <Ionicons name={rightIcon} size={24} color={iconColor} />
-        </TouchableOpacity>
-      );
-    }
-    
-    // Empty view for spacing when no button
-    return <View style={styles.touchableIcon} />;
-  };
+  const iconColor = useLightIcons ? colors.text.inverted : colors.text.primary;
   
   return (
     <View style={[
-      styles.header, 
-      { backgroundColor }, 
+      styles.container, 
+      { backgroundColor },
       style
     ]}>
-      {renderLeftSide()}
+      {/* Left button (back or menu) */}
+      {onBackPress ? (
+        <TouchableOpacity 
+          style={styles.button} 
+          onPress={onBackPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={24} color={iconColor} />
+        </TouchableOpacity>
+      ) : onMenuPress ? (
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={onMenuPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="menu-outline" size={24} color={iconColor} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.emptyButton} />
+      )}
       
-      <Text style={[styles.headerTitle, { color: iconColor }]} numberOfLines={1}>
+      {/* Title */}
+      <Typography 
+        variant="title" 
+        weight="semiBold" 
+        style={styles.title}
+        numberOfLines={1}
+      >
         {title}
-      </Text>
+      </Typography>
       
-      {renderRightSide()}
+      {/* Right button */}
+      {onRightPress ? (
+        <TouchableOpacity 
+          style={styles.button}
+          onPress={onRightPress}
+          activeOpacity={0.7}
+        >
+          <Ionicons name={rightIcon} size={24} color={iconColor} />
+        </TouchableOpacity>
+      ) : (
+        <View style={styles.emptyButton} />
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  header: {
+  container: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: width * 0.05,
-    paddingVertical: 16,
+    justifyContent: 'space-between',
+    height: 56,
+    paddingHorizontal: spacing.m,
+    paddingTop: isIphoneWithNotch ? spacing.s : 0,
+    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
-    height: Platform.OS === 'ios' ? 60 : 56,
   },
-  touchableIcon: {
-    padding: 8,
-    borderRadius: 20,
+  button: {
     width: 40,
     height: 40,
     alignItems: 'center',
     justifyContent: 'center',
+    borderRadius: 20,
   },
-  headerTitle: {
-    fontSize: Math.min(18, width * 0.05),
-    fontWeight: '600',
+  emptyButton: {
+    width: 40,
+  },
+  title: {
     flex: 1,
     textAlign: 'center',
-    marginHorizontal: 8,
-  },
+  }
 });
 
 export default Header; 

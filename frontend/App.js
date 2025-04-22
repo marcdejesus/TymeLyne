@@ -2,7 +2,8 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, Text, View, ActivityIndicator, SafeAreaView, Platform } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -63,10 +64,12 @@ const AppContent = () => {
 // Main App component
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar style="auto" />
-      <AppContent />
-    </AuthProvider>
+    <SafeAreaProvider>
+      <AuthProvider>
+        <StatusBar style="dark-content" backgroundColor="#F9F1E0" />
+        <AppContent />
+      </AuthProvider>
+    </SafeAreaProvider>
   );
 }
 

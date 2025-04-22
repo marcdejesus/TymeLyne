@@ -1,184 +1,394 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
   Image,
   ActivityIndicator,
   Alert,
+  SafeAreaView,
+  KeyboardAvoidingView,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
   Platform,
+  StatusBar,
   Dimensions
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import { 
-  Screen, 
-  InputField, 
-  Button, 
-  Card,
-  theme 
-} from '../components';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const { login, resendVerification, error, needsVerification } = useContext(AuthContext);
   
-  const { login, error } = useContext(AuthContext);
+  // Create refs for TextInput components to manage focus
+  const emailInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
+  
+  // Set email from route params if available
+  useEffect(() => {
+    if (route?.params?.email) {
+      setEmail(route.params.email);
+    }
+    
+    // Show verification message if coming from registration
+    if (route?.params?.fromRegistration) {
+      Alert.alert(
+        'Email Verification Required',
+        'Please check your email inbox for a verification link. You must verify your email before you can log in.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [route?.params]);
 
+  // Function to handle login
   const handleLogin = async () => {
-    // Validate inputs
+    // Dismiss keyboard when submitting
+    Keyboard.dismiss();
+    
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
+
+    setIsLoading(true);
     
-    try {
-      setIsLoading(true);
-      const result = await login(email, password);
+    // Call login function from AuthContext
+    const result = await login(email, password);
+    
+    if (!result.success) {
+      setIsLoading(false);
       
-      if (!result.success) {
-        Alert.alert('Login Failed', result.error || 'Invalid email or password');
+      // Check if verification is needed
+      if (result.needsVerification) {
+        Alert.alert(
+          'Email Not Verified',
+          'You need to verify your email before logging in. Would you like to resend the verification email?',
+          [
+            {
+              text: 'Cancel',
+              style: 'cancel'
+            },
+            {
+              text: 'Resend Email',
+              onPress: handleResendVerification
+            }
+          ]
+        );
+      } else {
+        Alert.alert('Error', result.error || 'Login failed');
       }
-      setIsLoading(false);
-    } catch (err) {
-      setIsLoading(false);
-      Alert.alert('Login Error', 'An unexpected error occurred. Please try again.');
+    }
+  };
+
+  // Handle resending verification email
+  const handleResendVerification = async () => {
+    // Dismiss keyboard when submitting
+    Keyboard.dismiss();
+    
+    if (!email) {
+      Alert.alert('Error', 'Please enter your email address');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    const result = await resendVerification(email);
+    
+    setIsLoading(false);
+    
+    if (result.success) {
+      Alert.alert('Success', 'Verification email sent. Please check your inbox.');
+    } else {
+      Alert.alert('Error', result.error || 'Failed to send verification email');
+    }
+  };
+
+  // Toggle password visibility
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
+  // Handle next input focus
+  const focusNextInput = (nextInput) => {
+    if (nextInput && nextInput.current) {
+      nextInput.current.focus();
     }
   };
 
   return (
-    <Screen
-      title="Sign In"
-      backgroundColor={theme.colors.background.main}
-      showBottomNav={false}
-      scrollable={true}
-      contentContainerStyle={styles.contentContainer}
-    >
-      {/* Logo and App Name */}
-      <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/favicon.png')} 
-          style={styles.logo} 
-          resizeMode="contain"
-        />
-        <Text style={styles.appName}>Tymelyne</Text>
-        <Text style={styles.tagline}>Your learning journey awaits</Text>
-      </View>
-
-      {/* Login Form */}
-      <View style={styles.formContainer}>
-        <InputField
-          label="Email"
-          placeholder="Enter your email"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
-        
-        <InputField
-          label="Password"
-          placeholder="Enter your password"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
-        
-        <Button
-          title={isLoading ? '' : 'Sign In'}
-          onPress={handleLogin}
-          loading={isLoading}
-          disabled={isLoading}
-          style={styles.loginButton}
-        />
-      </View>
-
-      {/* Register Link */}
-      <View style={styles.registerContainer}>
-        <Text style={styles.registerText}>Don't have an account? </Text>
-        <Text 
-          style={styles.registerLink}
-          onPress={() => navigation.navigate('Register')}
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
+        <KeyboardAvoidingView 
+          style={styles.container}
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+          enabled
         >
-          Create Account
-        </Text>
-      </View>
+          <ScrollView 
+            contentContainerStyle={styles.scrollContainer}
+            showsVerticalScrollIndicator={false}
+            keyboardShouldPersistTaps="handled"
+          >
+            {/* Logo and App Name */}
+            <View style={styles.logoContainer}>
+              <Image 
+                source={require('../../assets/favicon.png')} 
+                style={styles.logo} 
+                resizeMode="contain"
+              />
+              <Text style={styles.appName}>Tymelyne</Text>
+              <Text style={styles.tagline}>Learning one step at a time</Text>
+            </View>
 
-      {/* Demo Account Info */}
-      <Card style={styles.demoContainer}>
-        <Text style={styles.demoTitle}>Demo Account</Text>
-        <Text style={styles.demoText}>Email: demo@example.com</Text>
-        <Text style={styles.demoText}>Password: password</Text>
-      </Card>
-    </Screen>
+            {/* Login Form */}
+            <View style={styles.formContainer}>
+              <TextInput
+                ref={emailInputRef}
+                style={styles.input}
+                placeholder="Email"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                returnKeyType="next"
+                onSubmitEditing={() => focusNextInput(passwordInputRef)}
+                blurOnSubmit={false}
+                textContentType="emailAddress"
+              />
+              
+              {/* Password input with toggle button */}
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  ref={passwordInputRef}
+                  style={styles.passwordInput}
+                  placeholder="Password"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                  returnKeyType="done"
+                  onSubmitEditing={handleLogin}
+                  textContentType="password"
+                />
+                <TouchableOpacity 
+                  style={styles.visibilityToggle}
+                  onPress={togglePasswordVisibility}
+                  activeOpacity={0.7}
+                >
+                  <Text style={styles.visibilityToggleText}>
+                    {showPassword ? 'Hide' : 'Show'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+              
+              {/* Error Message */}
+              {error && !needsVerification && (
+                <Text style={styles.errorText}>{error}</Text>
+              )}
+              
+              {/* Verification Message */}
+              {needsVerification && (
+                <View style={styles.verificationContainer}>
+                  <Text style={styles.verificationText}>
+                    Your email is not verified. Please check your inbox or request a new verification email.
+                  </Text>
+                  <TouchableOpacity 
+                    style={styles.resendButton}
+                    onPress={handleResendVerification}
+                    disabled={isLoading}
+                  >
+                    <Text style={styles.resendButtonText}>Resend Verification</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+              
+              {/* Login Button */}
+              <TouchableOpacity 
+                style={styles.loginButton} 
+                onPress={handleLogin}
+                disabled={isLoading}
+                activeOpacity={0.8}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Login</Text>
+                )}
+              </TouchableOpacity>
+              
+              {/* Forgot Password */}
+              <TouchableOpacity style={styles.forgotPassword}>
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Register Link */}
+            <View style={styles.registerContainer}>
+              <Text style={styles.registerText}>Don't have an account? </Text>
+              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
+                <Text style={styles.registerLink}>Register</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Demo Account Info */}
+            <View style={styles.demoContainer}>
+              <Text style={styles.demoText}>
+                Demo Account:{'\n'}
+                Email: demo@example.com{'\n'}
+                Password: password
+              </Text>
+            </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: height * 0.02,
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.05, // Responsive margin
   },
   logo: {
-    width: width * 0.3,
-    height: width * 0.3,
+    width: width * 0.25, // Responsive size
+    height: width * 0.25, // Keep aspect ratio
   },
   appName: {
-    fontSize: theme.typography.fontSize.xxlarge,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
+    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
+    fontWeight: 'bold',
+    color: '#D35C34',
     marginTop: 10,
   },
   tagline: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.secondary,
+    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
+    color: '#6B6B5A',
     marginTop: 5,
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400,
-    marginBottom: theme.spacing.l,
+    maxWidth: 400, // Add max width for very large devices
+  },
+  input: {
+    backgroundColor: '#FFF',
+    borderRadius: 5,
+    padding: 15,
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: '#E0D8C0',
+    fontSize: 16,
+  },
+  passwordContainer: {
+    flexDirection: 'row',
+    borderWidth: 1,
+    borderColor: '#E0D8C0',
+    borderRadius: 5,
+    backgroundColor: '#FFF',
+    marginBottom: 15,
+  },
+  passwordInput: {
+    flex: 1,
+    padding: 15,
+    fontSize: 16,
+    backgroundColor: 'transparent',
+  },
+  visibilityToggle: {
+    justifyContent: 'center',
+    paddingHorizontal: 15,
+  },
+  visibilityToggleText: {
+    color: '#D35C34',
+    fontWeight: '600',
+  },
+  errorText: {
+    color: '#D35C34',
+    marginBottom: 15,
+    textAlign: 'center',
+  },
+  verificationContainer: {
+    backgroundColor: 'rgba(211, 92, 52, 0.1)',
+    borderRadius: 5,
+    padding: 15,
+    marginBottom: 15,
+  },
+  verificationText: {
+    color: '#D35C34',
+    marginBottom: 10,
+    textAlign: 'center',
+  },
+  resendButton: {
+    backgroundColor: '#F4ECE1',
+    borderRadius: 5,
+    padding: 10,
+    alignItems: 'center',
+  },
+  resendButtonText: {
+    color: '#D35C34',
+    fontWeight: '600',
   },
   loginButton: {
-    marginTop: theme.spacing.m,
+    backgroundColor: '#D35C34',
+    borderRadius: 5,
+    padding: 15,
+    alignItems: 'center',
+  },
+  loginButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  forgotPasswordText: {
+    color: '#6B6B5A',
   },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: theme.spacing.l,
-    marginBottom: theme.spacing.xl,
+    marginTop: 20,
   },
   registerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.typography.fontSize.regular,
+    color: '#6B6B5A',
   },
   registerLink: {
-    color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
-    fontSize: theme.typography.fontSize.regular,
+    color: '#D35C34',
+    fontWeight: 'bold',
   },
   demoContainer: {
-    alignItems: 'center',
-    width: '90%',
-    backgroundColor: `${theme.colors.primary}10`, // 10% opacity of primary color
-  },
-  demoTitle: {
-    fontSize: theme.typography.fontSize.regular,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.s,
+    marginTop: 30,
+    padding: 10,
+    backgroundColor: 'rgba(211, 92, 52, 0.1)',
+    borderRadius: 5,
+    width: '100%',
   },
   demoText: {
-    fontSize: theme.typography.fontSize.medium,
-    color: theme.colors.text.secondary,
-    marginBottom: 4,
+    color: '#6B6B5A',
+    textAlign: 'center',
   },
 });
 

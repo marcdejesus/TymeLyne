@@ -35,7 +35,6 @@ yarn-error.*
 .env.development
 .env.test
 .env.production
-.env*.local
 *.env
 
 # typescript

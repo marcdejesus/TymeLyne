@@ -1,51 +1,58 @@
 import React, { createContext, useState, useEffect } from 'react';
-// Import for future backend auth
-// import * as SecureStore from 'expo-secure-store';
-// import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import axios from 'axios';
+import apiConfig from '../config/apiConfig';
 
 export const AuthContext = createContext();
 
-// Mock user data
-const MOCK_USER = {
-  id: '1',
-  username: 'demouser',
-  fName: 'Demo',
-  lName: 'User',
-  email: 'demo@example.com',
-  follower_count: 1,
-  friends_count: 1, 
-  user_total_exp: 500,
-  current_courses: ['Digital Marketing']
-};
+// Load API URL from config file
+const API_URL = apiConfig.apiUrl;
+console.log('🌐 API URL set to:', API_URL);
+
+// Configure axios defaults
+axios.defaults.timeout = apiConfig.timeout;
+axios.interceptors.request.use(request => {
+  console.log('🔄 Making request to:', request.url);
+  return request;
+});
 
 const AuthProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [userToken, setUserToken] = useState(null);
   const [user, setUser] = useState(null);
   const [error, setError] = useState(null);
-
-  // Mock API URL for future implementation
-  // const API_URL = 'http://localhost:5000/api';
+  const [needsVerification, setNeedsVerification] = useState(false);
 
   useEffect(() => {
-    // Simulate checking if user is logged in
+    // Check if user is logged in
     const bootstrapAsync = async () => {
+      console.log('🔁 Checking for existing session...');
       try {
-        // For production, replace with:
-        // const token = await SecureStore.getItemAsync('userToken');
-        // if (token) {
-        //   setUserToken(token);
-        //   const userDataJson = await SecureStore.getItemAsync('user');
-        //   if (userDataJson) {
-        //     setUser(JSON.parse(userDataJson));
-        //   }
-        // }
+        // Retrieve token from secure storage
+        const token = await SecureStore.getItemAsync('userToken');
         
-        // Mock auto-login for demo (remove in production)
-        setUserToken('mock-token');
-        setUser(MOCK_USER);
+        if (token) {
+          console.log('🔑 Token found in storage');
+          setUserToken(token);
+          
+          // Retrieve user data
+          const userDataJson = await SecureStore.getItemAsync('user');
+          if (userDataJson) {
+            const userData = JSON.parse(userDataJson);
+            console.log('👤 User data retrieved from storage:', {
+              username: userData.username,
+              email: userData.email,
+              isVerified: userData.is_verified
+            });
+            setUser(userData);
+          } else {
+            console.log('❓ No user data found in storage');
+          }
+        } else {
+          console.log('🔒 No token found, user is not logged in');
+        }
       } catch (e) {
-        console.log('Error restoring token', e);
+        console.error('🔴 Error restoring session:', e);
       } finally {
         // Short delay to simulate loading
         setTimeout(() => {
@@ -58,36 +65,53 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (email, password) => {
+    console.log('🔶 LOGIN ATTEMPT:', { email });
     setIsLoading(true);
     setError(null);
-    
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    setNeedsVerification(false);
     
     try {
-      // For production, replace with actual API call:
-      // const response = await axios.post(`${API_URL}/auth/login`, {
-      //   email,
-      //   password,
-      // });
-      // const { token, user } = response.data;
-      // await SecureStore.setItemAsync('userToken', token);
-      // await SecureStore.setItemAsync('user', JSON.stringify(user));
+      // Call the backend API
+      console.log(`⚙️ Making login request to ${API_URL}/auth/login`);
+      const response = await axios.post(`${API_URL}/auth/login`, {
+        email,
+        password,
+      });
       
-      // Mock successful login
-      if (email === 'demo@example.com' && password === 'password') {
-        setUserToken('mock-token');
-        setUser(MOCK_USER);
-        return { success: true };
-      } else {
-        throw new Error('Invalid credentials');
-      }
+      const { token, user, message } = response.data;
+      console.log('✅ LOGIN SUCCESSFUL:', { 
+        username: user.username, 
+        email: user.email,
+        isVerified: user.is_verified
+      });
+
+      // Store token and user data
+      await SecureStore.setItemAsync('userToken', token);
+      await SecureStore.setItemAsync('user', JSON.stringify(user));
+      
+      setUserToken(token);
+      setUser(user);
+      
+      return { success: true };
     } catch (error) {
-      console.log('Login error:', error.message);
-      setError(error.message || 'Login failed');
+      console.error('🔴 LOGIN ERROR:', error.response?.data || error.message);
+      console.error('Error details:', error);
+      
+      // Check if the error is due to unverified email
+      if (error.response?.status === 401 && error.response?.data?.needsVerification) {
+        setNeedsVerification(true);
+        setError('Email not verified. Please check your inbox for verification email.');
+        return { 
+          success: false, 
+          error: 'Email not verified',
+          needsVerification: true
+        };
+      }
+      
+      setError(error.response?.data?.message || error.message || 'Login failed');
       return { 
         success: false, 
-        error: error.message || 'Login failed' 
+        error: error.response?.data?.message || error.message || 'Login failed'
       };
     } finally {
       setIsLoading(false);
@@ -95,60 +119,84 @@ const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
+    console.log('🔶 REGISTER ATTEMPT:', { 
+      email: userData.email, 
+      username: userData.username 
+    });
+    
     setIsLoading(true);
     setError(null);
     
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
     try {
-      // For production, replace with actual API call:
-      // const response = await axios.post(`${API_URL}/auth/register`, userData);
-      // const { token, user } = response.data;
-      // await SecureStore.setItemAsync('userToken', token);
-      // await SecureStore.setItemAsync('user', JSON.stringify(user));
+      // Call the backend API
+      console.log(`⚙️ Making registration request to ${API_URL}/auth/register`);
+      const response = await axios.post(`${API_URL}/auth/register`, userData);
       
-      // Mock successful registration
-      const newUser = {
-        ...MOCK_USER,
-        username: userData.username,
-        fName: userData.fName,
-        lName: userData.lName,
-        email: userData.email
+      const { success, needsVerification, message, user } = response.data;
+      console.log('✅ REGISTRATION SUCCESSFUL', { 
+        username: user.username, 
+        email: user.email,
+        isVerified: user.is_verified,
+        needsVerification,
+        message
+      });
+      
+      // Don't store token or set user as logged in
+      // User must verify email first
+      
+      // Set needsVerification flag
+      setNeedsVerification(needsVerification);
+      
+      return { 
+        success: true,
+        message: message,
+        needsVerification: true
       };
-      
-      setUserToken('mock-token');
-      setUser(newUser);
-      
-      return { success: true };
     } catch (error) {
-      console.log('Register error:', error.message);
-      setError(error.message || 'Registration failed');
+      console.error('🔴 REGISTER ERROR:', error.response?.data || error.message);
+      console.error('Error details:', error);
+      setError(error.response?.data?.message || error.message || 'Registration failed');
       return { 
         success: false, 
-        error: error.message || 'Registration failed' 
+        error: error.response?.data?.message || error.message || 'Registration failed'
       };
     } finally {
       setIsLoading(false);
     }
   };
 
-  const logout = async () => {
-    setIsLoading(true);
-    
-    // Simulate delay
-    await new Promise(resolve => setTimeout(resolve, 500));
+  const resendVerification = async (email) => {
+    console.log('🔶 RESEND VERIFICATION ATTEMPT:', { email });
     
     try {
-      // For production, replace with:
-      // await SecureStore.deleteItemAsync('userToken');
-      // await SecureStore.deleteItemAsync('user');
+      const response = await axios.post(`${API_URL}/auth/resend-verification`, { email });
+      console.log('✅ VERIFICATION EMAIL RESENT:', { email, message: response.data.message });
+      return { success: true, message: response.data.message };
+    } catch (error) {
+      console.error('🔴 RESEND VERIFICATION ERROR:', error.response?.data || error.message);
+      console.error('Error details:', error);
+      return { 
+        success: false, 
+        error: error.response?.data?.message || error.message || 'Failed to resend verification email'
+      };
+    }
+  };
+
+  const logout = async () => {
+    console.log('🔶 LOGOUT ATTEMPT');
+    setIsLoading(true);
+    
+    try {
+      // Remove token and user data from storage
+      await SecureStore.deleteItemAsync('userToken');
+      await SecureStore.deleteItemAsync('user');
       
-      // Mock logout
+      // Clear state
       setUserToken(null);
       setUser(null);
+      console.log('✅ LOGOUT SUCCESSFUL');
     } catch (e) {
-      console.log('Logout error', e);
+      console.error('🔴 LOGOUT ERROR:', e);
     } finally {
       setIsLoading(false);
     }
@@ -161,9 +209,11 @@ const AuthProvider = ({ children }) => {
         userToken,
         user,
         error,
+        needsVerification,
         login,
         register,
         logout,
+        resendVerification
       }}
     >
       {children}

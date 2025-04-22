@@ -11,16 +11,22 @@ const ProfileSchema = new Schema({
     type: String,
     required: true,
     unique: true,
-    max: 254
+    maxlength: 254
   },
   username: {
     type: String,
     required: true,
-    max: 30
+    maxlength: 30
   },
   is_verified: {
     type: Boolean,
     default: false
+  },
+  verification_token: {
+    type: String
+  },
+  verification_token_expires: {
+    type: Date
   },
   created_at: {
     type: Date,
@@ -32,11 +38,11 @@ const ProfileSchema = new Schema({
   },
   fName: {
     type: String,
-    max: 50
+    maxlength: 50
   },
   lName: {
     type: String,
-    max: 50
+    maxlength: 50
   },
   bio: {
     type: String
@@ -66,7 +72,7 @@ const ProfileSchema = new Schema({
   },
   theme: {
     type: String,
-    max: 10,
+    maxlength: 10,
     default: 'light'
   },
   course_generations: {

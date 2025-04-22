@@ -9,13 +9,14 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
-  StatusBar,
-  Platform,
-  Dimensions,
   KeyboardAvoidingView,
-  ScrollView
+  Platform,
+  ScrollView,
+  StatusBar,
+  Dimensions
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -23,30 +24,39 @@ const LoginScreen = ({ navigation }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  
   const { login, error } = useContext(AuthContext);
 
-  // Function to handle login
   const handleLogin = async () => {
+    // Validate inputs
     if (!email || !password) {
       Alert.alert('Error', 'Please enter both email and password');
       return;
     }
-
-    setIsLoading(true);
     
-    // Call login function from AuthContext
-    const result = await login(email, password);
-    
-    if (!result.success) {
-      setIsLoading(false);
-      Alert.alert('Error', result.error || 'Login failed');
+    try {
+      const result = await login(email, password);
+      
+      if (!result.success) {
+        Alert.alert('Login Failed', result.error || 'Invalid email or password');
+      }
+    } catch (err) {
+      Alert.alert('Login Error', 'An unexpected error occurred. Please try again.');
     }
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
-      <KeyboardAvoidingView 
+      <StatusBar barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} backgroundColor="#D35C34" />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.headerLeft} />
+        <Text style={styles.headerTitle}>Sign In</Text>
+        <View style={styles.headerRight} />
+      </View>
+      
+      <KeyboardAvoidingView
         style={styles.container}
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
@@ -63,44 +73,45 @@ const LoginScreen = ({ navigation }) => {
               resizeMode="contain"
             />
             <Text style={styles.appName}>Tymelyne</Text>
-            <Text style={styles.tagline}>Learning one step at a time</Text>
+            <Text style={styles.tagline}>Your learning journey awaits</Text>
           </View>
 
           {/* Login Form */}
           <View style={styles.formContainer}>
-            <TextInput
-              style={styles.input}
-              placeholder="Email"
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Email</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your email"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+            </View>
             
-            {/* Login Button */}
+            <View style={styles.inputGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+            
             <TouchableOpacity 
               style={styles.loginButton} 
               onPress={handleLogin}
-              disabled={isLoading}
               activeOpacity={0.8}
+              disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color="#ffffff" size="small" />
               ) : (
-                <Text style={styles.loginButtonText}>Login</Text>
+                <Text style={styles.loginButtonText}>Sign In</Text>
               )}
-            </TouchableOpacity>
-            
-            {/* Forgot Password */}
-            <TouchableOpacity style={styles.forgotPassword}>
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
             </TouchableOpacity>
           </View>
 
@@ -108,17 +119,15 @@ const LoginScreen = ({ navigation }) => {
           <View style={styles.registerContainer}>
             <Text style={styles.registerText}>Don't have an account? </Text>
             <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.registerLink}>Register</Text>
+              <Text style={styles.registerLink}>Create Account</Text>
             </TouchableOpacity>
           </View>
 
           {/* Demo Account Info */}
           <View style={styles.demoContainer}>
-            <Text style={styles.demoText}>
-              Demo Account:{'\n'}
-              Email: demo@example.com{'\n'}
-              Password: password
-            </Text>
+            <Text style={styles.demoTitle}>Demo Account</Text>
+            <Text style={styles.demoText}>Email: demo@example.com</Text>
+            <Text style={styles.demoText}>Password: password</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -130,7 +139,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F9F1E0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#D35C34',
+    height: 60,
+    paddingHorizontal: 15,
+  },
+  headerLeft: {
+    width: 40, // For alignment
+  },
+  headerRight: {
+    width: 40, // For alignment
+  },
+  headerTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,
@@ -139,81 +166,94 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: height * 0.05, // Responsive margin
+    marginTop: height * 0.02,
+    marginBottom: height * 0.05,
   },
   logo: {
-    width: width * 0.25, // Responsive size
-    height: width * 0.25, // Keep aspect ratio
+    width: width * 0.3,
+    height: width * 0.3,
   },
   appName: {
-    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
+    fontSize: width > 375 ? 30 : 26,
     fontWeight: 'bold',
     color: '#D35C34',
     marginTop: 10,
   },
   tagline: {
-    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
+    fontSize: width > 375 ? 16 : 14,
     color: '#6B6B5A',
     marginTop: 5,
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400, // Add max width for very large devices
+    maxWidth: 400,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A4A3A',
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#FFF',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
-    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#E0D8C0',
     fontSize: 16,
   },
   loginButton: {
     backgroundColor: '#D35C34',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
     alignItems: 'center',
+    marginTop: 10,
   },
   loginButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  forgotPasswordText: {
-    color: '#6B6B5A',
-  },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 25,
   },
   registerText: {
     color: '#6B6B5A',
+    fontSize: 16,
   },
   registerLink: {
     color: '#D35C34',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   demoContainer: {
-    marginTop: 30,
-    padding: 10,
+    marginTop: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 5,
-    width: '100%',
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '90%',
+  },
+  demoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#D35C34',
+    marginBottom: 8,
   },
   demoText: {
+    fontSize: 14,
     color: '#6B6B5A',
-    textAlign: 'center',
+    marginBottom: 4,
   },
 });
 

@@ -17,9 +17,9 @@ const isIphoneX = Platform.OS === 'ios' && (height > 800 || width > 800);
 /**
  * Reusable bottom navigation bar component
  * 
- * @param {string} activeScreen - The currently active screen ('Home', 'Achievements', 'Profile')
+ * @param {string} activeScreen - The currently active screen ('Home', 'Leaderboards', 'Profile')
  * @param {function} onHomePress - Function to call when Home tab is pressed
- * @param {function} onAchievementsPress - Function to call when Achievements tab is pressed
+ * @param {function} onAchievementsPress - Function to call when Leaderboards tab is pressed
  * @param {function} onProfilePress - Function to call when Profile tab is pressed
  * @param {object} style - Additional styles for the navigation container
  */
@@ -40,10 +40,10 @@ const BottomNavigation = ({
       onPress: onHomePress
     },
     {
-      id: 'Achievements',
+      id: 'Leaderboards',
       icon: 'trophy-outline',
       activeIcon: 'trophy',
-      label: 'Achievements',
+      label: 'Leaderboards',
       onPress: onAchievementsPress
     },
     {

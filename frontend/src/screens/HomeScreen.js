@@ -53,6 +53,8 @@ const HomeScreen = ({ navigation }) => {
       navigation.navigate('CourseDetails', params);
     } else if (screenName === 'Messages') {
       navigation.navigate('Messages');
+    } else if (screenName === 'Leaderboards') {
+      navigation.navigate('Leaderboards');
     } else {
       navigation.navigate('Development');
     }
@@ -84,7 +86,7 @@ const HomeScreen = ({ navigation }) => {
       rightIcon="paper-plane-outline"
       activeScreen="Home"
       onHomePress={() => handleNavigation('Home')}
-      onAchievementsPress={() => handleNavigation('Achievements')}
+      onAchievementsPress={() => handleNavigation('Leaderboards')}
       onProfilePress={() => handleNavigation('Profile')}
       backgroundColor={colors.background}
       scrollable={true}

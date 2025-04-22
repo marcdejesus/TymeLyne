@@ -12,7 +12,7 @@ const DevelopmentScreen = ({ navigation }) => {
       onBackPress={() => navigation.goBack()}
       activeScreen="Home"
       onHomePress={() => navigation.navigate('Home')}
-      onAchievementsPress={() => {}}
+      onAchievementsPress={() => navigation.navigate('Leaderboards')}
       onProfilePress={() => navigation.navigate('Profile')}
       backgroundColor={theme.colors.background.main}
     >

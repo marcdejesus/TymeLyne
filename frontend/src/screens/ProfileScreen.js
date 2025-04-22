@@ -70,6 +70,8 @@ const ProfileScreen = ({ navigation }) => {
     // For unimplemented screens, navigate to development page
     if (screenName === 'Home') {
       navigation.navigate('Home');
+    } else if (screenName === 'Leaderboards') {
+      navigation.navigate('Leaderboards');
     } else {
       navigation.navigate('Development');
     }
@@ -88,7 +90,7 @@ const ProfileScreen = ({ navigation }) => {
       rightIcon="settings-outline"
       activeScreen="Profile"
       onHomePress={() => handleNavigation('Home')}
-      onAchievementsPress={() => handleNavigation('Achievements')}
+      onAchievementsPress={() => handleNavigation('Leaderboards')}
       onProfilePress={() => handleNavigation('Profile')}
       backgroundColor={theme.colors.background.main}
     >

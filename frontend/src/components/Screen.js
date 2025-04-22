@@ -17,7 +17,7 @@ import { colors } from '../constants/theme';
  * @param {string} rightIcon - Icon name for right button
  * @param {string} activeScreen - Active screen for bottom navigation
  * @param {function} onHomePress - Function for home tab press
- * @param {function} onAchievementsPress - Function for achievements tab press
+ * @param {function} onAchievementsPress - Function for leaderboards tab press
  * @param {function} onProfilePress - Function for profile tab press
  * @param {boolean} scrollable - Whether content should be scrollable
  * @param {boolean} showBottomNav - Whether to show bottom navigation

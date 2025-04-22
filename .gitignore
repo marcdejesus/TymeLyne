@@ -1,10 +1,14 @@
 # Dependencies
 node_modules/
-npm-debug.log
-yarn-debug.log
-yarn-error.log
-.pnp
-.pnp.js
+.expo/
+npm-debug.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
 
 # Environment variables
 .env
@@ -65,9 +69,7 @@ data/db/
 
 # Secrets
 *.pem
-*.key
 *.cert
-*.jks
 credentials.json
 secrets.json
 
@@ -81,3 +83,7 @@ temp/
 .Trashes
 ehthumbs.db
 Thumbs.db
+
+# Configuration files with sensitive info
+frontend/src/config/apiConfig.js
+backend/.env

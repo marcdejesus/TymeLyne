@@ -5,6 +5,14 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from './src/constants/theme';
+import { 
+  useFonts,
+  Montserrat_300Light,
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold
+} from '@expo-google-fonts/montserrat';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -76,6 +84,24 @@ const AppContent = () => {
 
 // Main App component
 export default function App() {
+  // Load Montserrat fonts
+  const [fontsLoaded] = useFonts({
+    Montserrat_300Light,
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold
+  });
+
+  // Show loading screen while fonts are loading
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>

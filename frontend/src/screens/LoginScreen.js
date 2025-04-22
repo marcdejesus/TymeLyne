@@ -1,12 +1,7 @@
 import React, { useState, useContext, useRef, useEffect } from 'react';
 import {
   View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
   Image,
-  ActivityIndicator,
   Alert,
   SafeAreaView,
   KeyboardAvoidingView,
@@ -15,10 +10,15 @@ import {
   TouchableWithoutFeedback,
   Platform,
   StatusBar,
+  StyleSheet,
   Dimensions
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { colors, spacing, shadows } from '../constants/theme';
+import Typography from '../components/Typography';
+import Input from '../components/Input';
+import Button from '../components/Button';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,7 +26,6 @@ const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
   const { login, resendVerification, error, needsVerification } = useContext(AuthContext);
   
   // Create refs for TextInput components to manage focus
@@ -112,22 +111,15 @@ const LoginScreen = ({ navigation, route }) => {
     }
   };
 
-  // Toggle password visibility
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
-  };
-
-  // Handle next input focus
-  const focusNextInput = (nextInput) => {
-    if (nextInput && nextInput.current) {
-      nextInput.current.focus();
-    }
+  // Handle navigation to registration screen
+  const handleRegisterPress = () => {
+    navigation.navigate('Register');
   };
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
+        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
         <KeyboardAvoidingView 
           style={styles.container}
           behavior={Platform.OS === "ios" ? "padding" : "height"}
@@ -146,106 +138,78 @@ const LoginScreen = ({ navigation, route }) => {
                 style={styles.logo} 
                 resizeMode="contain"
               />
-              <Text style={styles.appName}>Tymelyne</Text>
-              <Text style={styles.tagline}>Learning one step at a time</Text>
+              <Typography variant="largeHeading" weight="bold" style={styles.appName}>
+                Tymelyne
+              </Typography>
+              <Typography variant="subheading" color={colors.text.secondary} style={styles.tagline}>
+                Learning one step at a time
+              </Typography>
             </View>
 
             {/* Login Form */}
             <View style={styles.formContainer}>
-              <TextInput
-                ref={emailInputRef}
-                style={styles.input}
-                placeholder="Email"
+              <Input
+                label="Email"
+                placeholder="Enter your email"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 returnKeyType="next"
-                onSubmitEditing={() => focusNextInput(passwordInputRef)}
-                blurOnSubmit={false}
-                textContentType="emailAddress"
+                leftIcon={<Icon name="mail-outline" size={20} color={colors.text.tertiary} />}
+                error={needsVerification ? "Email not verified" : null}
               />
               
-              {/* Password input with toggle button */}
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  ref={passwordInputRef}
-                  style={styles.passwordInput}
-                  placeholder="Password"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
-                  returnKeyType="done"
-                  onSubmitEditing={handleLogin}
-                  textContentType="password"
-                />
-                <TouchableOpacity 
-                  style={styles.visibilityToggle}
-                  onPress={togglePasswordVisibility}
-                  activeOpacity={0.7}
-                >
-                  <Text style={styles.visibilityToggleText}>
-                    {showPassword ? 'Hide' : 'Show'}
-                  </Text>
-                </TouchableOpacity>
+              <Input
+                label="Password"
+                placeholder="Enter your password"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={true}
+                returnKeyType="done"
+                onSubmitEditing={handleLogin}
+                leftIcon={<Icon name="lock-closed-outline" size={20} color={colors.text.tertiary} />}
+              />
+              
+              <Button
+                label="Log In"
+                variant="primary"
+                onPress={handleLogin}
+                loading={isLoading}
+                style={styles.loginButton}
+                fullWidth
+              />
+              
+              {/* Demo Account Info */}
+              <View style={styles.demoContainer}>
+                <Typography variant="caption" color={colors.text.tertiary} center>
+                  Demo Account: demo@user.com / password123
+                </Typography>
               </View>
               
-              {/* Error Message */}
-              {error && !needsVerification && (
-                <Text style={styles.errorText}>{error}</Text>
-              )}
+              {/* Register Button */}
+              <View style={styles.registerContainer}>
+                <Typography variant="body" color={colors.text.secondary}>
+                  Don't have an account?
+                </Typography>
+                <Button
+                  label="Register"
+                  variant="outline"
+                  onPress={handleRegisterPress}
+                  style={styles.registerButton}
+                />
+              </View>
               
-              {/* Verification Message */}
+              {/* Need to Resend Verification Email */}
               {needsVerification && (
-                <View style={styles.verificationContainer}>
-                  <Text style={styles.verificationText}>
-                    Your email is not verified. Please check your inbox or request a new verification email.
-                  </Text>
-                  <TouchableOpacity 
-                    style={styles.resendButton}
-                    onPress={handleResendVerification}
-                    disabled={isLoading}
-                  >
-                    <Text style={styles.resendButtonText}>Resend Verification</Text>
-                  </TouchableOpacity>
-                </View>
+                <Button
+                  label="Resend Verification Email"
+                  variant="outline"
+                  onPress={handleResendVerification}
+                  loading={isLoading}
+                  style={styles.resendButton}
+                />
               )}
-              
-              {/* Login Button */}
-              <TouchableOpacity 
-                style={styles.loginButton} 
-                onPress={handleLogin}
-                disabled={isLoading}
-                activeOpacity={0.8}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Login</Text>
-                )}
-              </TouchableOpacity>
-              
-              {/* Forgot Password */}
-              <TouchableOpacity style={styles.forgotPassword}>
-                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Register Link */}
-            <View style={styles.registerContainer}>
-              <Text style={styles.registerText}>Don't have an account? </Text>
-              <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-                <Text style={styles.registerLink}>Register</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Demo Account Info */}
-            <View style={styles.demoContainer}>
-              <Text style={styles.demoText}>
-                Demo Account:{'\n'}
-                Email: demo@example.com{'\n'}
-                Password: password
-              </Text>
             </View>
           </ScrollView>
         </KeyboardAvoidingView>
@@ -257,139 +221,61 @@ const LoginScreen = ({ navigation, route }) => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F9F1E0',
+    backgroundColor: colors.background,
   },
   container: {
     flex: 1,
-    backgroundColor: '#F9F1E0',
   },
   scrollContainer: {
     flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 20,
-    paddingBottom: Platform.OS === 'ios' ? 40 : 20,
+    paddingHorizontal: spacing.horizontal.medium,
+    paddingVertical: spacing.vertical.medium,
+    justifyContent: 'center'
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: height * 0.05, // Responsive margin
+    marginBottom: spacing.xl
   },
   logo: {
-    width: width * 0.25, // Responsive size
-    height: width * 0.25, // Keep aspect ratio
+    width: 80,
+    height: 80,
+    marginBottom: spacing.m
   },
   appName: {
-    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
-    fontWeight: 'bold',
-    color: '#D35C34',
-    marginTop: 10,
+    marginBottom: spacing.xs
   },
   tagline: {
-    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
-    color: '#6B6B5A',
-    marginTop: 5,
+    marginBottom: spacing.m
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400, // Add max width for very large devices
-  },
-  input: {
-    backgroundColor: '#FFF',
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    fontSize: 16,
-  },
-  passwordContainer: {
-    flexDirection: 'row',
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    borderRadius: 5,
-    backgroundColor: '#FFF',
-    marginBottom: 15,
-  },
-  passwordInput: {
-    flex: 1,
-    padding: 15,
-    fontSize: 16,
-    backgroundColor: 'transparent',
-  },
-  visibilityToggle: {
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-  },
-  visibilityToggleText: {
-    color: '#D35C34',
-    fontWeight: '600',
-  },
-  errorText: {
-    color: '#D35C34',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  verificationContainer: {
-    backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 5,
-    padding: 15,
-    marginBottom: 15,
-  },
-  verificationText: {
-    color: '#D35C34',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  resendButton: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 5,
-    padding: 10,
-    alignItems: 'center',
-  },
-  resendButtonText: {
-    color: '#D35C34',
-    fontWeight: '600',
+    maxWidth: 400,
+    alignSelf: 'center'
   },
   loginButton: {
-    backgroundColor: '#D35C34',
-    borderRadius: 5,
-    padding: 15,
-    alignItems: 'center',
+    marginTop: spacing.m
   },
-  loginButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  forgotPasswordText: {
-    color: '#6B6B5A',
+  demoContainer: {
+    marginTop: spacing.l,
+    padding: spacing.m,
+    backgroundColor: colors.cardDark,
+    borderRadius: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: colors.primary
   },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+    gap: spacing.s
   },
-  registerText: {
-    color: '#6B6B5A',
+  registerButton: {
+    marginLeft: spacing.s
   },
-  registerLink: {
-    color: '#D35C34',
-    fontWeight: 'bold',
-  },
-  demoContainer: {
-    marginTop: 30,
-    padding: 10,
-    backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 5,
-    width: '100%',
-  },
-  demoText: {
-    color: '#6B6B5A',
-    textAlign: 'center',
-  },
+  resendButton: {
+    marginTop: spacing.m
+  }
 });
 
 export default LoginScreen; 

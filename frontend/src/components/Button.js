@@ -1,141 +1,132 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Text, ActivityIndicator, Dimensions } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { TouchableOpacity, StyleSheet, ActivityIndicator, View } from 'react-native';
+import { buttons, colors, shadows } from '../constants/theme';
+import Typography from './Typography';
 
 /**
- * Button component with different variants (primary, secondary, outline, text)
- * Handles loading state and disabled state
+ * Button component with consistent styling across the app.
+ * Uses the app's theme and Typography component.
  * 
- * @param {string} variant - 'primary', 'secondary', 'outline', or 'text'
- * @param {function} onPress - Function to call when button is pressed
- * @param {boolean} loading - Whether to show loading indicator
- * @param {boolean} disabled - Whether button is disabled
- * @param {string} title - Text to display in button
- * @param {object} style - Additional styles for the button
- * @param {object} textStyle - Additional styles for the button text
+ * @param {Object} props - Component props.
+ * @param {string} props.variant - Button variant. Options: 'primary', 'secondary', 'outline'.
+ * @param {string} props.size - Button size. Options: 'small', 'medium', 'large'.
+ * @param {boolean} props.fullWidth - Whether the button should take full width.
+ * @param {boolean} props.disabled - Whether the button is disabled.
+ * @param {boolean} props.loading - Whether to show loading indicator.
+ * @param {Function} props.onPress - Function to call when button is pressed.
+ * @param {ReactNode} props.icon - Optional icon to display before text.
+ * @param {Object} props.style - Additional button styles.
+ * @param {string} props.label - Button text.
+ * @returns {ReactNode} - Button component.
  */
-const Button = ({
-  variant = 'primary',
-  onPress,
-  loading = false,
+const Button = ({ 
+  variant = 'primary', 
+  size = 'medium',
+  fullWidth = false,
   disabled = false,
-  title,
+  loading = false,
+  onPress,
+  icon,
   style,
-  textStyle,
-  ...props
+  label,
+  ...props 
 }) => {
-  // Determine button and text style based on variant
-  const getButtonStyle = () => {
-    switch (variant) {
-      case 'primary':
-        return styles.primaryButton;
-      case 'secondary':
-        return styles.secondaryButton;
-      case 'outline':
-        return styles.outlineButton;
-      case 'text':
-        return styles.textButton;
-      default:
-        return styles.primaryButton;
+  // Determine which button style to use
+  const buttonStyle = disabled ? buttons.disabled : buttons[variant] || buttons.primary;
+  
+  // Determine size-specific styles
+  const sizeStyles = {
+    small: {
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+    },
+    medium: {
+      paddingVertical: 12,
+      paddingHorizontal: 24,
+    },
+    large: {
+      paddingVertical: 16,
+      paddingHorizontal: 32,
     }
   };
-
-  const getTextStyle = () => {
-    switch (variant) {
-      case 'primary':
-        return styles.primaryText;
-      case 'secondary':
-        return styles.secondaryText;
-      case 'outline':
-        return styles.outlineText;
-      case 'text':
-        return styles.textText;
-      default:
-        return styles.primaryText;
-    }
-  };
-
-  const buttonStyles = [
-    styles.button,
-    getButtonStyle(),
-    disabled && styles.disabledButton,
-    style
-  ];
-
-  const titleStyles = [
-    styles.text,
-    getTextStyle(),
-    disabled && styles.disabledText,
-    textStyle
-  ];
-
+  
+  // Get current size style
+  const sizeStyle = sizeStyles[size] || sizeStyles.medium;
+  
+  // Determine text color based on variant and disabled state
+  const textColor = disabled ? 
+    colors.text.disabled : 
+    buttonStyle.textColor;
+  
   return (
     <TouchableOpacity
-      style={buttonStyles}
-      onPress={onPress}
-      disabled={disabled || loading}
+      style={[
+        styles.button,
+        { backgroundColor: buttonStyle.backgroundColor },
+        sizeStyle,
+        variant === 'outline' && styles.outline,
+        fullWidth && styles.fullWidth,
+        buttonStyle.borderRadius && { borderRadius: buttonStyle.borderRadius },
+        buttonStyle.borderWidth && { 
+          borderWidth: buttonStyle.borderWidth,
+          borderColor: buttonStyle.borderColor || colors.primary 
+        },
+        !disabled && buttonStyle.shadowColor && shadows.small,
+        style
+      ]}
+      onPress={loading || disabled ? null : onPress}
+      disabled={loading || disabled}
       activeOpacity={0.7}
       {...props}
     >
-      {loading ? (
-        <ActivityIndicator 
-          size="small" 
-          color={variant === 'primary' ? '#FFFFFF' : '#684BFF'} 
-        />
-      ) : (
-        <Text style={titleStyles}>{title}</Text>
-      )}
+      <View style={styles.content}>
+        {loading ? (
+          <ActivityIndicator 
+            size="small" 
+            color={textColor}
+            style={styles.loader} 
+          />
+        ) : (
+          <>
+            {icon && <View style={styles.iconContainer}>{icon}</View>}
+            <Typography 
+              variant="button" 
+              weight="medium"
+              color={textColor} 
+              center
+            >
+              {label}
+            </Typography>
+          </>
+        )}
+      </View>
     </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    height: 50,
-    borderRadius: 10,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    minWidth: width * 0.3,
   },
-  primaryButton: {
-    backgroundColor: '#684BFF',
+  content: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  secondaryButton: {
-    backgroundColor: '#F0ECFF',
+  fullWidth: {
+    width: '100%',
   },
-  outlineButton: {
+  outline: {
     backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#684BFF',
   },
-  textButton: {
-    backgroundColor: 'transparent',
-    paddingHorizontal: 0,
+  iconContainer: {
+    marginRight: 8,
   },
-  disabledButton: {
-    opacity: 0.6,
-  },
-  text: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  primaryText: {
-    color: '#FFFFFF',
-  },
-  secondaryText: {
-    color: '#684BFF',
-  },
-  outlineText: {
-    color: '#684BFF',
-  },
-  textText: {
-    color: '#684BFF',
-  },
-  disabledText: {
-    opacity: 0.6,
-  },
+  loader: {
+    marginRight: 8,
+  }
 });
 
 export default Button; 

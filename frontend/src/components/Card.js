@@ -1,91 +1,78 @@
 import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Dimensions, 
-  Platform 
-} from 'react-native';
-import { colors } from '../constants/theme';
-
-const { width } = Dimensions.get('window');
+import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { colors, shadows, borderRadius, spacing } from '../constants/theme';
 
 /**
- * Reusable Card component for containing content
+ * Card component with consistent styling across the app.
+ * Can be made touchable with onPress prop.
  * 
- * @param {node} children - Child components to render inside the card
- * @param {function} onPress - Function to call when card is pressed (makes card touchable)
- * @param {object} style - Additional styles for the card
- * @param {string} backgroundColor - Background color of the card
- * @param {number} elevation - Elevation/shadow intensity (1-5)
+ * @param {Object} props - Component props.
+ * @param {ReactNode} props.children - Card content.
+ * @param {string} props.variant - Card variant. Options: 'elevated', 'outlined', 'flat'.
+ * @param {Function} props.onPress - Function to call when card is pressed.
+ * @param {Object} props.style - Additional card styles.
+ * @param {boolean} props.noPadding - Whether to remove default padding.
+ * @returns {ReactNode} - Card component.
  */
-const Card = ({
-  children,
-  onPress,
+const Card = ({ 
+  children, 
+  variant = 'elevated', 
+  onPress, 
   style,
-  backgroundColor = colors.card,
-  elevation = 2
+  noPadding = false,
+  ...props 
 }) => {
-  // Shadow styles based on elevation
-  const getShadowStyle = () => {
-    const shadowOpacity = 0.08 * elevation;
-    const shadowRadius = elevation;
-    const shadowOffset = { width: 0, height: elevation / 2 };
-    
-    return Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset,
-        shadowOpacity,
-        shadowRadius,
-      },
-      android: {
-        elevation,
-      },
-    });
-  };
-  
-  // If onPress is provided, wrap in TouchableOpacity
+  // Determine container styles based on variant
+  const containerStyles = [
+    styles.container,
+    variant === 'elevated' && styles.elevated,
+    variant === 'outlined' && styles.outlined,
+    variant === 'flat' && styles.flat,
+    !noPadding && styles.padding,
+    style
+  ];
+
+  // Render a touchable or non-touchable card
   if (onPress) {
     return (
-      <TouchableOpacity
-        style={[
-          styles.card,
-          getShadowStyle(),
-          { backgroundColor },
-          style
-        ]}
+      <TouchableOpacity 
+        style={containerStyles} 
         onPress={onPress}
         activeOpacity={0.7}
-        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
+        {...props}
       >
         {children}
       </TouchableOpacity>
     );
   }
-  
-  // Otherwise render as a View
+
   return (
-    <View
-      style={[
-        styles.card,
-        getShadowStyle(),
-        { backgroundColor },
-        style
-      ]}
-    >
+    <View style={containerStyles} {...props}>
       {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  card: {
-    borderRadius: 12,
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: 0,
+  container: {
+    borderRadius: borderRadius.m,
+    backgroundColor: colors.card,
+    overflow: 'hidden',
+    marginVertical: spacing.s
   },
+  padding: {
+    padding: spacing.m
+  },
+  elevated: {
+    ...shadows.medium,
+  },
+  outlined: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  flat: {
+    // No additional styles for flat variant
+  }
 });
 
 export default Card; 

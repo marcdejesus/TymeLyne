@@ -9,15 +9,13 @@ import {
   ActivityIndicator,
   Alert,
   SafeAreaView,
-  StatusBar,
-  Platform,
-  Dimensions,
   KeyboardAvoidingView,
   ScrollView,
   Keyboard,
   TouchableWithoutFeedback
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
@@ -32,7 +30,6 @@ const LoginScreen = ({ navigation }) => {
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
 
-  // Function to handle login
   const handleLogin = async () => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
@@ -241,7 +238,25 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F9F1E0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#D35C34',
+    height: 60,
+    paddingHorizontal: 15,
+  },
+  headerLeft: {
+    width: 40, // For alignment
+  },
+  headerRight: {
+    width: 40, // For alignment
+  },
+  headerTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,
@@ -250,38 +265,46 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: height * 0.05, // Responsive margin
+    marginTop: height * 0.02,
+    marginBottom: height * 0.05,
   },
   logo: {
-    width: width * 0.25, // Responsive size
-    height: width * 0.25, // Keep aspect ratio
+    width: width * 0.3,
+    height: width * 0.3,
   },
   appName: {
-    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
+    fontSize: width > 375 ? 30 : 26,
     fontWeight: 'bold',
     color: '#D35C34',
     marginTop: 10,
   },
   tagline: {
-    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
+    fontSize: width > 375 ? 16 : 14,
     color: '#6B6B5A',
     marginTop: 5,
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400, // Add max width for very large devices
+    maxWidth: 400,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A4A3A',
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#FFF',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
-    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#E0D8C0',
     fontSize: 16,
@@ -336,43 +359,48 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#D35C34',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
     alignItems: 'center',
+    marginTop: 10,
   },
   loginButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  forgotPassword: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  forgotPasswordText: {
-    color: '#6B6B5A',
-  },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: 20,
+    marginTop: 25,
   },
   registerText: {
     color: '#6B6B5A',
+    fontSize: 16,
   },
   registerLink: {
     color: '#D35C34',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   demoContainer: {
-    marginTop: 30,
-    padding: 10,
+    marginTop: 40,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
     backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 5,
-    width: '100%',
+    borderRadius: 8,
+    alignItems: 'center',
+    width: '90%',
+  },
+  demoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#D35C34',
+    marginBottom: 8,
   },
   demoText: {
+    fontSize: 14,
     color: '#6B6B5A',
-    textAlign: 'center',
+    marginBottom: 4,
   },
 });
 

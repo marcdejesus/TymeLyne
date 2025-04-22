@@ -18,13 +18,13 @@ import {
   TouchableWithoutFeedback
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
 const RegisterScreen = ({ navigation }) => {
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,7 +41,17 @@ const RegisterScreen = ({ navigation }) => {
   const passwordInputRef = useRef(null);
   const confirmPasswordInputRef = useRef(null);
 
-  // Function to handle registration
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
+  const validateUsername = (username) => {
+    // Allow alphanumeric characters and underscores
+    const usernameRegex = /^[a-zA-Z0-9_]+$/;
+    return username.length >= 3 && usernameRegex.test(username);
+  };
+
   const handleRegister = async () => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
@@ -52,21 +62,18 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Error', 'Passwords do not match');
+    if (!validateUsername(username)) {
+      Alert.alert('Invalid Username', 'Username must be at least 3 characters and contain only letters, numbers, and underscores');
       return;
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      Alert.alert('Error', 'Please enter a valid email address');
+    if (!validateEmail(email)) {
+      Alert.alert('Invalid Email', 'Please enter a valid email address');
       return;
     }
 
-    // Password validation (minimum 8 characters)
-    if (password.length < 8) {
-      Alert.alert('Error', 'Password must be at least 8 characters');
+    if (password.length < 6) {
+      Alert.alert('Weak Password', 'Password must be at least 6 characters');
       return;
     }
 
@@ -303,7 +310,27 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#F9F1E0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#D35C34',
+    height: 60,
+    paddingHorizontal: 15,
+  },
+  headerLeft: {
+    width: 40,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+  },
+  headerRight: {
+    width: 40,
+  },
+  headerTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,
@@ -312,38 +339,40 @@ const styles = StyleSheet.create({
   scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    justifyContent: 'center',
     padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
-  logoContainer: {
-    alignItems: 'center',
-    marginBottom: height * 0.05, // Responsive margin
-  },
-  logo: {
-    width: width * 0.25, // Responsive size
-    height: width * 0.25, // Keep aspect ratio
-  },
-  appName: {
-    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
+  title: {
+    fontSize: width > 375 ? 30 : 26,
     fontWeight: 'bold',
     color: '#D35C34',
-    marginTop: 10,
+    marginTop: height * 0.02,
+    marginBottom: 10,
+    textAlign: 'center',
   },
-  tagline: {
-    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
+  subtitle: {
+    fontSize: width > 375 ? 16 : 14,
     color: '#6B6B5A',
-    marginTop: 5,
+    marginBottom: height * 0.04,
+    textAlign: 'center',
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400, // Add max width for very large devices
+    maxWidth: 400,
+  },
+  inputGroup: {
+    marginBottom: 20,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#4A4A3A',
+    marginBottom: 8,
   },
   input: {
     backgroundColor: '#FFF',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
-    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#E0D8C0',
     fontSize: 16,
@@ -377,7 +406,7 @@ const styles = StyleSheet.create({
   },
   registerButton: {
     backgroundColor: '#D35C34',
-    borderRadius: 5,
+    borderRadius: 8,
     padding: 15,
     alignItems: 'center',
     marginTop: 10,
@@ -389,15 +418,16 @@ const styles = StyleSheet.create({
   },
   loginContainer: {
     flexDirection: 'row',
-    marginTop: 20,
-    marginBottom: 20,
+    marginTop: 25,
   },
   loginText: {
     color: '#6B6B5A',
+    fontSize: 16,
   },
   loginLink: {
     color: '#D35C34',
     fontWeight: 'bold',
+    fontSize: 16,
   },
   successContainer: {
     width: '100%',

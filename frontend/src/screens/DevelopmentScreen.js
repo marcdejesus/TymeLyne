@@ -1,139 +1,192 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  Image,
-  TouchableOpacity
+import {
+  View, Text, StyleSheet, TouchableOpacity, Image,
+  SafeAreaView, StatusBar, Platform, ScrollView
 } from 'react-native';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const DevelopmentScreen = ({ navigation }) => {
-  const handleNavigation = (screenName) => {
-    if (screenName === 'Home') {
-      navigation.navigate('Home');
-    } else if (screenName === 'Profile') {
-      navigation.navigate('Profile');
-    } else {
-      navigation.navigate('Development');
-    }
-  };
-
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
+        backgroundColor="#D35C34"
+      />
+      
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.toggleDrawer()}>
-          <Text style={styles.menuIcon}>☰</Text>
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Icon name="arrow-back" size={24} color="#FFF" />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Coming Soon</Text>
-        <TouchableOpacity onPress={() => handleNavigation('Settings')}>
-          <Text style={styles.settingsIcon}>⟩</Text>
-        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Under Development</Text>
+        <View style={styles.headerRight} />
       </View>
       
       {/* Main Content */}
-      <View style={styles.content}>
-        <Text style={styles.titleText}>Feature Under Development</Text>
-        
-        {/* Construction Worker Image */}
-        <Image 
-          source={require('../../assets/favicon.png')} // Placeholder until we have the construction worker image
-          style={styles.workerImage}
-        />
-        
-        <Text style={styles.descriptionText}>
-          This feature is under development and will be implemented in the full app.
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <Text style={styles.title}>
+          Feature Coming Soon!
         </Text>
-      </View>
+        
+        <View style={styles.imageContainer}>
+          <Image 
+            source={require('../../assets/construction.png')} 
+            style={styles.constructionImage}
+            resizeMode="contain"
+          />
+        </View>
+        
+        <Text style={styles.description}>
+          We're hard at work building this feature to enhance your learning experience.
+          Thank you for your patience while we develop this section of the app.
+        </Text>
+        
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>What to expect:</Text>
+          <Text style={styles.infoText}>
+            • Personalized learning paths{'\n'}
+            • Detailed progress tracking{'\n'}
+            • Achievement rewards{'\n'}
+            • Social learning features{'\n'}
+            • Customizable learning goals
+          </Text>
+        </View>
+        
+        <TouchableOpacity 
+          style={styles.backButtonLarge}
+          onPress={() => navigation.goBack()}
+        >
+          <Text style={styles.backButtonText}>Go Back</Text>
+        </TouchableOpacity>
+      </ScrollView>
       
       {/* Bottom Navigation */}
       <View style={styles.bottomNav}>
         <TouchableOpacity 
-          style={styles.navItem} 
-          onPress={() => handleNavigation('Home')}
-        >
-          <Text style={styles.navIcon}>🏠</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
           style={styles.navItem}
-          onPress={() => handleNavigation('Achievements')}
+          onPress={() => navigation.navigate('Home')}
         >
-          <Text style={styles.navIcon}>🏆</Text>
+          <Icon name="home-outline" size={24} color="#6B6B5A" />
+          <Text style={styles.navText}>Home</Text>
         </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => handleNavigation('Profile')}
-        >
-          <Text style={styles.navIcon}>👤</Text>
+        
+        <TouchableOpacity style={styles.navItem}>
+          <Icon name="trophy-outline" size={24} color="#6B6B5A" />
+          <Text style={styles.navText}>Achievements</Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.navItem}>
+          <Icon name="person-outline" size={24} color="#6B6B5A" />
+          <Text style={styles.navText}>Profile</Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F9F1E0', // Beige background from the screenshots
+    backgroundColor: '#F9F1E0',
   },
   header: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0D8C0',
+    justifyContent: 'space-between',
+    backgroundColor: '#D35C34',
+    height: 60,
+    paddingHorizontal: 15,
   },
-  menuIcon: {
-    fontSize: 24,
-    color: '#4A4A3A',
+  backButton: {
+    padding: 8,
+  },
+  headerRight: {
+    width: 40, // Same width as back button for alignment
   },
   headerTitle: {
+    color: '#FFF',
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#4A4A3A',
-  },
-  settingsIcon: {
-    fontSize: 24,
-    color: '#4A4A3A',
   },
   content: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
   },
-  titleText: {
+  contentContainer: {
+    padding: 20,
+    paddingBottom: 30,
+  },
+  title: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginBottom: 20,
+    color: '#D35C34',
     textAlign: 'center',
-  },
-  workerImage: {
-    width: 150,
-    height: 150,
     marginBottom: 20,
   },
-  descriptionText: {
+  imageContainer: {
+    alignItems: 'center',
+    marginVertical: 20,
+  },
+  constructionImage: {
+    width: 200,
+    height: 200,
+  },
+  description: {
     fontSize: 16,
+    color: '#4A4A3A',
     textAlign: 'center',
-    color: '#6B6B5A',
+    marginBottom: 20,
     lineHeight: 24,
+  },
+  infoBox: {
+    backgroundColor: 'rgba(211, 92, 52, 0.1)',
+    borderRadius: 8,
+    padding: 15,
+    marginVertical: 20,
+    borderLeftWidth: 4,
+    borderLeftColor: '#D35C34',
+  },
+  infoTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#D35C34',
+    marginBottom: 10,
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#4A4A3A',
+    lineHeight: 26,
+  },
+  backButtonLarge: {
+    backgroundColor: '#D35C34',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  backButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   bottomNav: {
     flexDirection: 'row',
     borderTopWidth: 1,
     borderTopColor: '#E0D8C0',
-    backgroundColor: '#F9F1E0',
+    backgroundColor: '#FFF',
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
-    padding: 12,
+    justifyContent: 'center',
+    paddingVertical: 10,
   },
-  navIcon: {
-    fontSize: 24,
+  navText: {
+    fontSize: 12,
+    color: '#6B6B5A',
+    marginTop: 4,
   },
 });
 

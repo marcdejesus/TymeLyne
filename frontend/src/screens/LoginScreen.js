@@ -2,8 +2,6 @@ import React, { useState, useContext, useRef } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Image,
   ActivityIndicator,
@@ -15,7 +13,13 @@ import {
   TouchableWithoutFeedback
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { 
+  Screen, 
+  InputField, 
+  Button, 
+  Card,
+  theme 
+} from '../components';
 
 const { width, height } = Dimensions.get('window');
 
@@ -235,37 +239,9 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#D35C34',
-    height: 60,
-    paddingHorizontal: 15,
-  },
-  headerLeft: {
-    width: 40, // For alignment
-  },
-  headerRight: {
-    width: 40, // For alignment
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  scrollContainer: {
+  contentContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
@@ -278,14 +254,14 @@ const styles = StyleSheet.create({
     height: width * 0.3,
   },
   appName: {
-    fontSize: width > 375 ? 30 : 26,
-    fontWeight: 'bold',
-    color: '#D35C34',
+    fontSize: theme.typography.fontSize.xxlarge,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
     marginTop: 10,
   },
   tagline: {
-    fontSize: width > 375 ? 16 : 14,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.secondary,
     marginTop: 5,
   },
   formContainer: {
@@ -371,35 +347,32 @@ const styles = StyleSheet.create({
   },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: 25,
+    marginTop: theme.spacing.l,
+    marginBottom: theme.spacing.xl,
   },
   registerText: {
-    color: '#6B6B5A',
-    fontSize: 16,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.regular,
   },
   registerLink: {
-    color: '#D35C34',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.regular,
   },
   demoContainer: {
-    marginTop: 40,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 8,
     alignItems: 'center',
     width: '90%',
+    backgroundColor: `${theme.colors.primary}10`, // 10% opacity of primary color
   },
   demoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#D35C34',
-    marginBottom: 8,
+    fontSize: theme.typography.fontSize.regular,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.s,
   },
   demoText: {
-    fontSize: 14,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.medium,
+    color: theme.colors.text.secondary,
     marginBottom: 4,
   },
 });

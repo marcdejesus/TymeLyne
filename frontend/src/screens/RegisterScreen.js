@@ -2,15 +2,9 @@ import React, { useState, useContext, useRef } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
-  Image,
-  ScrollView,
   Alert,
   ActivityIndicator,
-  SafeAreaView,
-  StatusBar,
   Platform,
   Dimensions,
   KeyboardAvoidingView,
@@ -18,7 +12,12 @@ import {
   TouchableWithoutFeedback
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { 
+  Screen, 
+  InputField, 
+  Button, 
+  theme 
+} from '../components';
 
 const { width, height } = Dimensions.get('window');
 
@@ -307,52 +306,22 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#D35C34',
-    height: 60,
-    paddingHorizontal: 15,
-  },
-  headerLeft: {
-    width: 40,
-    alignItems: 'flex-start',
-    justifyContent: 'center',
-  },
-  headerRight: {
-    width: 40,
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  scrollContainer: {
+  contentContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   title: {
-    fontSize: width > 375 ? 30 : 26,
-    fontWeight: 'bold',
-    color: '#D35C34',
+    fontSize: theme.typography.fontSize.xxlarge,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
     marginTop: height * 0.02,
     marginBottom: 10,
     textAlign: 'center',
   },
   subtitle: {
-    fontSize: width > 375 ? 16 : 14,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.secondary,
     marginBottom: height * 0.04,
     textAlign: 'center',
   },
@@ -405,24 +374,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   registerButton: {
-    backgroundColor: '#D35C34',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  registerButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginTop: theme.spacing.m,
   },
   loginContainer: {
     flexDirection: 'row',
-    marginTop: 25,
+    marginTop: theme.spacing.l,
   },
   loginText: {
-    color: '#6B6B5A',
-    fontSize: 16,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.regular,
   },
   loginLink: {
     color: '#D35C34',

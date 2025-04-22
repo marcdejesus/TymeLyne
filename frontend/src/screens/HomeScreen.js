@@ -1,19 +1,16 @@
 import React, { useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  ScrollView,
-  SafeAreaView,
-  Platform,
-  StatusBar,
-  Dimensions
-} from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
+import { 
+  Screen, 
+  CourseCard, 
+  Card, 
+  SectionTitle, 
+  ProgressBar, 
+  theme 
+} from '../components';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const HomeScreen = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
@@ -111,316 +108,121 @@ const HomeScreen = ({ navigation }) => {
   // };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
-      <View style={styles.container}>
-        {/* Header with Navigation */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleMenuPress}>
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Home</Text>
-          <TouchableOpacity onPress={() => handleNavigation('Notifications')}>
-            <Text style={styles.notificationIcon}>⟩</Text>
-          </TouchableOpacity>
-        </View>
-        
-        <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-          {/* Active Courses Section */}
-          <Text style={styles.sectionTitle}>Active Courses</Text>
-          
-          {activeCourses.map(course => (
-            <TouchableOpacity 
-              key={course.id} 
-              style={styles.courseCard}
-              onPress={() => handleNavigation('CourseDetails', { courseId: course.id })}
-            >
-              <View style={styles.courseIconContainer}>
-                <Image source={course.icon} style={styles.courseIcon} />
-              </View>
-              <View style={styles.courseInfo}>
-                <Text style={styles.courseTitle}>{course.title}</Text>
-                <View style={styles.progressContainer}>
-                  <Text style={styles.progressText}>{course.progress}% COMPLETE</Text>
-                  <View style={styles.progressBar}>
-                    <View style={[styles.progress, { width: `${course.progress}%` }]} />
-                  </View>
-                </View>
-                <View style={styles.courseOptions}>
-                  <Text style={styles.optionDots}>•••</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))}
-          
-          {/* Add a Course Section */}
-          <Text style={styles.sectionTitle}>Add a Course</Text>
-          <View style={styles.addCourseContainer}>
-            <TouchableOpacity 
-              style={styles.addCourseOption}
-              onPress={() => handleNavigation('Community')}
-            >
-              <Text style={styles.downloadIcon}>↓</Text>
-              <Text style={styles.addOptionText}>Community</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.addCourseOption}
-              onPress={() => handleNavigation('Create')}
-            >
-              <Text style={styles.createIcon}>+</Text>
-              <Text style={styles.addOptionText}>Create</Text>
-            </TouchableOpacity>
-          </View>
-          
-          {/* Friend's Courses Section */}
-          <Text style={styles.sectionTitle}>Friend's Courses</Text>
-          <View style={styles.friendsCoursesContainer}>
-            {friendsCourses.map(course => (
-              <TouchableOpacity 
-                key={course.id} 
-                style={styles.friendCourseCard}
-                onPress={() => handleNavigation('CourseDetails', { courseId: course.id, fromFriend: true })}
-              >
-                <Image source={course.icon} style={styles.friendCourseIcon} />
-                <Text style={styles.friendCourseTitle}>{course.title}</Text>
-                <Text style={styles.friendUsername}>{course.username}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </ScrollView>
-        
-        {/* Bottom Navigation */}
-        <SafeAreaView style={styles.bottomNavContainer}>
-          <View style={styles.bottomNav}>
-            <TouchableOpacity 
-              style={[styles.navItem, styles.activeNavItem]} 
-              onPress={() => handleNavigation('Home')}
-            >
-              <Text style={styles.navIcon}>🏠</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.navItem}
-              onPress={() => handleNavigation('Achievements')}
-            >
-              <Text style={styles.navIcon}>🏆</Text>
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.navItem}
-              onPress={() => handleNavigation('Profile')}
-            >
-              <Text style={styles.navIcon}>👤</Text>
-            </TouchableOpacity>
-          </View>
-        </SafeAreaView>
+    <Screen
+      title="Home"
+      onMenuPress={handleMenuPress}
+      onRightPress={() => handleNavigation('Notifications')}
+      rightIcon="notifications-outline"
+      activeScreen="Home"
+      onHomePress={() => handleNavigation('Home')}
+      onAchievementsPress={() => handleNavigation('Achievements')}
+      onProfilePress={() => handleNavigation('Profile')}
+      backgroundColor={theme.colors.background.main}
+    >
+      {/* Active Courses Section */}
+      <SectionTitle title="Active Courses" />
+      
+      {activeCourses.map(course => (
+        <CourseCard 
+          key={course.id} 
+          course={course}
+          onPress={() => handleNavigation('CourseDetails', { courseId: course.id })}
+          onOptionsPress={() => handleNavigation('CourseOptions', { courseId: course.id })}
+        />
+      ))}
+      
+      {/* Add a Course Section */}
+      <SectionTitle title="Add a Course" />
+      <View style={styles.addCourseContainer}>
+        <Card
+          style={styles.addCourseOption}
+          onPress={() => handleNavigation('Community')}
+        >
+          <Text style={styles.downloadIcon}>↓</Text>
+          <Text style={styles.addOptionText}>Community</Text>
+        </Card>
+        <Card
+          style={styles.addCourseOption}
+          onPress={() => handleNavigation('Create')}
+        >
+          <Text style={styles.createIcon}>+</Text>
+          <Text style={styles.addOptionText}>Create</Text>
+        </Card>
       </View>
-    </SafeAreaView>
+      
+      {/* Friend's Courses Section */}
+      <SectionTitle title="Friend's Courses" />
+      <View style={styles.friendsCoursesContainer}>
+        {friendsCourses.map(course => (
+          <Card
+            key={course.id}
+            style={styles.friendCourseCard}
+            onPress={() => handleNavigation('CourseDetails', { courseId: course.id, fromFriend: true })}
+          >
+            <Image source={course.icon} style={styles.friendCourseIcon} />
+            <Text style={styles.friendCourseTitle}>{course.title}</Text>
+            <Text style={styles.friendUsername}>{course.username}</Text>
+          </Card>
+        ))}
+      </View>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0D8C0',
-    backgroundColor: '#F9F1E0',
-  },
-  menuIcon: {
-    fontSize: 24,
-    color: '#4A4A3A',
-    padding: 4, // Add more touch area
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-  },
-  notificationIcon: {
-    fontSize: 24,
-    color: '#4A4A3A',
-    padding: 4, // Add more touch area
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 16,
-    paddingBottom: 24, // Extra padding at the bottom for better scrolling
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginBottom: 12,
-    marginTop: 8,
-  },
-  courseCard: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 16,
-    flexDirection: 'row',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  courseIconContainer: {
-    marginRight: 16,
-  },
-  courseIcon: {
-    width: 50,
-    height: 50,
-  },
-  courseInfo: {
-    flex: 1,
-  },
-  courseTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginBottom: 8,
-  },
-  progressContainer: {
-    marginTop: 4,
-    width: '85%', // Avoid overlap with options dots
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#6B6B5A',
-    marginBottom: 4,
-  },
-  progressBar: {
-    height: 8,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 4,
-  },
-  progress: {
-    height: '100%',
-    backgroundColor: '#D35C34',
-    borderRadius: 4,
-  },
-  courseOptions: {
-    position: 'absolute',
-    right: 0,
-    top: 0,
-  },
-  optionDots: {
-    fontSize: 24,
-    color: '#6B6B5A',
-    textAlign: 'center',
-    padding: 4, // Add more touch area
-  },
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
   },
   addCourseOption: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 16,
     width: '48%',
     alignItems: 'center',
     justifyContent: 'center',
     height: width * 0.25, // Responsive height based on screen width
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginHorizontal: 0,
+    padding: 0,
   },
   downloadIcon: {
     fontSize: 32,
-    color: '#6B6B5A',
+    color: theme.colors.text.secondary,
     marginBottom: 8,
   },
   createIcon: {
     fontSize: 32,
-    color: '#6B6B5A',
+    color: theme.colors.text.secondary,
     marginBottom: 8,
   },
   addOptionText: {
-    fontSize: 16,
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.primary,
   },
   friendsCoursesContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     flexWrap: 'wrap',
+    marginTop: -theme.spacing.s, // Counteract the Card component's marginVertical
   },
   friendCourseCard: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 16,
     width: '48%',
     alignItems: 'center',
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginHorizontal: 0,
   },
   friendCourseIcon: {
-    width: 40,
-    height: 40,
+    width: width * 0.1,
+    height: width * 0.1,
     marginBottom: 8,
   },
   friendCourseTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.regular,
+    fontWeight: theme.typography.fontWeight.semiBold,
+    color: theme.colors.text.primary,
     textAlign: 'center',
   },
   friendUsername: {
-    fontSize: 12,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
     marginTop: 4,
-  },
-  bottomNavContainer: {
-    backgroundColor: '#F9F1E0',
-    borderTopWidth: 1,
-    borderTopColor: '#E0D8C0',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    backgroundColor: '#F9F1E0',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 12,
-  },
-  activeNavItem: {
-    borderTopWidth: 2,
-    borderTopColor: '#D35C34',
-  },
-  navIcon: {
-    fontSize: 24,
   },
 });
 

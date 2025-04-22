@@ -4,35 +4,31 @@ import {
   Text, 
   StyleSheet, 
   Image, 
-  TouchableOpacity,
-  ScrollView,
   Dimensions,
-  Platform,
-  StatusBar
+  Platform
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { 
+  Screen, 
+  Card, 
+  ProgressBar, 
+  SectionTitle,
+  theme 
+} from '../components';
 import { AuthContext } from '../contexts/AuthContext';
 
-// Get device dimensions for responsive sizing
-const { width, height } = Dimensions.get('window');
-const isIphoneX = Platform.OS === 'ios' && 
-                 (height > 800 || width > 800);
+const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
   
   // Mock data for demonstration
   // In production, this data would come from the user object fetched from the backend
-  // Example API endpoint: GET /api/users/profile
   const level = 10;
   const followers = 1;
   const friends = 1;
   const username = user?.username || '@username';
   
   // Mock courses data
-  // In production, this would be fetched with:
-  // GET /api/users/courses/top
-  // This would return the user's most active or highest-rated courses
   const topCourses = [
     { id: 1, title: 'Investing', icon: require('../../assets/course-icons/finance.png') },
     { id: 2, title: 'JavaScript', icon: require('../../assets/course-icons/computer.png') },
@@ -85,153 +81,66 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
-      <View style={styles.container}>
-        {/* Header with Navigation */}
-        <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.touchableIcon}
-            onPress={handleMenuPress}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.menuIcon}>☰</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Profile</Text>
-          <TouchableOpacity 
-            style={styles.touchableIcon}
-            onPress={() => handleNavigation('Settings')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.settingsIcon}>⟩</Text>
-          </TouchableOpacity>
+    <Screen
+      title="Profile"
+      onMenuPress={handleMenuPress}
+      onRightPress={() => handleNavigation('Settings')}
+      rightIcon="settings-outline"
+      activeScreen="Profile"
+      onHomePress={() => handleNavigation('Home')}
+      onAchievementsPress={() => handleNavigation('Achievements')}
+      onProfilePress={() => handleNavigation('Profile')}
+      backgroundColor={theme.colors.background.main}
+    >
+      {/* Profile Information */}
+      <View style={styles.profileSection}>
+        <View style={styles.profileImageContainer}>
+          <Image 
+            source={require('../../assets/favicon.png')} // Placeholder for profile picture
+            style={styles.profileImage} 
+          />
+          <Text style={styles.levelText}>LEVEL {level}</Text>
         </View>
         
-        {/* Main Content */}
-        <ScrollView 
-          style={styles.scrollView}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={styles.scrollViewContent}
-        >
-          {/* Profile Information */}
-          <View style={styles.profileSection}>
-            <View style={styles.profileImageContainer}>
-              <Image 
-                source={require('../../assets/favicon.png')} // Placeholder for profile picture
-                style={styles.profileImage} 
-              />
-              <Text style={styles.levelText}>LEVEL {level}</Text>
+        <View style={styles.profileInfo}>
+          <Text style={styles.username}>{username}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statLabel}>Followers</Text>
+              <Text style={styles.statValue}>{followers}</Text>
             </View>
-            
-            <View style={styles.profileInfo}>
-              <Text style={styles.username}>{username}</Text>
-              <View style={styles.statsRow}>
-                <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Followers</Text>
-                  <Text style={styles.statValue}>{followers}</Text>
-                </View>
-                <View style={styles.stat}>
-                  <Text style={styles.statLabel}>Friends</Text>
-                  <Text style={styles.statValue}>{friends}</Text>
-                </View>
-              </View>
-              
-              {/* Level Progress */}
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBar}>
-                  <View style={[styles.progress, { width: '30%' }]} />
-                </View>
-              </View>
+            <View style={styles.stat}>
+              <Text style={styles.statLabel}>Friends</Text>
+              <Text style={styles.statValue}>{friends}</Text>
             </View>
           </View>
           
-          {/* Top Courses Section */}
-          <Text style={styles.sectionTitle}>Top Courses</Text>
-          <View style={styles.coursesGrid}>
-            {topCourses.map(course => (
-              <TouchableOpacity 
-                key={course.id} 
-                style={styles.courseCard}
-                onPress={() => handleNavigation('CourseDetails')}
-                activeOpacity={0.8}
-              >
-                <Image source={course.icon} style={styles.courseIcon} />
-                <Text style={styles.courseTitle}>{course.title}</Text>
-              </TouchableOpacity>
-            ))}
+          {/* Level Progress */}
+          <View style={styles.progressContainer}>
+            <ProgressBar progress={30} showPercentage={false} />
           </View>
-        </ScrollView>
-        
-        {/* Bottom Navigation */}
-        <View style={styles.bottomNav}>
-          <TouchableOpacity 
-            style={styles.navItem} 
-            onPress={() => handleNavigation('Home')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navIcon}>🏠</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={styles.navItem}
-            onPress={() => handleNavigation('Achievements')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navIcon}>🏆</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.navItem, styles.activeNavItem]}
-            onPress={() => handleNavigation('Profile')}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.navIcon}>👤</Text>
-          </TouchableOpacity>
         </View>
       </View>
-    </SafeAreaView>
+      
+      {/* Top Courses Section */}
+      <SectionTitle title="Top Courses" />
+      <View style={styles.coursesGrid}>
+        {topCourses.map(course => (
+          <Card 
+            key={course.id} 
+            style={styles.courseCard}
+            onPress={() => handleNavigation('CourseDetails')}
+          >
+            <Image source={course.icon} style={styles.courseIcon} />
+            <Text style={styles.courseTitle}>{course.title}</Text>
+          </Card>
+        ))}
+      </View>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0', // Beige background
-  },
-  scrollView: {
-    flex: 1,
-  },
-  scrollViewContent: {
-    paddingBottom: 20,
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: width * 0.04,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0D8C0',
-  },
-  touchableIcon: {
-    padding: 8, // Increased touch target
-    borderRadius: 20,
-  },
-  menuIcon: {
-    fontSize: Math.min(24, width * 0.06), // Responsive font size
-    color: '#4A4A3A',
-  },
-  headerTitle: {
-    fontSize: Math.min(18, width * 0.05),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-  },
-  settingsIcon: {
-    fontSize: Math.min(24, width * 0.06),
-    color: '#4A4A3A',
-  },
   profileSection: {
     flexDirection: 'row',
     padding: width * 0.04,
@@ -261,16 +170,16 @@ const styles = StyleSheet.create({
   },
   levelText: {
     marginTop: 5,
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
   },
   profileInfo: {
     flex: 1,
   },
   username: {
-    fontSize: Math.min(18, width * 0.045),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.large,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
   },
   statsRow: {
     flexDirection: 'row',
@@ -280,89 +189,41 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   statLabel: {
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
   },
   statValue: {
-    fontSize: Math.min(14, width * 0.035),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.medium,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
   },
   progressContainer: {
     marginTop: 10,
   },
-  progressBar: {
-    height: 10,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 5,
-    overflow: 'hidden', // Ensures progress stays within the bar
-  },
-  progress: {
-    height: '100%',
-    backgroundColor: '#D35C34', // Orange
-    borderRadius: 5,
-  },
-  sectionTitle: {
-    fontSize: Math.min(18, width * 0.045),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    padding: width * 0.04,
-    paddingBottom: 8,
-  },
   coursesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    padding: width * 0.02,
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.xs,
   },
   courseCard: {
     width: '46%',
     margin: '2%',
-    padding: 16,
-    backgroundColor: '#F4ECE1',
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    height: width * 0.3,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    padding: theme.spacing.m,
   },
   courseIcon: {
     width: width * 0.1,
     height: width * 0.1,
-    marginBottom: 8,
+    maxWidth: 40,
+    maxHeight: 40,
+    marginBottom: 12,
   },
   courseTitle: {
-    fontSize: Math.min(16, width * 0.04),
+    fontSize: theme.typography.fontSize.regular,
     textAlign: 'center',
-    color: '#4A4A3A',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#E0D8C0',
-    backgroundColor: '#F9F1E0',
-    paddingBottom: isIphoneX ? 20 : 0, // Add padding for iPhone X and newer models
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    padding: 12,
-  },
-  activeNavItem: {
-    borderTopWidth: 2,
-    borderTopColor: '#D35C34',
-  },
-  navIcon: {
-    fontSize: Math.min(24, width * 0.06),
+    color: theme.colors.text.primary,
   },
 });
 

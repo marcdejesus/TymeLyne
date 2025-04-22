@@ -10,6 +10,8 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ProfileScreen from './src/screens/ProfileScreen';
 import DevelopmentScreen from './src/screens/DevelopmentScreen';
+import CourseCreateScreen from './src/screens/CourseCreateScreen';
+import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
 
 // Auth Context
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
@@ -50,6 +52,8 @@ const AppContent = () => {
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
           <Stack.Screen name="Development" component={DevelopmentScreen} />
+          <Stack.Screen name="Create" component={CourseCreateScreen} />
+          <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

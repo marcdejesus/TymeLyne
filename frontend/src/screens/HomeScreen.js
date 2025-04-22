@@ -56,12 +56,16 @@ const HomeScreen = ({ navigation }) => {
     }
   ];
 
-  const handleNavigation = (screenName) => {
+  const handleNavigation = (screenName, params) => {
     // For unimplemented screens, navigate to development page
     if (screenName === 'Profile') {
       navigation.navigate('Profile');
     } else if (screenName === 'Home') {
       // Already on home
+    } else if (screenName === 'Create') {
+      navigation.navigate('Create');
+    } else if (screenName === 'CourseDetails') {
+      navigation.navigate('CourseDetails', params);
     } else {
       navigation.navigate('Development');
     }
@@ -121,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
           <TouchableOpacity 
             key={course.id} 
             style={styles.courseCard}
-            onPress={() => handleNavigation('CourseDetails')}
+            onPress={() => handleNavigation('CourseDetails', { courseId: course.id })}
           >
             <View style={styles.courseIconContainer}>
               <Image source={course.icon} style={styles.courseIcon} />
@@ -167,7 +171,7 @@ const HomeScreen = ({ navigation }) => {
             <TouchableOpacity 
               key={course.id} 
               style={styles.friendCourseCard}
-              onPress={() => handleNavigation('FriendCourseDetails')}
+              onPress={() => handleNavigation('CourseDetails', { courseId: course.id, fromFriend: true })}
             >
               <Image source={course.icon} style={styles.friendCourseIcon} />
               <Text style={styles.friendCourseTitle}>{course.title}</Text>

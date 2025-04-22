@@ -6,6 +6,7 @@ import {
   TouchableOpacity, 
   Dimensions 
 } from 'react-native';
+import { colors } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -33,6 +34,7 @@ const SectionTitle = ({
         <TouchableOpacity 
           onPress={onRightPress}
           activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
           <Text style={styles.rightText}>{rightText}</Text>
         </TouchableOpacity>
@@ -46,19 +48,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: width * 0.04,
-    paddingVertical: 8,
-    marginTop: 8,
-    marginBottom: 12,
+    paddingTop: 20,
+    paddingBottom: 12,
   },
   title: {
-    fontSize: Math.min(18, width * 0.045),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
+    fontSize: 20,
+    fontWeight: '600',
+    color: colors.text,
   },
   rightText: {
-    fontSize: Math.min(14, width * 0.035),
-    color: '#D35C34',
+    fontSize: 14,
+    color: colors.primary,
     fontWeight: '500',
   },
 });

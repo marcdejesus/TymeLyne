@@ -6,6 +6,7 @@ import {
   Dimensions, 
   Platform 
 } from 'react-native';
+import { colors } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -22,12 +23,12 @@ const Card = ({
   children,
   onPress,
   style,
-  backgroundColor = '#F4ECE1',
+  backgroundColor = colors.card,
   elevation = 2
 }) => {
   // Shadow styles based on elevation
   const getShadowStyle = () => {
-    const shadowOpacity = 0.05 * elevation;
+    const shadowOpacity = 0.08 * elevation;
     const shadowRadius = elevation;
     const shadowOffset = { width: 0, height: elevation / 2 };
     
@@ -55,7 +56,8 @@ const Card = ({
           style
         ]}
         onPress={onPress}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
+        hitSlop={{ top: 4, bottom: 4, left: 4, right: 4 }}
       >
         {children}
       </TouchableOpacity>
@@ -79,10 +81,10 @@ const Card = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 10,
+    borderRadius: 12,
     padding: 16,
     marginVertical: 8,
-    marginHorizontal: width * 0.02,
+    marginHorizontal: 0,
   },
 });
 

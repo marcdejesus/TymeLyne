@@ -5,10 +5,11 @@ import {
   StyleSheet, 
   TouchableOpacity, 
   Dimensions,
-  Platform 
+  Platform,
+  SafeAreaView 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import theme from '../constants/theme';
+import { colors, spacing, typography } from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 const isIphoneX = Platform.OS === 'ios' && (height > 800 || width > 800);
@@ -55,38 +56,40 @@ const BottomNavigation = ({
   ];
 
   return (
-    <View style={[styles.container, style]}>
-      {navItems.map((item) => {
-        const isActive = activeScreen === item.id;
-        const iconName = isActive ? item.activeIcon : item.icon;
-        
-        return (
-          <TouchableOpacity 
-            key={item.id}
-            style={[
-              styles.navItem,
-              isActive && styles.activeNavItem
-            ]}
-            onPress={item.onPress}
-            activeOpacity={0.7}
-          >
-            <Ionicons 
-              name={iconName} 
-              size={24} 
-              color={isActive ? theme.colors.primary : theme.colors.text.primary} 
-            />
-            <Text 
+    <SafeAreaView style={{ backgroundColor: colors.card }}>
+      <View style={[styles.container, style]}>
+        {navItems.map((item) => {
+          const isActive = activeScreen === item.id;
+          const iconName = isActive ? item.activeIcon : item.icon;
+          
+          return (
+            <TouchableOpacity 
+              key={item.id}
               style={[
-                styles.navLabel,
-                isActive && styles.activeNavLabel
+                styles.navItem,
+                isActive && styles.activeNavItem
               ]}
+              onPress={item.onPress}
+              activeOpacity={0.7}
             >
-              {item.label}
-            </Text>
-          </TouchableOpacity>
-        );
-      })}
-    </View>
+              <Ionicons 
+                name={iconName} 
+                size={24} 
+                color={isActive ? colors.primary : colors.textSecondary} 
+              />
+              <Text 
+                style={[
+                  styles.navLabel,
+                  isActive && styles.activeNavLabel
+                ]}
+              >
+                {item.label}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+    </SafeAreaView>
   );
 };
 
@@ -94,28 +97,31 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: theme.colors.ui.border,
-    backgroundColor: theme.colors.background.main,
-    paddingBottom: isIphoneX ? 20 : 0, // Extra padding for notched devices
+    borderTopColor: colors.border,
+    backgroundColor: colors.card,
+    paddingTop: 10,
+    paddingBottom: isIphoneX ? 8 : 10, // Adjusted padding for notched devices
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: theme.spacing.s,
+    paddingVertical: 6,
+    minHeight: 48, // Ensure touch targets are at least 48px tall
   },
   activeNavItem: {
-    borderTopWidth: 2,
-    borderTopColor: theme.colors.primary,
+    borderTopWidth: 3,
+    borderTopColor: colors.primary,
+    paddingTop: 0, // Adjust for the added border
   },
   navLabel: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.primary,
-    marginTop: theme.spacing.xs,
+    fontSize: 12,
+    color: colors.textSecondary,
+    marginTop: 4,
   },
   activeNavLabel: {
-    color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.medium,
+    color: colors.primary,
+    fontWeight: '600',
   }
 });
 

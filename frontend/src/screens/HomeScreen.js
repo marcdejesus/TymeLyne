@@ -1,14 +1,12 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, Dimensions, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { AuthContext } from '../contexts/AuthContext';
-import { 
-  Screen, 
-  CourseCard, 
-  Card, 
-  SectionTitle, 
-  ProgressBar, 
-  theme 
-} from '../components';
+import Screen from '../components/Screen';
+import CourseCard from '../components/CourseCard';
+import Card from '../components/Card';
+import SectionTitle from '../components/SectionTitle';
+import { colors } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -16,21 +14,7 @@ const HomeScreen = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
 
   // Mock data for demonstration
-  // In production, this would come from an API call like:
-  // useEffect(() => {
-  //   const fetchCourses = async () => {
-  //     try {
-  //       const token = await SecureStore.getItemAsync('userToken');
-  //       const response = await axios.get('http://yourapi.com/api/courses/active', {
-  //         headers: { Authorization: `Bearer ${token}` }
-  //       });
-  //       setActiveCourses(response.data);
-  //     } catch (error) {
-  //       console.error('Error fetching active courses:', error);
-  //     }
-  //   };
-  //   fetchCourses();
-  // }, []);
+  // In production, this would come from an API call
 
   const activeCourses = [
     { 
@@ -42,8 +26,6 @@ const HomeScreen = ({ navigation }) => {
   ];
 
   // Mock data for friends' courses
-  // In production, this would be fetched from the backend:
-  // GET /api/courses/friends
   const friendsCourses = [
     { 
       id: 1, 
@@ -75,37 +57,22 @@ const HomeScreen = ({ navigation }) => {
   };
 
   const handleMenuPress = () => {
-    // Since we removed drawer navigation, show a logout option here
-    logout();
+    Alert.alert(
+      "Logout",
+      "Are you sure you want to logout?",
+      [
+        {
+          text: "Cancel",
+          style: "cancel"
+        },
+        { 
+          text: "Logout", 
+          onPress: () => logout(),
+          style: "destructive"
+        }
+      ]
+    );
   };
-
-  // Future backend integration for course actions:
-  // 
-  // Function to handle starting a course:
-  // const startCourse = async (courseId) => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     await axios.post(`http://yourapi.com/api/courses/${courseId}/start`, {}, {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //     // Refresh courses after starting
-  //     fetchCourses();
-  //   } catch (error) {
-  //     console.error('Error starting course:', error);
-  //   }
-  // };
-  //
-  // Function to update course progress:
-  // const updateProgress = async (courseId, progress) => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     await axios.put(`http://yourapi.com/api/courses/${courseId}/progress`, { progress }, {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating progress:', error);
-  //   }
-  // };
 
   return (
     <Screen
@@ -117,7 +84,8 @@ const HomeScreen = ({ navigation }) => {
       onHomePress={() => handleNavigation('Home')}
       onAchievementsPress={() => handleNavigation('Achievements')}
       onProfilePress={() => handleNavigation('Profile')}
-      backgroundColor={theme.colors.background.main}
+      backgroundColor={colors.background}
+      scrollable={true}
     >
       {/* Active Courses Section */}
       <SectionTitle title="Active Courses" />
@@ -138,14 +106,14 @@ const HomeScreen = ({ navigation }) => {
           style={styles.addCourseOption}
           onPress={() => handleNavigation('Community')}
         >
-          <Text style={styles.downloadIcon}>↓</Text>
+          <Ionicons name="download-outline" size={28} color={colors.textSecondary} />
           <Text style={styles.addOptionText}>Community</Text>
         </Card>
         <Card
           style={styles.addCourseOption}
           onPress={() => handleNavigation('Create')}
         >
-          <Text style={styles.createIcon}>+</Text>
+          <Ionicons name="add" size={28} color={colors.textSecondary} />
           <Text style={styles.addOptionText}>Create</Text>
         </Card>
       </View>
@@ -173,56 +141,61 @@ const styles = StyleSheet.create({
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: 20,
   },
   addCourseOption: {
     width: '48%',
     alignItems: 'center',
     justifyContent: 'center',
-    height: width * 0.25, // Responsive height based on screen width
-    marginHorizontal: 0,
+    height: width * 0.25,
     padding: 0,
-  },
-  downloadIcon: {
-    fontSize: 32,
-    color: theme.colors.text.secondary,
-    marginBottom: 8,
-  },
-  createIcon: {
-    fontSize: 32,
-    color: theme.colors.text.secondary,
-    marginBottom: 8,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   addOptionText: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.primary,
+    fontSize: 16,
+    color: colors.text,
+    marginTop: 10,
   },
   friendsCoursesContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     flexWrap: 'wrap',
-    marginTop: -theme.spacing.s, // Counteract the Card component's marginVertical
+    justifyContent: 'space-between',
   },
   friendCourseCard: {
     width: '48%',
+    padding: 12,
+    marginBottom: 16,
     alignItems: 'center',
-    marginHorizontal: 0,
+    backgroundColor: colors.card,
+    borderRadius: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   friendCourseIcon: {
-    width: width * 0.1,
-    height: width * 0.1,
+    width: 40,
+    height: 40,
     marginBottom: 8,
   },
   friendCourseTitle: {
-    fontSize: theme.typography.fontSize.regular,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.text.primary,
+    fontSize: 14,
+    fontWeight: '600',
+    color: colors.text,
     textAlign: 'center',
+    marginBottom: 4,
   },
   friendUsername: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
-    marginTop: 4,
+    fontSize: 12,
+    color: colors.textSecondary,
+    textAlign: 'center',
   },
 });
 

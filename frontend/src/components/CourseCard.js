@@ -8,6 +8,8 @@ import {
   Dimensions,
   Platform 
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
@@ -33,7 +35,7 @@ const CourseCard = ({
       <TouchableOpacity 
         style={[styles.gridCard, style]}
         onPress={onPress}
-        activeOpacity={0.8}
+        activeOpacity={0.7}
       >
         <Image source={course.icon} style={styles.gridIcon} />
         <Text style={styles.gridTitle} numberOfLines={2}>
@@ -48,7 +50,7 @@ const CourseCard = ({
     <TouchableOpacity 
       style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={0.8}
+      activeOpacity={0.7}
     >
       <View style={styles.iconContainer}>
         <Image source={course.icon} style={styles.icon} />
@@ -81,8 +83,9 @@ const CourseCard = ({
           style={styles.optionsButton}
           onPress={onOptionsPress}
           activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.optionsDots}>•••</Text>
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.textSecondary} />
         </TouchableOpacity>
       )}
     </TouchableOpacity>
@@ -92,25 +95,20 @@ const CourseCard = ({
 const styles = StyleSheet.create({
   // Horizontal card styles
   card: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 10,
+    backgroundColor: colors.card,
+    borderRadius: 12,
     padding: 16,
     flexDirection: 'row',
     marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   iconContainer: {
     marginRight: 16,
+    justifyContent: 'center',
   },
   icon: {
     width: width * 0.12,
@@ -120,41 +118,40 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: Math.min(18, width * 0.045),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
+    fontSize: 18,
+    fontWeight: '600',
+    color: colors.text,
     marginBottom: 8,
   },
   progressContainer: {
     marginTop: 4,
-    width: '85%', // Avoid overlap with options dots
+    width: '90%', // Avoid overlap with options dots
   },
   progressText: {
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
+    fontSize: 12,
+    color: colors.textSecondary,
     marginBottom: 4,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progress: {
     height: '100%',
-    backgroundColor: '#D35C34',
-    borderRadius: 4,
+    backgroundColor: colors.primary,
+    borderRadius: 3,
   },
   optionsButton: {
     padding: 4,
-    justifyContent: 'flex-start',
-  },
-  optionsDots: {
-    fontSize: 18,
-    color: '#6B6B5A',
-    lineHeight: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 40,
+    width: 40,
   },
   
   // Grid card styles
@@ -162,22 +159,16 @@ const styles = StyleSheet.create({
     width: '46%',
     margin: '2%',
     padding: 16,
-    backgroundColor: '#F4ECE1',
-    borderRadius: 10,
+    backgroundColor: colors.card,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     aspectRatio: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 3,
+    elevation: 2,
   },
   gridIcon: {
     width: width * 0.1,
@@ -187,10 +178,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   gridTitle: {
-    fontSize: Math.min(16, width * 0.04),
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
-    color: '#4A4A3A',
+    color: colors.text,
   },
 });
 

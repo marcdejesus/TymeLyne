@@ -2,8 +2,9 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { colors } from './src/constants/theme';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -26,7 +27,7 @@ const AppContent = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#D35C34" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -37,7 +38,8 @@ const AppContent = () => {
         // Auth Stack
         <Stack.Navigator
           screenOptions={{
-            headerShown: false
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.background }
           }}
         >
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -47,7 +49,8 @@ const AppContent = () => {
         // Main App Stack
         <Stack.Navigator
           screenOptions={{
-            headerShown: false
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.background }
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />
@@ -66,7 +69,7 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark-content" backgroundColor="#F9F1E0" />
+        <StatusBar style="dark-content" backgroundColor={colors.background} />
         <AppContent />
       </AuthProvider>
     </SafeAreaProvider>
@@ -78,6 +81,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9F1E0',
+    backgroundColor: colors.background,
   },
 });

@@ -1,10 +1,9 @@
 import React from 'react';
-import { StatusBar, Platform } from 'react-native';
 import SafeAreaContainer from './SafeAreaContainer';
 import Header from './Header';
 import ContentContainer from './ContentContainer';
 import BottomNavigation from './BottomNavigation';
-import theme from '../constants/theme';
+import { colors } from '../constants/theme';
 
 /**
  * Standardized Screen component that combines all necessary layout components
@@ -23,6 +22,7 @@ import theme from '../constants/theme';
  * @param {boolean} scrollable - Whether content should be scrollable
  * @param {boolean} showBottomNav - Whether to show bottom navigation
  * @param {string} backgroundColor - Background color for the screen
+ * @param {boolean} statusBarLight - Whether to use light status bar content
  * @param {object} style - Additional styles for the content container
  * @param {object} contentContainerStyle - Additional styles for the scroll content container
  */
@@ -39,17 +39,16 @@ const Screen = ({
   onProfilePress,
   scrollable = true,
   showBottomNav = true,
-  backgroundColor = theme.colors.background.main,
+  backgroundColor = colors.background,
+  statusBarLight = false,
   style,
   contentContainerStyle
 }) => {
   return (
-    <SafeAreaContainer backgroundColor={backgroundColor}>
-      <StatusBar 
-        barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} 
-        backgroundColor={backgroundColor} 
-      />
-      
+    <SafeAreaContainer 
+      backgroundColor={backgroundColor}
+      statusBarLight={statusBarLight}
+    >
       {/* Header */}
       {(title || onBackPress || onMenuPress || onRightPress) && (
         <Header 

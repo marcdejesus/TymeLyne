@@ -13,15 +13,38 @@ export const deviceInfo = {
 
 // Colors
 export const colors = {
-  // Primary palette
-  primary: '#D35C34', // Orange
-  primaryLight: '#E88A6A',
-  primaryDark: '#B3492A',
+  // Primary colors
+  primary: '#FF7E17', // More vibrant orange for primary actions
+  primaryLight: '#FFE4CC', // Lighter shade for backgrounds
   
-  // Secondary palette
-  secondary: '#684BFF', // Purple
-  secondaryLight: '#9B8AFF',
-  secondaryDark: '#4C36C2',
+  // Secondary colors
+  secondary: '#3772FF', // Blue for secondary actions
+  secondaryLight: '#E4ECFF', // Light blue for secondary backgrounds
+  
+  // Background colors
+  background: '#F8F9FA', // Main background
+  card: '#FFFFFF', // Card background
+  cardDark: '#F2F3F5', // Darker card background
+  input: '#F2F3F5', // Input field background
+  
+  // Text colors
+  text: '#1A1A1A', // Primary text
+  textSecondary: '#6B7280', // Secondary text
+  textTertiary: '#9CA3AF', // Tertiary text
+  textInverted: '#FFFFFF', // Text on dark backgrounds
+  
+  // UI colors
+  border: '#E5E7EB', // Border color
+  separator: '#F2F3F5', // Separator line color
+  highlight: '#FFF4E6', // Highlight background
+  error: '#EF4444', // Error color
+  success: '#10B981', // Success color
+  warning: '#F59E0B', // Warning color
+  info: '#3B82F6', // Info color
+  
+  // Status colors
+  online: '#34D399', // Online status
+  offline: '#9CA3AF', // Offline status
   
   // Background colors
   background: {

@@ -7,13 +7,6 @@ A React Native Expo application with a Node.js/MongoDB backend, containerized wi
 - **frontend**: React Native Expo application
 - **backend**: Node.js with Express and MongoDB
 
-## Features
-
-- User authentication (register, login, logout)
-- User profile management
-- Docker containerization for backend
-- MongoDB database integration
-
 ## Getting Started
 
 ### Prerequisites
@@ -66,25 +59,3 @@ npm start
 
 - **GET /api/profiles/:id**: Get a user profile by ID
 - **PUT /api/profiles/:id**: Update a user profile (requires authentication)
-
-## Database Schema
-
-### Profile Collection
-
-- **user_id** (UUID, Primary Key): User's unique identifier
-- **email** (String, unique): User's email
-- **username** (String): User's username
-- **is_verified** (Boolean): Account verification status
-- **created_at** (Date): Account creation date
-- **profile_picture** (String): URL to profile picture
-- **fName** (String): First name
-- **lName** (String): Last name
-- **bio** (String): User biography
-- **dob** (Date): Date of birth
-- **user_total_exp** (Number): Total experience points
-- **follower_count** (Number): Number of followers
-- **friends_count** (Number): Number of friends
-- **current_courses** (Array): Courses in progress
-- **completed_courses** (Array): Completed courses
-- **theme** (String): UI theme preference
-- **course_generations** (Number): Course generation count 

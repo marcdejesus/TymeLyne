@@ -1,192 +1,114 @@
 import React from 'react';
 import {
   View, Text, StyleSheet, TouchableOpacity, Image,
-  SafeAreaView, StatusBar, Platform, ScrollView
+  ScrollView
 } from 'react-native';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { Screen, theme } from '../components';
 
 const DevelopmentScreen = ({ navigation }) => {
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar
-        barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'}
-        backgroundColor="#D35C34"
-      />
+    <Screen
+      title="Under Development"
+      onBackPress={() => navigation.goBack()}
+      activeScreen="Home"
+      onHomePress={() => navigation.navigate('Home')}
+      onAchievementsPress={() => {}}
+      onProfilePress={() => navigation.navigate('Profile')}
+      backgroundColor={theme.colors.background.main}
+    >
+      <Text style={styles.title}>
+        Feature Coming Soon!
+      </Text>
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Icon name="arrow-back" size={24} color="#FFF" />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Under Development</Text>
-        <View style={styles.headerRight} />
+      <View style={styles.imageContainer}>
+        <Image 
+          source={require('../../assets/construction.png')} 
+          style={styles.constructionImage}
+          resizeMode="contain"
+        />
       </View>
       
-      {/* Main Content */}
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        <Text style={styles.title}>
-          Feature Coming Soon!
-        </Text>
-        
-        <View style={styles.imageContainer}>
-          <Image 
-            source={require('../../assets/construction.png')} 
-            style={styles.constructionImage}
-            resizeMode="contain"
-          />
-        </View>
-        
-        <Text style={styles.description}>
-          We're hard at work building this feature to enhance your learning experience.
-          Thank you for your patience while we develop this section of the app.
-        </Text>
-        
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>What to expect:</Text>
-          <Text style={styles.infoText}>
-            • Personalized learning paths{'\n'}
-            • Detailed progress tracking{'\n'}
-            • Achievement rewards{'\n'}
-            • Social learning features{'\n'}
-            • Customizable learning goals
-          </Text>
-        </View>
-        
-        <TouchableOpacity 
-          style={styles.backButtonLarge}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.backButtonText}>Go Back</Text>
-        </TouchableOpacity>
-      </ScrollView>
+      <Text style={styles.description}>
+        We're hard at work building this feature to enhance your learning experience.
+        Thank you for your patience while we develop this section of the app.
+      </Text>
       
-      {/* Bottom Navigation */}
-      <View style={styles.bottomNav}>
-        <TouchableOpacity 
-          style={styles.navItem}
-          onPress={() => navigation.navigate('Home')}
-        >
-          <Icon name="home-outline" size={24} color="#6B6B5A" />
-          <Text style={styles.navText}>Home</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="trophy-outline" size={24} color="#6B6B5A" />
-          <Text style={styles.navText}>Achievements</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity style={styles.navItem}>
-          <Icon name="person-outline" size={24} color="#6B6B5A" />
-          <Text style={styles.navText}>Profile</Text>
-        </TouchableOpacity>
+      <View style={styles.infoBox}>
+        <Text style={styles.infoTitle}>What to expect:</Text>
+        <Text style={styles.infoText}>
+          • Personalized learning paths{'\n'}
+          • Detailed progress tracking{'\n'}
+          • Achievement rewards{'\n'}
+          • Social learning features{'\n'}
+          • Customizable learning goals
+        </Text>
       </View>
-    </SafeAreaView>
+      
+      <TouchableOpacity 
+        style={styles.backButtonLarge}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>Go Back</Text>
+      </TouchableOpacity>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#D35C34',
-    height: 60,
-    paddingHorizontal: 15,
-  },
-  backButton: {
-    padding: 8,
-  },
-  headerRight: {
-    width: 40, // Same width as back button for alignment
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  content: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 30,
-  },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#D35C34',
+    fontSize: theme.typography.fontSize.xxlarge,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: theme.spacing.l,
   },
   imageContainer: {
     alignItems: 'center',
-    marginVertical: 20,
+    marginVertical: theme.spacing.l,
   },
   constructionImage: {
     width: 200,
     height: 200,
   },
   description: {
-    fontSize: 16,
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.primary,
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: theme.spacing.l,
     lineHeight: 24,
   },
   infoBox: {
-    backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 8,
-    padding: 15,
-    marginVertical: 20,
+    backgroundColor: theme.colors.background.card,
+    borderRadius: theme.borderRadius.medium,
+    padding: theme.spacing.m,
+    marginVertical: theme.spacing.l,
     borderLeftWidth: 4,
-    borderLeftColor: '#D35C34',
+    borderLeftColor: theme.colors.primary,
+    ...theme.shadows.small,
   },
   infoTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#D35C34',
-    marginBottom: 10,
+    fontSize: theme.typography.fontSize.large,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.s,
   },
   infoText: {
-    fontSize: 16,
-    color: '#4A4A3A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.primary,
     lineHeight: 26,
   },
   backButtonLarge: {
-    backgroundColor: '#D35C34',
-    borderRadius: 8,
-    padding: 15,
+    backgroundColor: theme.colors.primary,
+    borderRadius: theme.borderRadius.medium,
+    padding: theme.spacing.m,
     alignItems: 'center',
-    marginTop: 20,
+    marginTop: theme.spacing.l,
+    ...theme.shadows.small,
   },
   backButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  bottomNav: {
-    flexDirection: 'row',
-    borderTopWidth: 1,
-    borderTopColor: '#E0D8C0',
-    backgroundColor: '#FFF',
-  },
-  navItem: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 10,
-  },
-  navText: {
-    fontSize: 12,
-    color: '#6B6B5A',
-    marginTop: 4,
+    color: theme.colors.text.inverse,
+    fontSize: theme.typography.fontSize.regular,
+    fontWeight: theme.typography.fontWeight.bold,
   },
 });
 

@@ -8,6 +8,7 @@ import {
   Platform 
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import theme from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 const isIphoneX = Platform.OS === 'ios' && (height > 800 || width > 800);
@@ -72,7 +73,7 @@ const BottomNavigation = ({
             <Ionicons 
               name={iconName} 
               size={24} 
-              color={isActive ? '#D35C34' : '#4A4A3A'} 
+              color={isActive ? theme.colors.primary : theme.colors.text.primary} 
             />
             <Text 
               style={[
@@ -93,28 +94,28 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     borderTopWidth: 1,
-    borderTopColor: '#E0D8C0',
-    backgroundColor: '#F9F1E0',
+    borderTopColor: theme.colors.ui.border,
+    backgroundColor: theme.colors.background.main,
     paddingBottom: isIphoneX ? 20 : 0, // Extra padding for notched devices
   },
   navItem: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 10,
+    paddingVertical: theme.spacing.s,
   },
   activeNavItem: {
     borderTopWidth: 2,
-    borderTopColor: '#D35C34',
+    borderTopColor: theme.colors.primary,
   },
   navLabel: {
-    fontSize: 12,
-    color: '#4A4A3A',
-    marginTop: 4,
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.primary,
+    marginTop: theme.spacing.xs,
   },
   activeNavLabel: {
-    color: '#D35C34',
-    fontWeight: '500',
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.medium,
   }
 });
 

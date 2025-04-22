@@ -27,25 +27,32 @@ This will start the Node.js backend on port 5000 and MongoDB on port 27017.
 
 ### Running the Frontend
 
-1. Navigate to the frontend directory:
+1. Create .env file:
+
+```bash
+cd backend
+```
+- Replace all instances of server and email information with your actual information
+
+2. Navigate to the frontend directory:
 
 ```bash
 cd frontend
 ```
 
-2. Install dependencies:
+3. Install dependencies:
 
 ```bash
 npm install
 ```
 
-3. Start the Expo development server:
+4. Start the Expo development server:
 
 ```bash
 npm start
 ```
 
-4. Use the Expo Go app on your mobile device to scan the QR code or run on an emulator.
+5. Use the Expo Go app on your mobile device to scan the QR code or run on an emulator.
 
 ## API Endpoints
 

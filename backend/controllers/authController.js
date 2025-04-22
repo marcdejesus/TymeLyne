@@ -90,10 +90,26 @@ exports.register = async (req, res) => {
 
 // Login user
 exports.login = async (req, res) => {
-  console.log('🔶 LOGIN ATTEMPT:', { email: req.body.email });
+  console.log('🔑 LOGIN ATTEMPT:', { 
+    email: req.body.email,
+    ip: req.ip,
+    clientIP: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
+    userAgent: req.headers['user-agent']
+  });
   
   try {
     const { email, password } = req.body;
+    
+    console.log('🔍 Login credentials received:', { 
+      email, 
+      passwordProvided: !!password,
+      passwordLength: password ? password.length : 0
+    });
+
+    // Special handling for demo account
+    if (email === 'demo@example.com' && password === 'password') {
+      console.log('👤 Demo account login attempt detected');
+    }
 
     // Find user by email
     const user = await Profile.findOne({ email }).select('+password');
@@ -101,9 +117,21 @@ exports.login = async (req, res) => {
       console.log('🔴 LOGIN FAILED: User not found', { email });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
+    
+    console.log('👤 User found:', { 
+      userId: user.user_id, 
+      email: user.email,
+      username: user.username,
+      isVerified: user.is_verified,
+      passwordStored: !!user.password,
+      passwordLength: user.password ? user.password.length : 0
+    });
 
     // Verify password
+    console.log('🔑 Comparing passwords...');
     const isMatch = await bcrypt.compare(password, user.password);
+    console.log('🔑 Password comparison result:', isMatch);
+    
     if (!isMatch) {
       console.log('🔴 LOGIN FAILED: Password incorrect', { email });
       return res.status(400).json({ message: 'Invalid credentials' });
@@ -124,11 +152,13 @@ exports.login = async (req, res) => {
     }
 
     // Create JWT token
+    console.log('🔑 Creating JWT token...');
     const token = jwt.sign(
       { id: user.user_id, email: user.email },
       process.env.JWT_SECRET,
       { expiresIn: '7d' }
     );
+    console.log('✅ JWT token created successfully');
 
     console.log('✅ LOGIN SUCCESSFUL', { 
       userId: user.user_id, 

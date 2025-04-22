@@ -53,7 +53,7 @@ app.use(express.json());
 
 // Configure CORS to allow requests from the React Native app
 const corsOptions = {
-  origin: '*', // Allow all origins in development
+  origin: ['http://localhost:8081', 'http://192.168.1.145:8081', 'http://192.168.1.145:8082', 'exp://192.168.1.145:8081', 'exp://192.168.1.145:8082'],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,
@@ -62,7 +62,10 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-console.log('✅ CORS configured to allow all origins');
+console.log('✅ CORS configured to allow specific origins:', corsOptions.origin);
+
+// Enable trust proxy - important for accurate client IP detection
+app.enable('trust proxy');
 
 // Add response time tracking middleware
 app.use((req, res, next) => {

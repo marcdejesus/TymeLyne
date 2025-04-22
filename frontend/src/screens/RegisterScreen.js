@@ -1,43 +1,58 @@
 import React, { useState, useContext } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ScrollView, 
-  ActivityIndicator 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+  ScrollView,
+  Alert,
+  ActivityIndicator
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
 
 const RegisterScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [fName, setFName] = useState('');
-  const [lName, setLName] = useState('');
-  const [errorMsg, setErrorMsg] = useState('');
   
-  const { register, isLoading, error } = useContext(AuthContext);
+  const { register, error } = useContext(AuthContext);
 
+  // Function to handle registration
   const handleRegister = async () => {
     // Form validation
-    if (!username || !email || !password || !confirmPassword || !fName || !lName) {
-      setErrorMsg('Please fill in all fields');
+    if (!fullName || !email || !username || !password || !confirmPassword) {
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
-    
+
     if (password !== confirmPassword) {
-      setErrorMsg('Passwords do not match');
+      Alert.alert('Error', 'Passwords do not match');
       return;
     }
-    
-    if (password.length < 6) {
-      setErrorMsg('Password should be at least 6 characters');
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Error', 'Please enter a valid email address');
       return;
     }
-    
+
+    // Password validation (minimum 8 characters)
+    if (password.length < 8) {
+      Alert.alert('Error', 'Password must be at least 8 characters');
+      return;
+    }
+
+    // Split full name into first and last name
+    const nameParts = fullName.trim().split(' ');
+    const fName = nameParts[0] || '';
+    const lName = nameParts.slice(1).join(' ') || '';
+
+    // Create user data
     const userData = {
       username,
       email,
@@ -45,28 +60,43 @@ const RegisterScreen = ({ navigation }) => {
       fName,
       lName
     };
-    
+
+    // Call register from AuthContext
     const result = await register(userData);
-    if (!result.success) {
-      setErrorMsg(result.error);
+    
+    if (result.success) {
+      Alert.alert(
+        'Account Created', 
+        'Your account has been created successfully.',
+        [
+          { 
+            text: 'OK'
+          }
+        ]
+      );
     }
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.scrollContainer}>
-      <View style={styles.container}>
-        <Text style={styles.title}>TymeLyne</Text>
-        <Text style={styles.subtitle}>Create Account</Text>
-        
-        {errorMsg ? <Text style={styles.errorText}>{errorMsg}</Text> : null}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-        
+    <ScrollView contentContainerStyle={styles.container}>
+      {/* Logo and App Name */}
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('../../assets/favicon.png')} 
+          style={styles.logo} 
+          resizeMode="contain"
+        />
+        <Text style={styles.appName}>Tymelyne</Text>
+        <Text style={styles.tagline}>Create your account</Text>
+      </View>
+
+      {/* Registration Form */}
+      <View style={styles.formContainer}>
         <TextInput
           style={styles.input}
-          placeholder="Username"
-          value={username}
-          onChangeText={setUsername}
-          autoCapitalize="none"
+          placeholder="Full Name"
+          value={fullName}
+          onChangeText={setFullName}
         />
         
         <TextInput
@@ -78,21 +108,13 @@ const RegisterScreen = ({ navigation }) => {
           autoCapitalize="none"
         />
         
-        <View style={styles.nameContainer}>
-          <TextInput
-            style={[styles.input, styles.nameInput]}
-            placeholder="First Name"
-            value={fName}
-            onChangeText={setFName}
-          />
-          
-          <TextInput
-            style={[styles.input, styles.nameInput]}
-            placeholder="Last Name"
-            value={lName}
-            onChangeText={setLName}
-          />
-        </View>
+        <TextInput
+          style={styles.input}
+          placeholder="Username"
+          value={username}
+          onChangeText={setUsername}
+          autoCapitalize="none"
+        />
         
         <TextInput
           style={styles.input}
@@ -111,91 +133,84 @@ const RegisterScreen = ({ navigation }) => {
         />
         
         <TouchableOpacity 
-          style={styles.button} 
+          style={styles.registerButton} 
           onPress={handleRegister}
-          disabled={isLoading}
         >
-          {isLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Register</Text>
-          )}
+          <Text style={styles.registerButtonText}>Create Account</Text>
         </TouchableOpacity>
-        
-        <View style={styles.loginContainer}>
-          <Text>Already have an account? </Text>
-          <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-            <Text style={styles.loginText}>Login</Text>
-          </TouchableOpacity>
-        </View>
+      </View>
+
+      {/* Login Link */}
+      <View style={styles.loginContainer}>
+        <Text style={styles.loginText}>Already have an account? </Text>
+        <TouchableOpacity onPress={() => navigation.navigate('Login')}>
+          <Text style={styles.loginLink}>Login</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollContainer: {
-    flexGrow: 1,
-  },
   container: {
-    flex: 1,
+    flexGrow: 1,
+    backgroundColor: '#F9F1E0',
+    alignItems: 'center',
     justifyContent: 'center',
     padding: 20,
-    backgroundColor: '#F5F5F5',
   },
-  title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#4C4C6D',
-    textAlign: 'center',
-    marginBottom: 10,
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 30,
   },
-  subtitle: {
+  logo: {
+    width: 80,
+    height: 80,
+  },
+  appName: {
     fontSize: 24,
-    marginBottom: 24,
-    textAlign: 'center',
-    color: '#1B9C85',
+    fontWeight: 'bold',
+    color: '#D35C34',
+    marginTop: 10,
+  },
+  tagline: {
+    fontSize: 16,
+    color: '#6B6B5A',
+    marginTop: 5,
+  },
+  formContainer: {
+    width: '100%',
   },
   input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
+    backgroundColor: '#FFF',
+    borderRadius: 5,
     padding: 15,
-    marginBottom: 16,
+    marginBottom: 15,
     borderWidth: 1,
-    borderColor: '#E0E0E0',
+    borderColor: '#E0D8C0',
   },
-  nameContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  nameInput: {
-    flex: 0.48,
-  },
-  button: {
-    backgroundColor: '#1B9C85',
-    borderRadius: 8,
+  registerButton: {
+    backgroundColor: '#D35C34',
+    borderRadius: 5,
     padding: 15,
     alignItems: 'center',
     marginTop: 10,
   },
-  buttonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+  registerButtonText: {
+    color: '#FFF',
     fontSize: 16,
+    fontWeight: 'bold',
   },
   loginContainer: {
     flexDirection: 'row',
-    justifyContent: 'center',
     marginTop: 20,
   },
   loginText: {
-    color: '#1B9C85',
-    fontWeight: 'bold',
+    color: '#6B6B5A',
   },
-  errorText: {
-    color: 'red',
-    marginBottom: 10,
-    textAlign: 'center',
+  loginLink: {
+    color: '#D35C34',
+    fontWeight: 'bold',
   },
 });
 

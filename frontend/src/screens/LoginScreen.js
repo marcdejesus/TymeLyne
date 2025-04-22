@@ -2,21 +2,21 @@ import React, { useState, useContext } from 'react';
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   StyleSheet,
   Image,
   ActivityIndicator,
   Alert,
-  SafeAreaView,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
-  StatusBar,
   Dimensions
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import Icon from 'react-native-vector-icons/Ionicons';
+import { 
+  Screen, 
+  InputField, 
+  Button, 
+  Card,
+  theme 
+} from '../components';
 
 const { width, height } = Dimensions.get('window');
 
@@ -35,138 +35,91 @@ const LoginScreen = ({ navigation }) => {
     }
     
     try {
+      setIsLoading(true);
       const result = await login(email, password);
       
       if (!result.success) {
         Alert.alert('Login Failed', result.error || 'Invalid email or password');
       }
+      setIsLoading(false);
     } catch (err) {
+      setIsLoading(false);
       Alert.alert('Login Error', 'An unexpected error occurred. Please try again.');
     }
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle={Platform.OS === 'ios' ? 'dark-content' : 'light-content'} backgroundColor="#D35C34" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft} />
-        <Text style={styles.headerTitle}>Sign In</Text>
-        <View style={styles.headerRight} />
+    <Screen
+      title="Sign In"
+      backgroundColor={theme.colors.background.main}
+      showBottomNav={false}
+      scrollable={true}
+      contentContainerStyle={styles.contentContainer}
+    >
+      {/* Logo and App Name */}
+      <View style={styles.logoContainer}>
+        <Image 
+          source={require('../../assets/favicon.png')} 
+          style={styles.logo} 
+          resizeMode="contain"
+        />
+        <Text style={styles.appName}>Tymelyne</Text>
+        <Text style={styles.tagline}>Your learning journey awaits</Text>
       </View>
-      
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-      >
-        <ScrollView 
-          contentContainerStyle={styles.scrollContainer}
-          showsVerticalScrollIndicator={false}
+
+      {/* Login Form */}
+      <View style={styles.formContainer}>
+        <InputField
+          label="Email"
+          placeholder="Enter your email"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        
+        <InputField
+          label="Password"
+          placeholder="Enter your password"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+        
+        <Button
+          title={isLoading ? '' : 'Sign In'}
+          onPress={handleLogin}
+          loading={isLoading}
+          disabled={isLoading}
+          style={styles.loginButton}
+        />
+      </View>
+
+      {/* Register Link */}
+      <View style={styles.registerContainer}>
+        <Text style={styles.registerText}>Don't have an account? </Text>
+        <Text 
+          style={styles.registerLink}
+          onPress={() => navigation.navigate('Register')}
         >
-          {/* Logo and App Name */}
-          <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/favicon.png')} 
-              style={styles.logo} 
-              resizeMode="contain"
-            />
-            <Text style={styles.appName}>Tymelyne</Text>
-            <Text style={styles.tagline}>Your learning journey awaits</Text>
-          </View>
+          Create Account
+        </Text>
+      </View>
 
-          {/* Login Form */}
-          <View style={styles.formContainer}>
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Email</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
-                keyboardType="email-address"
-                autoCapitalize="none"
-              />
-            </View>
-            
-            <View style={styles.inputGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter your password"
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry
-              />
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.loginButton} 
-              onPress={handleLogin}
-              activeOpacity={0.8}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-          </View>
-
-          {/* Register Link */}
-          <View style={styles.registerContainer}>
-            <Text style={styles.registerText}>Don't have an account? </Text>
-            <TouchableOpacity onPress={() => navigation.navigate('Register')}>
-              <Text style={styles.registerLink}>Create Account</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Demo Account Info */}
-          <View style={styles.demoContainer}>
-            <Text style={styles.demoTitle}>Demo Account</Text>
-            <Text style={styles.demoText}>Email: demo@example.com</Text>
-            <Text style={styles.demoText}>Password: password</Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      {/* Demo Account Info */}
+      <Card style={styles.demoContainer}>
+        <Text style={styles.demoTitle}>Demo Account</Text>
+        <Text style={styles.demoText}>Email: demo@example.com</Text>
+        <Text style={styles.demoText}>Password: password</Text>
+      </Card>
+    </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    backgroundColor: '#D35C34',
-    height: 60,
-    paddingHorizontal: 15,
-  },
-  headerLeft: {
-    width: 40, // For alignment
-  },
-  headerRight: {
-    width: 40, // For alignment
-  },
-  headerTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  scrollContainer: {
+  contentContainer: {
     flexGrow: 1,
     alignItems: 'center',
-    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
@@ -179,80 +132,52 @@ const styles = StyleSheet.create({
     height: width * 0.3,
   },
   appName: {
-    fontSize: width > 375 ? 30 : 26,
-    fontWeight: 'bold',
-    color: '#D35C34',
+    fontSize: theme.typography.fontSize.xxlarge,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
     marginTop: 10,
   },
   tagline: {
-    fontSize: width > 375 ? 16 : 14,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.regular,
+    color: theme.colors.text.secondary,
     marginTop: 5,
   },
   formContainer: {
     width: '100%',
     maxWidth: 400,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4A4A3A',
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFF',
-    borderRadius: 8,
-    padding: 15,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    fontSize: 16,
+    marginBottom: theme.spacing.l,
   },
   loginButton: {
-    backgroundColor: '#D35C34',
-    borderRadius: 8,
-    padding: 15,
-    alignItems: 'center',
-    marginTop: 10,
-  },
-  loginButtonText: {
-    color: '#FFF',
-    fontSize: 16,
-    fontWeight: 'bold',
+    marginTop: theme.spacing.m,
   },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: 25,
+    marginTop: theme.spacing.l,
+    marginBottom: theme.spacing.xl,
   },
   registerText: {
-    color: '#6B6B5A',
-    fontSize: 16,
+    color: theme.colors.text.secondary,
+    fontSize: theme.typography.fontSize.regular,
   },
   registerLink: {
-    color: '#D35C34',
-    fontWeight: 'bold',
-    fontSize: 16,
+    color: theme.colors.primary,
+    fontWeight: theme.typography.fontWeight.bold,
+    fontSize: theme.typography.fontSize.regular,
   },
   demoContainer: {
-    marginTop: 40,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    backgroundColor: 'rgba(211, 92, 52, 0.1)',
-    borderRadius: 8,
     alignItems: 'center',
     width: '90%',
+    backgroundColor: `${theme.colors.primary}10`, // 10% opacity of primary color
   },
   demoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#D35C34',
-    marginBottom: 8,
+    fontSize: theme.typography.fontSize.regular,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.primary,
+    marginBottom: theme.spacing.s,
   },
   demoText: {
-    fontSize: 14,
-    color: '#6B6B5A',
+    fontSize: theme.typography.fontSize.medium,
+    color: theme.colors.text.secondary,
     marginBottom: 4,
   },
 });

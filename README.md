@@ -1,223 +1,68 @@
-# Tymelyne - Learning Time Management App
+# TymeLyne
 
-Tymelyne is an innovative learning application that helps users manage their time effectively while learning new skills. The app includes course creation, progress tracking, and interactive learning features.
-
-## Features
-
-- **AI Course Generation**: Create personalized learning paths with AI
-- **Progress Tracking**: Monitor your learning progress with XP and achievements
-- **Interactive Activities**: Practice with hands-on activities and quizzes
-- **Social Learning**: View and share learning achievements
+A React Native Expo application with a Node.js/MongoDB backend, containerized with Docker.
 
 ## Project Structure
 
-- **Frontend**: React Native (Expo) application
-- **Backend**: Django REST API
-- **Docker**: Configuration for containerized development
+- **frontend**: React Native Expo application
+- **backend**: Node.js with Express and MongoDB
 
-## Development Setup
+## Getting Started
 
 ### Prerequisites
 
-- Node.js 18+
-- Python 3.9+
-- Docker and Docker Compose (for containerized development)
+- Node.js (v14 or higher)
+- Docker and Docker Compose
+- Expo CLI
 
-### Option 1: Running with Docker (Recommended)
+### Running the Backend
 
-The simplest way to get started with Tymelyne is to use Docker:
+1. Start the backend and MongoDB using Docker Compose:
 
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/marcdejesus/tymelyne.git
-   cd tymelyne
-   ```
-
-2. Create A Root .env File:
-   - Duplicate the .env.example file to your root directory
-   - Rename it as .env
-   - Replace all instances of your public/private IP with your actual IP
-  
-3. Create A Frontend .env File:
-   - Duplicate the .env.example file in the Frontend directory
-   - Rename it as .env.frontend
-   - Replace all instances of IP with your actual IP
-  
-4. Create A Docker .env File:
-   - Duplicate the .env.docker.example file in the root directory
-   - Rename it as .env.docker
-   - Replace all instances of IP with your actual IP
-  
-3. Create two app.js Files:
-   - Duplicate the api.js.example file underneath app/frontend/src/services/ and src/api/
-   - Rename them to api.js
-   - Replace YOUR_LOCAL_IP_HERE with your local IP 
-
-2. Start the application using the provided script:
-   ```bash
-   docker-compose up -d
-   ```
-
-3. Accessing Mobile Build:
-   cd frontend
-   ```bash
-   npx expo start
-   ```
-   Using your phone camera, scan the qr code
-
-5. Access the application:
-   - Backend API: http://localhost:8000 /admin for admin login
-   - Frontend Expo: Scan terminal QR code
-  
-6. Close Build:
-   - ctrl + c in terminal to kill Expo
-   - ```bash
-     docker-compose down
-     ``` To shut down Docker
-
-
-### Option 2: Manual Setup
-
-#### Backend Setup
-
-1. Navigate to the backend directory:
-   ```bash
-   cd tymelyne/backend
-   ```
-
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
-
-3. Install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. Run migrations:
-   ```bash
-   python manage.py migrate
-   ```
-
-5. Start the development server:
-   ```bash
-   python manage.py runserver
-   ```
-
-#### Frontend Setup
-
-1. Navigate to the frontend directory:
-   ```bash
-   cd tymelyne/frontend
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Start the Expo development server:
-   ```bash
-   npx expo start
-   ```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit your changes: `git commit -m 'Add some feature'`
-4. Push to the branch: `git push origin feature-name`
-5. Submit a pull request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Connecting from a Real Device (Phone/Tablet)
-
-To access the API from your phone or tablet using Expo Go, follow these steps:
-
-1. Run the setup script to detect your local IP and update the frontend:
 ```bash
-./update_api_url.sh
+docker-compose up
 ```
 
-2. Start the backend server with local IP info:
+This will start the Node.js backend on port 5000 and MongoDB on port 27017.
+
+### Running the Frontend
+
+1. Create .env file:
+
 ```bash
 cd backend
-./run_with_ip.sh
 ```
+- Replace all instances of server and email information with your actual information
 
-3. Start the Expo development server:
+2. Navigate to the frontend directory:
+
 ```bash
 cd frontend
-npx expo start
 ```
 
-4. Scan the QR code with the Expo Go app on your device
-   - Make sure your phone is on the same Wi-Fi network as your computer
-   - The backend API should now be accessible from your phone
+3. Install dependencies:
+
+```bash
+npm install
+```
+
+4. Start the Expo development server:
+
+```bash
+npm start
+```
+
+5. Use the Expo Go app on your mobile device to scan the QR code or run on an emulator.
 
 ## API Endpoints
 
-- `GET /api/tasks/` - List all tasks
-- `POST /api/tasks/` - Create a new task
-- `GET /api/tasks/{id}/` - Retrieve a task
-- `PUT /api/tasks/{id}/` - Update a task
-- `DELETE /api/tasks/{id}/` - Delete a task
+### Authentication
 
-## Troubleshooting
+- **POST /api/auth/register**: Register a new user
+- **POST /api/auth/login**: Login a user
+- **GET /api/auth/me**: Get current user (requires authentication)
 
-### Network Connection Errors
+### Profiles
 
-If you're getting network errors when trying to connect from Expo Go to your backend:
-
-1. **Verify your computer's IP address and configuration**:
-   ```bash
-   # Run this from the project root
-   ./update_api_url.sh
-   
-   # Run the network diagnostic tool
-   cd backend && ./check_network.sh
-   ```
-
-2. **Check macOS firewall settings**:
-   - Go to System Preferences > Security & Privacy > Firewall
-   - Click on "Firewall Options..."
-   - Make sure Python or your terminal application is allowed to receive incoming connections
-
-3. **Try Expo's Tunnel connection method**:
-   ```bash
-   cd frontend
-   npx expo start --tunnel
-   ```
-   This will create a tunnel that bypasses network restrictions.
-
-4. **Check both devices are on the same network**:
-   - Make sure your phone and computer are connected to the same WiFi network
-   - Some public networks or hotspots might block communication between devices
-
-5. **Alternative API URL formats to try**:
-   Open `frontend/src/api/api.js` and try changing to a different connection method:
-   ```javascript
-   // Try these different options one at a time:
-   const API_URL = API_URLS.localDevice;      // Default option
-   // const API_URL = 'http://YOUR_IP:8000';  // Direct IP
-   // const API_URL = API_URLS.expoDevelopment; // Alternative Expo format
-   ```
-
-6. **Temporarily disable CORS for testing**:
-   Make sure `CORS_ALLOW_ALL_ORIGINS = True` is enabled in Django's settings.py.
-
-### Other Common Issues
-
-- **API Connection Issues**: Make sure your phone and computer are on the same WiFi network
-- **Cannot Connect to API**: Check firewall settings to allow incoming connections on port 8000
-- **Expo Can't Connect**: Try using the "Tunnel" connection method in Expo
-
-## Testing the Connection
-
-1. Start both the backend and frontend servers
-2. Use the app to create, view, update, and delete tasks
+- **GET /api/profiles/:id**: Get a user profile by ID
+- **PUT /api/profiles/:id**: Update a user profile (requires authentication)

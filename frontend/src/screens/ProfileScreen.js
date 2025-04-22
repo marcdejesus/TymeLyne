@@ -1,0 +1,230 @@
+import React, { useContext } from 'react';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  Image, 
+  Dimensions,
+  Platform
+} from 'react-native';
+import { 
+  Screen, 
+  Card, 
+  ProgressBar, 
+  SectionTitle,
+  theme 
+} from '../components';
+import { AuthContext } from '../contexts/AuthContext';
+
+const { width } = Dimensions.get('window');
+
+const ProfileScreen = ({ navigation }) => {
+  const { user, logout } = useContext(AuthContext);
+  
+  // Mock data for demonstration
+  // In production, this data would come from the user object fetched from the backend
+  const level = 10;
+  const followers = 1;
+  const friends = 1;
+  const username = user?.username || '@username';
+  
+  // Mock courses data
+  const topCourses = [
+    { id: 1, title: 'Investing', icon: require('../../assets/course-icons/finance.png') },
+    { id: 2, title: 'JavaScript', icon: require('../../assets/course-icons/computer.png') },
+    { id: 3, title: 'Finance', icon: require('../../assets/course-icons/finance.png') },
+    { id: 4, title: 'Python', icon: require('../../assets/course-icons/computer.png') },
+  ];
+
+  // Future backend integration for profile actions:
+  //
+  // Function to update profile:
+  // const updateProfile = async (profileData) => {
+  //   try {
+  //     const token = await SecureStore.getItemAsync('userToken');
+  //     const response = await axios.put('http://yourapi.com/api/users/profile', profileData, {
+  //       headers: { Authorization: `Bearer ${token}` }
+  //     });
+  //     // Update local user data
+  //     setUser(response.data);
+  //     await SecureStore.setItemAsync('user', JSON.stringify(response.data));
+  //   } catch (error) {
+  //     console.error('Error updating profile:', error);
+  //   }
+  // };
+  //
+  // Function to get followers:
+  // const getFollowers = async () => {
+  //   try {
+  //     const token = await SecureStore.getItemAsync('userToken');
+  //     const response = await axios.get('http://yourapi.com/api/users/followers', {
+  //       headers: { Authorization: `Bearer ${token}` }
+  //     });
+  //     setFollowers(response.data);
+  //   } catch (error) {
+  //     console.error('Error fetching followers:', error);
+  //   }
+  // };
+
+  const handleNavigation = (screenName) => {
+    // For unimplemented screens, navigate to development page
+    if (screenName === 'Home') {
+      navigation.navigate('Home');
+    } else {
+      navigation.navigate('Development');
+    }
+  };
+
+  const handleMenuPress = () => {
+    // Since we removed drawer navigation, show a logout option here
+    logout();
+  };
+
+  return (
+    <Screen
+      title="Profile"
+      onMenuPress={handleMenuPress}
+      onRightPress={() => handleNavigation('Settings')}
+      rightIcon="settings-outline"
+      activeScreen="Profile"
+      onHomePress={() => handleNavigation('Home')}
+      onAchievementsPress={() => handleNavigation('Achievements')}
+      onProfilePress={() => handleNavigation('Profile')}
+      backgroundColor={theme.colors.background.main}
+    >
+      {/* Profile Information */}
+      <View style={styles.profileSection}>
+        <View style={styles.profileImageContainer}>
+          <Image 
+            source={require('../../assets/favicon.png')} // Placeholder for profile picture
+            style={styles.profileImage} 
+          />
+          <Text style={styles.levelText}>LEVEL {level}</Text>
+        </View>
+        
+        <View style={styles.profileInfo}>
+          <Text style={styles.username}>{username}</Text>
+          <View style={styles.statsRow}>
+            <View style={styles.stat}>
+              <Text style={styles.statLabel}>Followers</Text>
+              <Text style={styles.statValue}>{followers}</Text>
+            </View>
+            <View style={styles.stat}>
+              <Text style={styles.statLabel}>Friends</Text>
+              <Text style={styles.statValue}>{friends}</Text>
+            </View>
+          </View>
+          
+          {/* Level Progress */}
+          <View style={styles.progressContainer}>
+            <ProgressBar progress={30} showPercentage={false} />
+          </View>
+        </View>
+      </View>
+      
+      {/* Top Courses Section */}
+      <SectionTitle title="Top Courses" />
+      <View style={styles.coursesGrid}>
+        {topCourses.map(course => (
+          <Card 
+            key={course.id} 
+            style={styles.courseCard}
+            onPress={() => handleNavigation('CourseDetails')}
+          >
+            <Image source={course.icon} style={styles.courseIcon} />
+            <Text style={styles.courseTitle}>{course.title}</Text>
+          </Card>
+        ))}
+      </View>
+    </Screen>
+  );
+};
+
+const styles = StyleSheet.create({
+  profileSection: {
+    flexDirection: 'row',
+    padding: width * 0.04,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+  },
+  profileImage: {
+    width: width * 0.2,
+    height: width * 0.2,
+    borderRadius: width * 0.1,
+    backgroundColor: '#D8D0BA',
+    marginRight: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  levelText: {
+    marginTop: 5,
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
+  },
+  profileInfo: {
+    flex: 1,
+  },
+  username: {
+    fontSize: theme.typography.fontSize.large,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    marginTop: 5,
+  },
+  stat: {
+    marginRight: 20,
+  },
+  statLabel: {
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
+  },
+  statValue: {
+    fontSize: theme.typography.fontSize.medium,
+    fontWeight: theme.typography.fontWeight.bold,
+    color: theme.colors.text.primary,
+  },
+  progressContainer: {
+    marginTop: 10,
+  },
+  coursesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    paddingHorizontal: theme.spacing.xs,
+  },
+  courseCard: {
+    width: '46%',
+    margin: '2%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: theme.spacing.m,
+  },
+  courseIcon: {
+    width: width * 0.1,
+    height: width * 0.1,
+    maxWidth: 40,
+    maxHeight: 40,
+    marginBottom: 12,
+  },
+  courseTitle: {
+    fontSize: theme.typography.fontSize.regular,
+    textAlign: 'center',
+    color: theme.colors.text.primary,
+  },
+});
+
+export default ProfileScreen; 

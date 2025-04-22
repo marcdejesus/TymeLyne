@@ -1,13 +1,9 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
-  Image, 
-  Dimensions,
-  Platform 
-} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, spacing, shadows, borderRadius } from '../constants/theme';
+import Typography from './Typography';
+import Card from './Card';
 
 const { width } = Dimensions.get('window');
 
@@ -30,40 +26,57 @@ const CourseCard = ({
   // For grid layout style
   if (variant === 'grid') {
     return (
-      <TouchableOpacity 
+      <Card 
+        variant="elevated"
         style={[styles.gridCard, style]}
         onPress={onPress}
-        activeOpacity={0.8}
+        noPadding={false}
       >
         <Image source={course.icon} style={styles.gridIcon} />
-        <Text style={styles.gridTitle} numberOfLines={2}>
+        <Typography 
+          variant="subheading" 
+          weight="semiBold" 
+          center 
+          numberOfLines={2}
+          style={styles.gridTitle}
+        >
           {course.title}
-        </Text>
-      </TouchableOpacity>
+        </Typography>
+      </Card>
     );
   }
   
   // For horizontal layout (default)
   return (
-    <TouchableOpacity 
+    <Card 
+      variant="elevated"
       style={[styles.card, style]}
       onPress={onPress}
-      activeOpacity={0.8}
+      noPadding={false}
     >
       <View style={styles.iconContainer}>
         <Image source={course.icon} style={styles.icon} />
       </View>
       
       <View style={styles.contentContainer}>
-        <Text style={styles.title} numberOfLines={1}>
+        <Typography 
+          variant="subheading" 
+          weight="semiBold" 
+          numberOfLines={1}
+          style={styles.title}
+        >
           {course.title}
-        </Text>
+        </Typography>
         
         {course.progress !== undefined && (
           <View style={styles.progressContainer}>
-            <Text style={styles.progressText}>
+            <Typography 
+              variant="caption" 
+              color={colors.text.secondary}
+              style={styles.progressText}
+            >
               {course.progress}% COMPLETE
-            </Text>
+            </Typography>
             <View style={styles.progressBar}>
               <View 
                 style={[
@@ -81,36 +94,27 @@ const CourseCard = ({
           style={styles.optionsButton}
           onPress={onOptionsPress}
           activeOpacity={0.7}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
         >
-          <Text style={styles.optionsDots}>•••</Text>
+          <Ionicons name="ellipsis-vertical" size={20} color={colors.text.tertiary} />
         </TouchableOpacity>
       )}
-    </TouchableOpacity>
+    </Card>
   );
 };
 
 const styles = StyleSheet.create({
   // Horizontal card styles
   card: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 10,
-    padding: 16,
+    padding: 0, // Card component has its own padding
     flexDirection: 'row',
-    marginBottom: 16,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 3,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    marginBottom: spacing.m,
+    borderRadius: borderRadius.m,
+    padding: spacing.m,
   },
   iconContainer: {
-    marginRight: 16,
+    marginRight: spacing.m,
+    justifyContent: 'center',
   },
   icon: {
     width: width * 0.12,
@@ -120,77 +124,55 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     flex: 1,
+    justifyContent: 'center',
   },
   title: {
-    fontSize: Math.min(18, width * 0.045),
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
   progressContainer: {
-    marginTop: 4,
-    width: '85%', // Avoid overlap with options dots
+    marginTop: spacing.xs,
+    width: '90%', // Avoid overlap with options dots
   },
   progressText: {
-    fontSize: Math.min(12, width * 0.03),
-    color: '#6B6B5A',
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   progressBar: {
-    height: 8,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 4,
+    height: 6,
+    backgroundColor: colors.border,
+    borderRadius: 3,
     overflow: 'hidden',
   },
   progress: {
     height: '100%',
-    backgroundColor: '#D35C34',
-    borderRadius: 4,
+    backgroundColor: colors.primary,
+    borderRadius: 3,
   },
   optionsButton: {
-    padding: 4,
-    justifyContent: 'flex-start',
-  },
-  optionsDots: {
-    fontSize: 18,
-    color: '#6B6B5A',
-    lineHeight: 18,
+    padding: spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+    height: 40,
+    width: 40,
   },
   
   // Grid card styles
   gridCard: {
     width: '46%',
     margin: '2%',
-    padding: 16,
-    backgroundColor: '#F4ECE1',
-    borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
     aspectRatio: 1,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    padding: spacing.m,
   },
   gridIcon: {
     width: width * 0.1,
     height: width * 0.1,
     maxWidth: 40,
     maxHeight: 40,
-    marginBottom: 12,
+    marginBottom: spacing.s,
   },
   gridTitle: {
-    fontSize: Math.min(16, width * 0.04),
-    fontWeight: '600',
     textAlign: 'center',
-    color: '#4A4A3A',
   },
 });
 

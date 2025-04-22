@@ -1,90 +1,110 @@
 import React from 'react';
-import { StyleSheet, TouchableOpacity, Text, ActivityIndicator, Dimensions } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator 
+} from 'react-native';
+import Typography from './Typography';
+import { colors, shadows, spacing, borderRadius } from '../constants/theme';
 
 /**
- * Button component with different variants (primary, secondary, outline, text)
- * Handles loading state and disabled state
+ * Button component with different variants that follows the design system
  * 
- * @param {string} variant - 'primary', 'secondary', 'outline', or 'text'
+ * @param {string} variant - Button variant: 'primary', 'secondary', 'outline', 'text'
  * @param {function} onPress - Function to call when button is pressed
- * @param {boolean} loading - Whether to show loading indicator
- * @param {boolean} disabled - Whether button is disabled
- * @param {string} title - Text to display in button
- * @param {object} style - Additional styles for the button
- * @param {object} textStyle - Additional styles for the button text
+ * @param {ReactNode} children - Button content (text or components)
+ * @param {string} size - Button size: 'small', 'medium', 'large'
+ * @param {boolean} disabled - Whether the button is disabled
+ * @param {boolean} loading - Whether to show a loading indicator
+ * @param {object} style - Additional style for the button container
+ * @param {object} textStyle - Additional style for the button text
+ * @param {boolean} fullWidth - Whether button should take full width
+ * @param {number} activeOpacity - Opacity when pressed (0 to 1)
+ * @param {object} props - Additional props to pass to TouchableOpacity
  */
 const Button = ({
   variant = 'primary',
   onPress,
-  loading = false,
+  children,
+  size = 'medium',
   disabled = false,
-  title,
+  loading = false,
   style,
   textStyle,
+  fullWidth = false,
+  activeOpacity = 0.7,
   ...props
 }) => {
-  // Determine button and text style based on variant
+  // Determine styles based on variant and size
   const getButtonStyle = () => {
-    switch (variant) {
-      case 'primary':
-        return styles.primaryButton;
-      case 'secondary':
-        return styles.secondaryButton;
-      case 'outline':
-        return styles.outlineButton;
-      case 'text':
-        return styles.textButton;
-      default:
-        return styles.primaryButton;
-    }
+    // Base styles
+    const baseStyle = [
+      styles.button,
+      styles[`${variant}Button`],
+      styles[`${size}Button`],
+      fullWidth && styles.fullWidth,
+      disabled && styles.disabledButton,
+      style,
+    ];
+    
+    return baseStyle;
   };
-
+  
+  // Determine text styles
   const getTextStyle = () => {
-    switch (variant) {
-      case 'primary':
-        return styles.primaryText;
-      case 'secondary':
-        return styles.secondaryText;
-      case 'outline':
-        return styles.outlineText;
-      case 'text':
-        return styles.textText;
-      default:
-        return styles.primaryText;
-    }
+    return [
+      styles.buttonText,
+      styles[`${variant}Text`],
+      styles[`${size}Text`],
+      disabled && styles.disabledText,
+      textStyle,
+    ];
   };
 
-  const buttonStyles = [
-    styles.button,
-    getButtonStyle(),
-    disabled && styles.disabledButton,
-    style
-  ];
-
-  const titleStyles = [
-    styles.text,
-    getTextStyle(),
-    disabled && styles.disabledText,
-    textStyle
-  ];
+  // Determine text color based on variant
+  const getTextColor = () => {
+    if (disabled) return colors.text.disabled;
+    
+    switch (variant) {
+      case 'primary':
+        return colors.text.inverted;
+      case 'secondary':
+        return colors.text.primary;
+      case 'outline':
+        return colors.primary;
+      case 'text':
+        return colors.primary;
+      default:
+        return colors.text.inverted;
+    }
+  };
 
   return (
     <TouchableOpacity
-      style={buttonStyles}
+      style={getButtonStyle()}
       onPress={onPress}
       disabled={disabled || loading}
-      activeOpacity={0.7}
+      activeOpacity={activeOpacity}
       {...props}
     >
       {loading ? (
         <ActivityIndicator 
           size="small" 
-          color={variant === 'primary' ? '#FFFFFF' : '#684BFF'} 
+          color={getTextColor()} 
         />
       ) : (
-        <Text style={titleStyles}>{title}</Text>
+        typeof children === 'string' ? (
+          <Typography 
+            variant="button" 
+            weight="medium" 
+            style={getTextStyle()}
+            color={getTextColor()}
+          >
+            {children}
+          </Typography>
+        ) : (
+          children
+        )
       )}
     </TouchableOpacity>
   );
@@ -92,49 +112,72 @@ const Button = ({
 
 const styles = StyleSheet.create({
   button: {
-    height: 50,
-    borderRadius: 10,
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    minWidth: width * 0.3,
+    justifyContent: 'center',
+    borderRadius: borderRadius.m,
   },
+  
+  // Variant styles
   primaryButton: {
-    backgroundColor: '#684BFF',
+    backgroundColor: colors.primary,
+    ...shadows.small,
   },
   secondaryButton: {
-    backgroundColor: '#F0ECFF',
+    backgroundColor: colors.secondary,
+    ...shadows.small,
   },
   outlineButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#684BFF',
+    borderColor: colors.primary,
   },
   textButton: {
     backgroundColor: 'transparent',
     paddingHorizontal: 0,
   },
-  disabledButton: {
-    opacity: 0.6,
+  
+  // Size styles
+  smallButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.s,
+    minHeight: 32,
   },
-  text: {
+  mediumButton: {
+    paddingVertical: spacing.s,
+    paddingHorizontal: spacing.m,
+    minHeight: 44,
+  },
+  largeButton: {
+    paddingVertical: spacing.m,
+    paddingHorizontal: spacing.l,
+    minHeight: 52,
+  },
+  
+  // Text styles
+  buttonText: {
+    textAlign: 'center',
+  },
+  smallText: {
+    fontSize: 12,
+  },
+  mediumText: {
+    fontSize: 14,
+  },
+  largeText: {
     fontSize: 16,
-    fontWeight: '600',
   },
-  primaryText: {
-    color: '#FFFFFF',
-  },
-  secondaryText: {
-    color: '#684BFF',
-  },
-  outlineText: {
-    color: '#684BFF',
-  },
-  textText: {
-    color: '#684BFF',
+  
+  // State styles
+  disabledButton: {
+    backgroundColor: colors.cardDark,
+    borderColor: colors.border,
+    ...shadows.none,
   },
   disabledText: {
-    opacity: 0.6,
+    color: colors.text.disabled,
+  },
+  fullWidth: {
+    width: '100%',
   },
 });
 

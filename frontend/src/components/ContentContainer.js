@@ -1,65 +1,59 @@
 import React from 'react';
-import { 
-  View, 
-  StyleSheet, 
-  ScrollView, 
-  Dimensions 
-} from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { ScrollView, View, StyleSheet } from 'react-native';
+import { colors } from '../constants/theme';
 
 /**
- * Reusable component for containing the main content of a screen
- * with consistent padding and scrolling behavior
+ * ContentContainer component that wraps content in a scrollable or static container
  * 
- * @param {node} children - Child components to render inside the container
+ * @param {ReactNode} children - Content to display
  * @param {boolean} scrollable - Whether content should be scrollable
+ * @param {object} style - Additional style for the container
+ * @param {object} contentContainerStyle - Style for the scroll view content container
  * @param {boolean} showsVerticalScrollIndicator - Whether to show scroll indicator
- * @param {object} style - Additional styles for the container
- * @param {object} contentContainerStyle - Additional styles for the scroll content container
+ * @param {boolean} keyboardShouldPersistTaps - How keyboard should behave when tapping outside of keyboard
+ * @param {object} props - Additional props to pass to ScrollView/View
  */
 const ContentContainer = ({
   children,
   scrollable = true,
-  showsVerticalScrollIndicator = false,
   style,
-  contentContainerStyle
+  contentContainerStyle,
+  showsVerticalScrollIndicator = false,
+  keyboardShouldPersistTaps = 'handled',
+  ...props
 }) => {
-  // If content should be scrollable
   if (scrollable) {
     return (
       <ScrollView
-        style={[styles.scrollView, style]}
-        contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+        style={[styles.scrollContainer, style]}
+        contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        bounces={true}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        {...props}
       >
         {children}
       </ScrollView>
     );
   }
-  
-  // Otherwise render as a plain View
+
   return (
-    <View style={[styles.container, style]}>
+    <View style={[styles.container, style]} {...props}>
       {children}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  scrollContent: {
-    paddingHorizontal: width * 0.04,
-    paddingVertical: 16,
-    paddingBottom: 32, // Extra padding at the bottom for better scrolling
-  },
   container: {
     flex: 1,
-    paddingHorizontal: width * 0.04,
-    paddingVertical: 16,
+    backgroundColor: colors.background,
+  },
+  scrollContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  contentContainer: {
+    flexGrow: 1,
   }
 });
 

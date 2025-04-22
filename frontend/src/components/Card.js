@@ -1,77 +1,63 @@
 import React from 'react';
 import { 
   View, 
-  StyleSheet, 
   TouchableOpacity, 
-  Dimensions, 
-  Platform 
+  StyleSheet 
 } from 'react-native';
-
-const { width } = Dimensions.get('window');
+import { colors, shadows, spacing, borderRadius } from '../constants/theme';
 
 /**
- * Reusable Card component for containing content
+ * Card component with different variants based on our design system
  * 
- * @param {node} children - Child components to render inside the card
- * @param {function} onPress - Function to call when card is pressed (makes card touchable)
- * @param {object} style - Additional styles for the card
+ * @param {string} variant - Card variant: 'flat', 'elevated', 'outlined'
+ * @param {function} onPress - Function to call when card is pressed
+ * @param {ReactNode} children - Card content
+ * @param {object} style - Additional style for the card
  * @param {string} backgroundColor - Background color of the card
- * @param {number} elevation - Elevation/shadow intensity (1-5)
+ * @param {boolean} disabled - Whether the card is disabled/inactive
+ * @param {number} activeOpacity - Opacity when pressed (0 to 1)
+ * @param {object} props - Additional props to pass to View/TouchableOpacity
  */
 const Card = ({
-  children,
+  variant = 'flat',
   onPress,
+  children,
   style,
-  backgroundColor = '#F4ECE1',
-  elevation = 2
+  backgroundColor,
+  disabled = false,
+  activeOpacity = 0.8,
+  ...props
 }) => {
-  // Shadow styles based on elevation
-  const getShadowStyle = () => {
-    const shadowOpacity = 0.05 * elevation;
-    const shadowRadius = elevation;
-    const shadowOffset = { width: 0, height: elevation / 2 };
-    
-    return Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset,
-        shadowOpacity,
-        shadowRadius,
-      },
-      android: {
-        elevation,
-      },
-    });
-  };
-  
-  // If onPress is provided, wrap in TouchableOpacity
+  // Determine the background color
+  const bgColor = backgroundColor || 
+    (variant === 'outlined' ? 'transparent' : colors.card);
+
+  // Base card styles based on variant
+  const cardStyles = [
+    styles.card,
+    styles[variant],
+    { backgroundColor: bgColor },
+    disabled && styles.disabled,
+    style
+  ];
+
+  // If onPress is provided, render a TouchableOpacity, otherwise render a View
   if (onPress) {
     return (
       <TouchableOpacity
-        style={[
-          styles.card,
-          getShadowStyle(),
-          { backgroundColor },
-          style
-        ]}
-        onPress={onPress}
-        activeOpacity={0.8}
+        style={cardStyles}
+        onPress={disabled ? null : onPress}
+        activeOpacity={activeOpacity}
+        disabled={disabled}
+        {...props}
       >
         {children}
       </TouchableOpacity>
     );
   }
-  
-  // Otherwise render as a View
+
   return (
-    <View
-      style={[
-        styles.card,
-        getShadowStyle(),
-        { backgroundColor },
-        style
-      ]}
-    >
+    <View style={cardStyles} {...props}>
       {children}
     </View>
   );
@@ -79,11 +65,29 @@ const Card = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: 10,
-    padding: 16,
-    marginVertical: 8,
-    marginHorizontal: width * 0.02,
+    borderRadius: borderRadius.m,
+    padding: spacing.m,
+    backgroundColor: colors.card,
   },
+  
+  // Variant styles
+  flat: {
+    // Just the base style
+  },
+  
+  elevated: {
+    ...shadows.medium,
+  },
+  
+  outlined: {
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  
+  // State styles
+  disabled: {
+    opacity: 0.6,
+  }
 });
 
 export default Card; 

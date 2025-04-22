@@ -164,7 +164,7 @@ const ComponentUsageExample = ({ navigation }) => {
       <BottomNavigation 
         activeScreen="Home"
         onHomePress={() => alert('Home pressed')}
-        onAchievementsPress={() => alert('Achievements pressed')}
+        onAchievementsPress={() => alert('Leaderboards pressed')}
         onProfilePress={() => alert('Profile pressed')}
       />
     </SafeAreaContainer>

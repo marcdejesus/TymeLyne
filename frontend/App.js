@@ -2,8 +2,18 @@ import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ActivityIndicator, SafeAreaView, Platform } from 'react-native';
+import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { colors } from './src/constants/theme';
+import * as Font from 'expo-font';
+import { 
+  useFonts,
+  Montserrat_300Light,
+  Montserrat_400Regular,
+  Montserrat_500Medium,
+  Montserrat_600SemiBold,
+  Montserrat_700Bold
+} from '@expo-google-fonts/montserrat';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -13,6 +23,11 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import DevelopmentScreen from './src/screens/DevelopmentScreen';
 import CourseCreateScreen from './src/screens/CourseCreateScreen';
 import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
+import SectionContent from './src/screens/SectionContent';
+import SectionQuiz from './src/screens/SectionQuiz';
+import MessagesScreen from './src/screens/MessagesScreen';
+import ConversationScreen from './src/screens/ConversationScreen';
+import LeaderboardsScreen from './src/screens/LeaderboardsScreen';
 
 // Auth Context
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
@@ -26,7 +41,7 @@ const AppContent = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#D35C34" />
+        <ActivityIndicator size="large" color={colors.primary} />
       </View>
     );
   }
@@ -37,7 +52,8 @@ const AppContent = () => {
         // Auth Stack
         <Stack.Navigator
           screenOptions={{
-            headerShown: false
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.background }
           }}
         >
           <Stack.Screen name="Login" component={LoginScreen} />
@@ -47,7 +63,8 @@ const AppContent = () => {
         // Main App Stack
         <Stack.Navigator
           screenOptions={{
-            headerShown: false
+            headerShown: false,
+            cardStyle: { backgroundColor: colors.background }
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />
@@ -55,6 +72,11 @@ const AppContent = () => {
           <Stack.Screen name="Development" component={DevelopmentScreen} />
           <Stack.Screen name="Create" component={CourseCreateScreen} />
           <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
+          <Stack.Screen name="SectionContent" component={SectionContent} />
+          <Stack.Screen name="SectionQuiz" component={SectionQuiz} />
+          <Stack.Screen name="Messages" component={MessagesScreen} />
+          <Stack.Screen name="Conversation" component={ConversationScreen} />
+          <Stack.Screen name="Leaderboards" component={LeaderboardsScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>
@@ -63,10 +85,28 @@ const AppContent = () => {
 
 // Main App component
 export default function App() {
+  // Load Montserrat fonts
+  const [fontsLoaded] = useFonts({
+    Montserrat_300Light,
+    Montserrat_400Regular,
+    Montserrat_500Medium,
+    Montserrat_600SemiBold,
+    Montserrat_700Bold
+  });
+
+  // Show loading screen while fonts are loading
+  if (!fontsLoaded) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark-content" backgroundColor="#F9F1E0" />
+        <StatusBar style="dark-content" backgroundColor={colors.background} />
         <AppContent />
       </AuthProvider>
     </SafeAreaProvider>
@@ -78,6 +118,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F9F1E0',
+    backgroundColor: colors.background,
   },
 });

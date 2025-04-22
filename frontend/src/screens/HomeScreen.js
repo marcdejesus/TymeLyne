@@ -1,228 +1,199 @@
 import React, { useContext } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, Dimensions } from 'react-native';
+import { View, StyleSheet, Alert, SafeAreaView, FlatList, ScrollView } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Screen from '../components/Screen';
+import SectionTitle from '../components/SectionTitle';
+import CourseCard from '../components/CourseCard';
 import { AuthContext } from '../contexts/AuthContext';
-import { 
-  Screen, 
-  CourseCard, 
-  Card, 
-  SectionTitle, 
-  ProgressBar, 
-  theme 
-} from '../components';
+import { colors, spacing } from '../constants/theme';
+import Typography from '../components/Typography';
+import Button from '../components/Button';
+import Card from '../components/Card';
 
-const { width } = Dimensions.get('window');
+// Mock data - replace with API call
+const activeCourses = [
+  { id: '1', title: 'Introduction to Design Thinking', icon: require('../../assets/course-icons/design.png'), progress: 75 },
+  { id: '2', title: 'Advanced UX Research Methods', icon: require('../../assets/course-icons/marketing.png'), progress: 32 },
+];
+
+// Mock friend courses - replace with API call
+const friendCourses = [
+  { id: '3', title: 'User Interface Fundamentals', icon: require('../../assets/course-icons/design.png') },
+  { id: '4', title: 'Responsive Web Design', icon: require('../../assets/course-icons/computer.png') },
+  { id: '5', title: 'Mobile App Development', icon: require('../../assets/course-icons/computer.png') },
+  { id: '6', title: 'Data Visualization Basics', icon: require('../../assets/course-icons/finance.png') },
+];
 
 const HomeScreen = ({ navigation }) => {
-  const { user, logout } = useContext(AuthContext);
+  const { logout, userInfo } = useContext(AuthContext);
 
-  // Mock data for demonstration
-  // In production, this would come from an API call like:
-  // useEffect(() => {
-  //   const fetchCourses = async () => {
-  //     try {
-  //       const token = await SecureStore.getItemAsync('userToken');
-  //       const response = await axios.get('http://yourapi.com/api/courses/active', {
-  //         headers: { Authorization: `Bearer ${token}` }
-  //       });
-  //       setActiveCourses(response.data);
-  //     } catch (error) {
-  //       console.error('Error fetching active courses:', error);
-  //     }
-  //   };
-  //   fetchCourses();
-  // }, []);
-
-  const activeCourses = [
-    { 
-      id: 1, 
-      title: 'Digital Marketing', 
-      icon: require('../../assets/course-icons/marketing.png'),
-      progress: 10 
-    }
-  ];
-
-  // Mock data for friends' courses
-  // In production, this would be fetched from the backend:
-  // GET /api/courses/friends
-  const friendsCourses = [
-    { 
-      id: 1, 
-      title: 'Investing', 
-      icon: require('../../assets/course-icons/finance.png'),
-      username: '@herobrine' 
-    },
-    { 
-      id: 2, 
-      title: 'JavaScript', 
-      icon: require('../../assets/course-icons/computer.png'),
-      username: '@steve' 
-    }
-  ];
-
-  const handleNavigation = (screenName, params) => {
-    // For unimplemented screens, navigate to development page
-    if (screenName === 'Profile') {
-      navigation.navigate('Profile');
-    } else if (screenName === 'Home') {
-      // Already on home
-    } else if (screenName === 'Create') {
-      navigation.navigate('Create');
-    } else if (screenName === 'CourseDetails') {
-      navigation.navigate('CourseDetails', params);
-    } else {
-      navigation.navigate('Development');
-    }
+  const handleNavigation = (screen, params = {}) => {
+    navigation.navigate(screen, params);
   };
 
   const handleMenuPress = () => {
-    // Since we removed drawer navigation, show a logout option here
-    logout();
+    Alert.alert(
+      'Logout',
+      'Are you sure you want to logout?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Logout',
+          onPress: () => {
+            logout();
+          },
+        },
+      ],
+      { cancelable: true }
+    );
   };
-
-  // Future backend integration for course actions:
-  // 
-  // Function to handle starting a course:
-  // const startCourse = async (courseId) => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     await axios.post(`http://yourapi.com/api/courses/${courseId}/start`, {}, {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //     // Refresh courses after starting
-  //     fetchCourses();
-  //   } catch (error) {
-  //     console.error('Error starting course:', error);
-  //   }
-  // };
-  //
-  // Function to update course progress:
-  // const updateProgress = async (courseId, progress) => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     await axios.put(`http://yourapi.com/api/courses/${courseId}/progress`, { progress }, {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //   } catch (error) {
-  //     console.error('Error updating progress:', error);
-  //   }
-  // };
 
   return (
     <Screen
       title="Home"
-      onMenuPress={handleMenuPress}
-      onRightPress={() => handleNavigation('Notifications')}
-      rightIcon="notifications-outline"
+      showHeader={true}
+      headerRight={{
+        icon: 'menu-outline',
+        onPress: handleMenuPress,
+      }}
       activeScreen="Home"
-      onHomePress={() => handleNavigation('Home')}
-      onAchievementsPress={() => handleNavigation('Achievements')}
+      onHomePress={() => {}}
+      onAchievementsPress={() => handleNavigation('Leaderboards')}
       onProfilePress={() => handleNavigation('Profile')}
-      backgroundColor={theme.colors.background.main}
     >
-      {/* Active Courses Section */}
-      <SectionTitle title="Active Courses" />
-      
-      {activeCourses.map(course => (
-        <CourseCard 
-          key={course.id} 
-          course={course}
-          onPress={() => handleNavigation('CourseDetails', { courseId: course.id })}
-          onOptionsPress={() => handleNavigation('CourseOptions', { courseId: course.id })}
+      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
+        <View style={styles.welcomeSection}>
+          <Typography variant="h1" weight="bold">
+            Welcome back,
+          </Typography>
+          <Typography variant="h2" weight="semiBold">
+            {userInfo?.name || 'User'}
+          </Typography>
+        </View>
+
+        <SectionTitle 
+          title="Active Courses" 
+          rightText="View All" 
+          onRightPress={() => handleNavigation('Development')} 
         />
-      ))}
-      
-      {/* Add a Course Section */}
-      <SectionTitle title="Add a Course" />
-      <View style={styles.addCourseContainer}>
-        <Card
-          style={styles.addCourseOption}
-          onPress={() => handleNavigation('Community')}
-        >
-          <Text style={styles.downloadIcon}>↓</Text>
-          <Text style={styles.addOptionText}>Community</Text>
-        </Card>
-        <Card
-          style={styles.addCourseOption}
-          onPress={() => handleNavigation('Create')}
-        >
-          <Text style={styles.createIcon}>+</Text>
-          <Text style={styles.addOptionText}>Create</Text>
-        </Card>
-      </View>
-      
-      {/* Friend's Courses Section */}
-      <SectionTitle title="Friend's Courses" />
-      <View style={styles.friendsCoursesContainer}>
-        {friendsCourses.map(course => (
+        <View style={styles.coursesContainer}>
+          {activeCourses && activeCourses.length > 0 ? (
+            activeCourses.map(course => (
+              <CourseCard
+                key={course.id}
+                course={course}
+                onPress={() => handleNavigation('CourseDetails', { course })}
+                onOptionsPress={() => Alert.alert('Options', 'Course options')}
+              />
+            ))
+          ) : (
+            <Typography variant="body" style={styles.emptyCourseText}>
+              You don't have any active courses yet.
+            </Typography>
+          )}
+        </View>
+
+        <SectionTitle title="Add a Course" />
+        <View style={styles.addCourseContainer}>
           <Card
-            key={course.id}
-            style={styles.friendCourseCard}
-            onPress={() => handleNavigation('CourseDetails', { courseId: course.id, fromFriend: true })}
+            variant="elevated"
+            style={styles.addCourseCard}
+            onPress={() => handleNavigation('Development')}
           >
-            <Image source={course.icon} style={styles.friendCourseIcon} />
-            <Text style={styles.friendCourseTitle}>{course.title}</Text>
-            <Text style={styles.friendUsername}>{course.username}</Text>
+            <Ionicons name="people-outline" size={32} color={colors.primary} />
+            <View style={styles.addCourseTextContainer}>
+              <Typography variant="subheading" weight="semiBold">
+                Community
+              </Typography>
+              <Typography variant="body2" color={colors.text.secondary}>
+                Find popular courses
+              </Typography>
+            </View>
           </Card>
-        ))}
-      </View>
+
+          <Card
+            variant="elevated"
+            style={styles.addCourseCard}
+            onPress={() => handleNavigation('Create')}
+          >
+            <Ionicons name="add-circle-outline" size={32} color={colors.primary} />
+            <View style={styles.addCourseTextContainer}>
+              <Typography variant="subheading" weight="semiBold">
+                Create New
+              </Typography>
+              <Typography variant="body2" color={colors.text.secondary}>
+                Start from scratch
+              </Typography>
+            </View>
+          </Card>
+        </View>
+
+        <SectionTitle 
+          title="Friends' Courses" 
+          rightText="See More" 
+          onRightPress={() => handleNavigation('Development')} 
+        />
+        {friendCourses && friendCourses.length > 0 ? (
+          <FlatList
+            data={friendCourses}
+            keyExtractor={(item) => item.id}
+            numColumns={2}
+            scrollEnabled={false}
+            renderItem={({ item }) => (
+              <CourseCard
+                course={item}
+                variant="grid"
+                onPress={() => handleNavigation('CourseDetails', { course: item })}
+              />
+            )}
+            contentContainerStyle={styles.gridContainer}
+          />
+        ) : (
+          <Typography variant="body" style={styles.emptyCourseText}>
+            No courses from friends to display.
+          </Typography>
+        )}
+      </ScrollView>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.m,
+  },
+  welcomeSection: {
+    marginTop: spacing.m,
+    marginBottom: spacing.l,
+  },
+  coursesContainer: {
+    marginBottom: spacing.l,
+  },
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 16,
+    marginBottom: spacing.l,
   },
-  addCourseOption: {
-    width: '48%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: width * 0.25, // Responsive height based on screen width
-    marginHorizontal: 0,
-    padding: 0,
-  },
-  downloadIcon: {
-    fontSize: 32,
-    color: theme.colors.text.secondary,
-    marginBottom: 8,
-  },
-  createIcon: {
-    fontSize: 32,
-    color: theme.colors.text.secondary,
-    marginBottom: 8,
-  },
-  addOptionText: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.primary,
-  },
-  friendsCoursesContainer: {
+  addCourseCard: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    marginTop: -theme.spacing.s, // Counteract the Card component's marginVertical
-  },
-  friendCourseCard: {
-    width: '48%',
     alignItems: 'center',
-    marginHorizontal: 0,
+    padding: spacing.m,
+    width: '48%',
   },
-  friendCourseIcon: {
-    width: width * 0.1,
-    height: width * 0.1,
-    marginBottom: 8,
+  addCourseTextContainer: {
+    marginLeft: spacing.s,
+    flex: 1,
   },
-  friendCourseTitle: {
-    fontSize: theme.typography.fontSize.regular,
-    fontWeight: theme.typography.fontWeight.semiBold,
-    color: theme.colors.text.primary,
+  gridContainer: {
+    paddingBottom: spacing.xl,
+  },
+  emptyCourseText: {
     textAlign: 'center',
-  },
-  friendUsername: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
-    marginTop: 4,
+    marginTop: spacing.m,
   },
 });
 

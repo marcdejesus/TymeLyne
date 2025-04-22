@@ -51,6 +51,8 @@ const HomeScreen = ({ navigation }) => {
       navigation.navigate('Create');
     } else if (screenName === 'CourseDetails') {
       navigation.navigate('CourseDetails', params);
+    } else if (screenName === 'Messages') {
+      navigation.navigate('Messages');
     } else {
       navigation.navigate('Development');
     }
@@ -78,8 +80,8 @@ const HomeScreen = ({ navigation }) => {
     <Screen
       title="Home"
       onMenuPress={handleMenuPress}
-      onRightPress={() => handleNavigation('Notifications')}
-      rightIcon="notifications-outline"
+      onRightPress={() => handleNavigation('Messages')}
+      rightIcon="paper-plane-outline"
       activeScreen="Home"
       onHomePress={() => handleNavigation('Home')}
       onAchievementsPress={() => handleNavigation('Achievements')}

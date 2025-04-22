@@ -16,6 +16,8 @@ import CourseCreateScreen from './src/screens/CourseCreateScreen';
 import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
 import SectionContent from './src/screens/SectionContent';
 import SectionQuiz from './src/screens/SectionQuiz';
+import MessagesScreen from './src/screens/MessagesScreen';
+import ConversationScreen from './src/screens/ConversationScreen';
 
 // Auth Context
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
@@ -62,6 +64,8 @@ const AppContent = () => {
           <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
           <Stack.Screen name="SectionContent" component={SectionContent} />
           <Stack.Screen name="SectionQuiz" component={SectionQuiz} />
+          <Stack.Screen name="Messages" component={MessagesScreen} />
+          <Stack.Screen name="Conversation" component={ConversationScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

@@ -8,6 +8,8 @@ import { StyleSheet, Text, View, ActivityIndicator } from 'react-native';
 import LoginScreen from './src/screens/LoginScreen';
 import RegisterScreen from './src/screens/RegisterScreen';
 import HomeScreen from './src/screens/HomeScreen';
+import ProfileScreen from './src/screens/ProfileScreen';
+import DevelopmentScreen from './src/screens/DevelopmentScreen';
 
 // Auth Context
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
@@ -21,49 +23,35 @@ const AppContent = () => {
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#1B9C85" />
+        <ActivityIndicator size="large" color="#D35C34" />
       </View>
     );
   }
 
   return (
     <NavigationContainer>
-      <Stack.Navigator
-        screenOptions={{
-          headerStyle: {
-            backgroundColor: '#1B9C85',
-          },
-          headerTitleStyle: {
-            color: '#fff',
-          },
-          headerTintColor: '#fff',
-        }}
-      >
-        {userToken == null ? (
-          // Auth Stack
-          <>
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen} 
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="Register" 
-              component={RegisterScreen} 
-              options={{ headerShown: false }}
-            />
-          </>
-        ) : (
-          // App Stack
-          <>
-            <Stack.Screen 
-              name="Home" 
-              component={HomeScreen} 
-              options={{ title: 'TymeLyne' }}
-            />
-          </>
-        )}
-      </Stack.Navigator>
+      {userToken == null ? (
+        // Auth Stack
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false
+          }}
+        >
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+        </Stack.Navigator>
+      ) : (
+        // Main App Stack
+        <Stack.Navigator
+          screenOptions={{
+            headerShown: false
+          }}
+        >
+          <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="Profile" component={ProfileScreen} />
+          <Stack.Screen name="Development" component={DevelopmentScreen} />
+        </Stack.Navigator>
+      )}
     </NavigationContainer>
   );
 };
@@ -83,6 +71,6 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F9F1E0',
   },
 });

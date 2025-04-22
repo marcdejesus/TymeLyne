@@ -2,9 +2,15 @@ import React, { useState, useContext, useRef } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
+  Image,
+  ScrollView,
   Alert,
   ActivityIndicator,
+  SafeAreaView,
+  StatusBar,
   Platform,
   Dimensions,
   KeyboardAvoidingView,
@@ -12,18 +18,13 @@ import {
   TouchableWithoutFeedback
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import { 
-  Screen, 
-  InputField, 
-  Button, 
-  theme 
-} from '../components';
 
 const { width, height } = Dimensions.get('window');
 
 const RegisterScreen = ({ navigation }) => {
-  const [username, setUsername] = useState('');
+  const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -40,6 +41,7 @@ const RegisterScreen = ({ navigation }) => {
   const passwordInputRef = useRef(null);
   const confirmPasswordInputRef = useRef(null);
 
+  // Validation functions
   const validateEmail = (email) => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
@@ -51,6 +53,7 @@ const RegisterScreen = ({ navigation }) => {
     return username.length >= 3 && usernameRegex.test(username);
   };
 
+  // Function to handle registration
   const handleRegister = async () => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
@@ -73,6 +76,11 @@ const RegisterScreen = ({ navigation }) => {
 
     if (password.length < 6) {
       Alert.alert('Weak Password', 'Password must be at least 6 characters');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Password Mismatch', 'Passwords do not match');
       return;
     }
 
@@ -306,42 +314,48 @@ const RegisterScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
+    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
-  title: {
-    fontSize: theme.typography.fontSize.xxlarge,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
-    marginTop: height * 0.02,
-    marginBottom: 10,
-    textAlign: 'center',
+  logoContainer: {
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  subtitle: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.secondary,
-    marginBottom: height * 0.04,
-    textAlign: 'center',
+  logo: {
+    width: width * 0.25,
+    height: width * 0.25,
+  },
+  appName: {
+    fontSize: width > 375 ? 28 : 24,
+    fontWeight: 'bold',
+    color: '#D35C34',
+    marginTop: 10,
+  },
+  tagline: {
+    fontSize: width > 375 ? 16 : 14,
+    color: '#6B6B5A',
+    marginTop: 5,
   },
   formContainer: {
     width: '100%',
     maxWidth: 400,
   },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4A4A3A',
-    marginBottom: 8,
-  },
   input: {
     backgroundColor: '#FFF',
-    borderRadius: 8,
+    borderRadius: 5,
     padding: 15,
+    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#E0D8C0',
     fontSize: 16,
@@ -374,20 +388,26 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   registerButton: {
-    marginTop: theme.spacing.m,
+    backgroundColor: '#D35C34',
+    borderRadius: 5,
+    padding: 15,
+    alignItems: 'center',
+  },
+  registerButtonText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: 'bold',
   },
   loginContainer: {
     flexDirection: 'row',
-    marginTop: theme.spacing.l,
+    marginTop: 20,
   },
   loginText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.typography.fontSize.regular,
+    color: '#6B6B5A',
   },
   loginLink: {
     color: '#D35C34',
     fontWeight: 'bold',
-    fontSize: 16,
   },
   successContainer: {
     width: '100%',

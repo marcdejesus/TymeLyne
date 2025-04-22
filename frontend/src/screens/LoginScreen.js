@@ -1,7 +1,9 @@
-import React, { useState, useContext, useRef } from 'react';
+import React, { useState, useContext, useRef, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
+  TouchableOpacity,
   StyleSheet,
   Image,
   ActivityIndicator,
@@ -10,20 +12,17 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Keyboard,
-  TouchableWithoutFeedback
+  TouchableWithoutFeedback,
+  Platform,
+  StatusBar,
+  Dimensions
 } from 'react-native';
 import { AuthContext } from '../contexts/AuthContext';
-import { 
-  Screen, 
-  InputField, 
-  Button, 
-  Card,
-  theme 
-} from '../components';
+import Icon from 'react-native-vector-icons/Ionicons';
 
 const { width, height } = Dimensions.get('window');
 
-const LoginScreen = ({ navigation }) => {
+const LoginScreen = ({ navigation, route }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,7 +32,24 @@ const LoginScreen = ({ navigation }) => {
   // Create refs for TextInput components to manage focus
   const emailInputRef = useRef(null);
   const passwordInputRef = useRef(null);
+  
+  // Set email from route params if available
+  useEffect(() => {
+    if (route?.params?.email) {
+      setEmail(route.params.email);
+    }
+    
+    // Show verification message if coming from registration
+    if (route?.params?.fromRegistration) {
+      Alert.alert(
+        'Email Verification Required',
+        'Please check your email inbox for a verification link. You must verify your email before you can log in.',
+        [{ text: 'OK' }]
+      );
+    }
+  }, [route?.params]);
 
+  // Function to handle login
   const handleLogin = async () => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
@@ -239,48 +255,49 @@ const LoginScreen = ({ navigation }) => {
 };
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  container: {
+    flex: 1,
+    backgroundColor: '#F9F1E0',
+  },
+  scrollContainer: {
     flexGrow: 1,
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
     paddingBottom: Platform.OS === 'ios' ? 40 : 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: height * 0.02,
-    marginBottom: height * 0.05,
+    marginBottom: height * 0.05, // Responsive margin
   },
   logo: {
-    width: width * 0.3,
-    height: width * 0.3,
+    width: width * 0.25, // Responsive size
+    height: width * 0.25, // Keep aspect ratio
   },
   appName: {
-    fontSize: theme.typography.fontSize.xxlarge,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
+    fontSize: width > 375 ? 28 : 24, // Smaller on smaller screens
+    fontWeight: 'bold',
+    color: '#D35C34',
     marginTop: 10,
   },
   tagline: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.secondary,
+    fontSize: width > 375 ? 16 : 14, // Smaller on smaller screens
+    color: '#6B6B5A',
     marginTop: 5,
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400,
-  },
-  inputGroup: {
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#4A4A3A',
-    marginBottom: 8,
+    maxWidth: 400, // Add max width for very large devices
   },
   input: {
     backgroundColor: '#FFF',
-    borderRadius: 8,
+    borderRadius: 5,
     padding: 15,
+    marginBottom: 15,
     borderWidth: 1,
     borderColor: '#E0D8C0',
     fontSize: 16,
@@ -335,45 +352,43 @@ const styles = StyleSheet.create({
   },
   loginButton: {
     backgroundColor: '#D35C34',
-    borderRadius: 8,
+    borderRadius: 5,
     padding: 15,
     alignItems: 'center',
-    marginTop: 10,
   },
   loginButtonText: {
     color: '#FFF',
     fontSize: 16,
     fontWeight: 'bold',
   },
+  forgotPassword: {
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  forgotPasswordText: {
+    color: '#6B6B5A',
+  },
   registerContainer: {
     flexDirection: 'row',
-    marginTop: theme.spacing.l,
-    marginBottom: theme.spacing.xl,
+    marginTop: 20,
   },
   registerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.typography.fontSize.regular,
+    color: '#6B6B5A',
   },
   registerLink: {
-    color: theme.colors.primary,
-    fontWeight: theme.typography.fontWeight.bold,
-    fontSize: theme.typography.fontSize.regular,
+    color: '#D35C34',
+    fontWeight: 'bold',
   },
   demoContainer: {
-    alignItems: 'center',
-    width: '90%',
-    backgroundColor: `${theme.colors.primary}10`, // 10% opacity of primary color
-  },
-  demoTitle: {
-    fontSize: theme.typography.fontSize.regular,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.primary,
-    marginBottom: theme.spacing.s,
+    marginTop: 30,
+    padding: 10,
+    backgroundColor: 'rgba(211, 92, 52, 0.1)',
+    borderRadius: 5,
+    width: '100%',
   },
   demoText: {
-    fontSize: theme.typography.fontSize.medium,
-    color: theme.colors.text.secondary,
-    marginBottom: 4,
+    color: '#6B6B5A',
+    textAlign: 'center',
   },
 });
 

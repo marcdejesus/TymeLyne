@@ -1,9 +1,18 @@
-import React, { createContext, useState, useEffect } from 'react';
+import React, { createContext, useState, useEffect, useContext } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import apiConfig from '../config/apiConfig';
 
 export const AuthContext = createContext();
+
+// Create a hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
 
 // Load API URL from config file
 const API_URL = apiConfig.apiUrl;

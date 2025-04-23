@@ -1,19 +1,61 @@
-import React from 'react';
-import { View, StyleSheet, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, Dimensions, ActivityIndicator } from 'react-native';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
 import SectionTitle from '../components/SectionTitle';
 import Typography from '../components/Typography';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '../constants/theme';
+import { getCourseById, updateSectionCompletion } from '../services/courseService';
 
 const { width } = Dimensions.get('window');
 
 const CourseDetailsScreen = ({ navigation, route }) => {
-  // In a real app, we would get the course details from the route params or fetch from API
-  // For now, we'll use some mock data
+  const [course, setCourse] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  
+  // Course ID can come from route params or already loaded course object
+  const courseId = route.params?.courseId;
+  const initialCourse = route.params?.course;
+  
+  useEffect(() => {
+    const loadCourse = async () => {
+      try {
+        // If we already have the full course data, use it
+        if (initialCourse && initialCourse.sections) {
+          console.log('Using provided course data:', initialCourse.title);
+          setCourse(initialCourse);
+          setLoading(false);
+          return;
+        }
+        
+        // Otherwise fetch from API by ID
+        if (courseId) {
+          console.log('Fetching course by ID:', courseId);
+          const data = await getCourseById(courseId);
+          setCourse(data);
+        } else {
+          // Fallback to mock data for development only
+          console.log('No course ID provided, using mock data');
+          setCourse(mockCourse);
+        }
+      } catch (err) {
+        console.error('Error loading course:', err);
+        setError(err.message || 'Failed to load course');
+        setCourse(defaultCourse);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadCourse();
+  }, [courseId, initialCourse]);
+  
+  // Mock data for development and fallback
   const mockCourse = {
     id: 1,
+    course_id: 1,
     title: 'Digital Marketing',
     description: 'Master the essential skills and strategies needed for effective digital marketing campaigns.',
     sections: [
@@ -43,23 +85,94 @@ const CourseDetailsScreen = ({ navigation, route }) => {
   
   const defaultCourse = {
     id: 0,
+    course_id: 0,
     title: 'Course Not Found',
     description: 'This course could not be loaded.',
     sections: []
   };
-  
-  // Use course from route params, or mockCourse for development, or defaultCourse as a fallback
-  const course = route.params?.course || mockCourse;
 
   const handleBackPress = () => {
     navigation && navigation.goBack();
   };
 
   const handleSectionPress = (sectionId) => {
-    if (navigation) {
-      navigation.navigate('SectionContent', { courseId: course.id, sectionId });
+    if (navigation && course) {
+      navigation.navigate('SectionContent', { 
+        courseId: course.course_id || course.id, 
+        sectionId,
+        section: course.sections.find(s => s._id === sectionId || s.id === sectionId)
+      });
     }
   };
+  
+  const handleSectionCompletionToggle = async (sectionId, currentStatus) => {
+    try {
+      // Optimistically update the UI
+      setCourse(prevCourse => {
+        const updatedSections = prevCourse.sections.map(section => 
+          (section._id === sectionId || section.id === sectionId) 
+            ? {...section, isCompleted: !currentStatus} 
+            : section
+        );
+        return {...prevCourse, sections: updatedSections};
+      });
+      
+      // Send to backend
+      if (course.course_id) {
+        await updateSectionCompletion(course.course_id, sectionId, !currentStatus);
+      }
+    } catch (err) {
+      console.error('Failed to update section completion:', err);
+      // Revert the optimistic update on error
+      setCourse(prevCourse => {
+        const updatedSections = prevCourse.sections.map(section => 
+          (section._id === sectionId || section.id === sectionId) 
+            ? {...section, isCompleted: currentStatus} 
+            : section
+        );
+        return {...prevCourse, sections: updatedSections};
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <Screen
+        title="Loading Course"
+        onBackPress={handleBackPress}
+        backgroundColor={colors.background}
+        showBottomNav={false}
+      >
+        <View style={styles.loaderContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Typography variant="body1" style={styles.loaderText}>
+            Loading course content...
+          </Typography>
+        </View>
+      </Screen>
+    );
+  }
+
+  if (error) {
+    return (
+      <Screen
+        title="Error"
+        onBackPress={handleBackPress}
+        backgroundColor={colors.background}
+        showBottomNav={false}
+      >
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.status.error} />
+          <Typography variant="h2" style={styles.errorTitle}>
+            Failed to Load Course
+          </Typography>
+          <Typography variant="body1" style={styles.errorMessage}>
+            {error}
+          </Typography>
+        </View>
+      </Screen>
+    );
+  }
 
   return (
     <Screen
@@ -84,10 +197,10 @@ const CourseDetailsScreen = ({ navigation, route }) => {
       {course.sections && course.sections.length > 0 ? (
         course.sections.map((section) => (
           <Card
-            key={section.id}
+            key={section._id || section.id}
             style={styles.sectionCard}
             variant="elevated"
-            onPress={() => handleSectionPress(section.id)}
+            onPress={() => handleSectionPress(section._id || section.id)}
           >
             <Typography variant="subheading" weight="semiBold" style={styles.sectionTitle}>
               {section.title}
@@ -97,14 +210,42 @@ const CourseDetailsScreen = ({ navigation, route }) => {
               {section.description}
             </Typography>
             
-            {section.isCompleted && (
-              <View style={styles.completedBadge}>
-                <Ionicons name="checkmark-circle" size={20} color={colors.status.success} />
-                <Typography variant="label" color={colors.status.success} style={styles.completedText}>
-                  Completed
-                </Typography>
-              </View>
-            )}
+            <View style={styles.sectionFooter}>
+              {section.isCompleted ? (
+                <View style={styles.completedBadge}>
+                  <Ionicons 
+                    name="checkmark-circle" 
+                    size={20} 
+                    color={colors.status.success} 
+                    onPress={() => handleSectionCompletionToggle(section._id || section.id, true)}
+                  />
+                  <Typography variant="label" color={colors.status.success} style={styles.completedText}>
+                    Completed
+                  </Typography>
+                </View>
+              ) : (
+                <View style={styles.notCompletedBadge}>
+                  <Ionicons 
+                    name="ellipse-outline" 
+                    size={20} 
+                    color={colors.text.secondary}
+                    onPress={() => handleSectionCompletionToggle(section._id || section.id, false)}
+                  />
+                  <Typography variant="label" color={colors.text.secondary} style={styles.completedText}>
+                    Not Completed
+                  </Typography>
+                </View>
+              )}
+              
+              {section.hasQuiz && (
+                <View style={styles.quizBadge}>
+                  <Ionicons name="help-circle" size={18} color={colors.primary} />
+                  <Typography variant="label" color={colors.primary} style={styles.quizText}>
+                    Quiz
+                  </Typography>
+                </View>
+              )}
+            </View>
           </Card>
         ))
       ) : (
@@ -142,17 +283,58 @@ const styles = StyleSheet.create({
   sectionDescription: {
     lineHeight: 20,
   },
-  completedBadge: {
+  sectionFooter: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: spacing.s,
   },
+  completedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  notCompletedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   completedText: {
+    marginLeft: spacing.xs,
+  },
+  quizBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  quizText: {
     marginLeft: spacing.xs,
   },
   noContentMessage: {
     textAlign: 'center',
     marginVertical: spacing.m,
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.l,
+  },
+  loaderText: {
+    marginTop: spacing.m,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.l,
+  },
+  errorTitle: {
+    marginTop: spacing.m,
+    marginBottom: spacing.s,
+    textAlign: 'center', 
+  },
+  errorMessage: {
+    textAlign: 'center',
+    color: colors.text.secondary,
   },
 });
 

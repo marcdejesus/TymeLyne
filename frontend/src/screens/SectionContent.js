@@ -5,7 +5,8 @@ import {
   TouchableOpacity,
   ScrollView,
   Dimensions,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
@@ -13,6 +14,7 @@ import Card from '../components/Card';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
+import { getCourseById, updateSectionCompletion } from '../services/courseService';
 
 const { width } = Dimensions.get('window');
 
@@ -24,103 +26,127 @@ const { width } = Dimensions.get('window');
  * @param {object} route - Route parameters with courseId, sectionId, sectionData, and courseData
  */
 const SectionContent = ({ navigation, route }) => {
-  const { courseId, sectionId, sectionData, courseData } = route.params;
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [section, setSection] = useState(null);
-  const [selectedOptions, setSelectedOptions] = useState({});
+  const [course, setCourse] = useState(null);
   
-  // Mock section content - In a real app, this would come from an API based on sectionId
-  const mockSectionContent = {
-    id: sectionId,
-    title: sectionData?.title || 'Section Content',
-    content: [
-      courseData?.paragraph1 || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-      courseData?.paragraph2 || 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
-      courseData?.paragraph3 || 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.'
-    ],
-    practiceQuiz: [
-      {
-        id: 1,
-        question: 'What is the primary focus of this section?',
-        options: [
-          'Understanding core concepts',
-          'Practical application',
-          'Advanced techniques',
-          'All of the above'
-        ],
-        correctOption: 0
-      },
-      {
-        id: 2,
-        question: 'Which of the following is NOT discussed in this section?',
-        options: [
-          'Fundamental principles',
-          'Implementation strategies',
-          'Quantum physics',
-          'Best practices'
-        ],
-        correctOption: 2
-      }
-    ],
-    isCompleted: sectionData?.isCompleted || false,
-    difficulty: courseData?.difficulty || 'Intermediate',
-    experiencePoints: Math.floor((courseData?.course_exp || 500) / (courseData?.sections?.length || 1))
-  };
-
+  // Get params from route
+  const courseId = route.params?.courseId;
+  const sectionId = route.params?.sectionId;
+  const initialSection = route.params?.section;
+  
   useEffect(() => {
-    // Simulate API fetch for section data
-    const fetchSectionData = () => {
-      // In a real app, this would be an API call
-      // const response = await fetch(`/api/courses/${courseId}/sections/${sectionId}`);
-      // const data = await response.json();
-      
-      setTimeout(() => {
-        setSection(mockSectionContent);
+    const loadData = async () => {
+      try {
+        if (initialSection) {
+          // If we already have the section data, use it
+          setSection(initialSection);
+          setLoading(false);
+          return;
+        }
+        
+        // Otherwise load the course to get the section
+        if (courseId && sectionId) {
+          const courseData = await getCourseById(courseId);
+          setCourse(courseData);
+          
+          // Find the specific section
+          const sectionData = courseData.sections.find(s => 
+            s._id === sectionId || s.id === sectionId
+          );
+          
+          if (sectionData) {
+            setSection(sectionData);
+          } else {
+            setError('Section not found');
+          }
+        } else {
+          setError('Missing course or section information');
+        }
+      } catch (err) {
+        console.error('Error loading section:', err);
+        setError(err.message || 'Failed to load section content');
+      } finally {
         setLoading(false);
-      }, 300);
+      }
     };
-
-    fetchSectionData();
-  }, [courseId, sectionId]);
+    
+    loadData();
+  }, [courseId, sectionId, initialSection]);
 
   const handleBackPress = () => {
     navigation.goBack();
   };
 
+  const handleMarkComplete = async () => {
+    try {
+      // Optimistically update UI
+      setSection(prev => ({
+        ...prev,
+        isCompleted: !prev.isCompleted
+      }));
+      
+      // Send to backend
+      if (courseId && sectionId) {
+        await updateSectionCompletion(courseId, sectionId, !section.isCompleted);
+      }
+      
+      // Optional: Show success message
+    } catch (err) {
+      console.error('Failed to update completion status:', err);
+      // Revert the optimistic update
+      setSection(prev => ({
+        ...prev,
+        isCompleted: !prev.isCompleted
+      }));
+    }
+  };
+
   const handleStartQuiz = () => {
-    navigation.navigate('SectionQuiz', { 
-      courseId, 
-      sectionId,
-      sectionTitle: section.title,
-      quizType: 'practice',
-      experiencePoints: section.experiencePoints
-    });
-  };
-
-  const handleCheckWork = () => {
-    // In a real app, this would validate user's practice quiz answers
-    // and provide feedback
-    alert('This would check your practice answers and provide feedback.');
-  };
-
-  const handleOptionSelect = (questionIndex, optionIndex) => {
-    setSelectedOptions({
-      ...selectedOptions,
-      [questionIndex]: optionIndex
-    });
+    if (section && section.hasQuiz) {
+      navigation.navigate('SectionQuiz', {
+        courseId: courseId,
+        sectionId: sectionId,
+        sectionTitle: section.title,
+        quiz: section.quiz
+      });
+    }
   };
 
   if (loading) {
     return (
       <Screen
-        title="Loading..."
+        title="Loading Content"
         onBackPress={handleBackPress}
         backgroundColor={colors.background}
         showBottomNav={false}
       >
         <View style={styles.loadingContainer}>
-          <Typography variant="body" color="secondary">
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Typography variant="body1" style={styles.loadingText}>
             Loading section content...
+          </Typography>
+        </View>
+      </Screen>
+    );
+  }
+  
+  if (error || !section) {
+    return (
+      <Screen
+        title="Error"
+        onBackPress={handleBackPress}
+        backgroundColor={colors.background}
+        showBottomNav={false}
+      >
+        <View style={styles.errorContainer}>
+          <Ionicons name="alert-circle-outline" size={48} color={colors.status.error} />
+          <Typography variant="h2" style={styles.errorTitle}>
+            Content Unavailable
+          </Typography>
+          <Typography variant="body1" style={styles.errorMessage}>
+            {error || 'Section content could not be loaded'}
           </Typography>
         </View>
       </Screen>
@@ -135,250 +161,165 @@ const SectionContent = ({ navigation, route }) => {
       showBottomNav={false}
       scrollable={true}
     >
-      {/* Section Info Bar */}
-      <Card variant="elevated" style={styles.infoBar}>
-        <View style={styles.infoItem}>
-          <Ionicons name="trophy-outline" size={18} color={colors.primary} />
-          <Typography variant="caption" color="secondary" style={styles.infoText}>
-            {section.experiencePoints} XP
-          </Typography>
-        </View>
-        
-        <View style={styles.infoItem}>
-          <Ionicons name="stats-chart-outline" size={18} color={colors.primary} />
-          <Typography variant="caption" color="secondary" style={styles.infoText}>
-            {section.difficulty}
-          </Typography>
-        </View>
-
-        {section.isCompleted && (
-          <View style={styles.infoItem}>
-            <Ionicons name="checkmark-circle" size={18} color={colors.status.success} />
-            <Typography variant="caption" color={colors.status.success} style={styles.infoText}>
-              Completed
-            </Typography>
-          </View>
-        )}
-      </Card>
-      
-      {/* Section Content */}
-      <Card variant="elevated" style={styles.contentCard}>
-        <Typography variant="title" weight="semiBold" style={styles.contentTitle}>
-          {section.title}
-        </Typography>
-        
-        {section.content.map((paragraph, index) => (
-          <Typography key={index} variant="body" style={styles.paragraph}>
-            {paragraph}
-          </Typography>
-        ))}
-      </Card>
-      
-      {/* Practice Quiz Section */}
-      <Typography variant="title" weight="semiBold" style={styles.practiceQuizTitle}>
-        Practice Quiz
-      </Typography>
-      
-      {section.practiceQuiz.map((question, questionIndex) => (
-        <Card key={questionIndex} variant="elevated" style={styles.questionCard}>
-          <View style={styles.questionHeader}>
-            <Typography variant="subheading" weight="semiBold" style={styles.questionNumber}>
-              Question {questionIndex + 1}
-            </Typography>
-            <Ionicons name="help-circle-outline" size={20} color={colors.primary} />
-          </View>
-          
-          <Typography variant="body" style={styles.questionText}>
-            {question.question}
+      <View style={styles.container}>
+        <Card style={styles.headerCard}>
+          <Typography variant="h1" weight="bold" style={styles.title}>
+            {section.title}
           </Typography>
           
-          {question.options.map((option, optionIndex) => {
-            const isSelected = selectedOptions[questionIndex] === optionIndex;
-            const isCorrect = isSelected && optionIndex === question.correctOption;
-            const isWrong = isSelected && optionIndex !== question.correctOption;
-            
-            return (
-              <TouchableOpacity 
-                key={optionIndex} 
-                style={[
-                  styles.optionContainer,
-                  isSelected && styles.selectedOption,
-                  isCorrect && styles.correctOption,
-                  isWrong && styles.wrongOption
-                ]}
-                activeOpacity={0.7}
-                onPress={() => handleOptionSelect(questionIndex, optionIndex)}
+          <Typography variant="body1" style={styles.description}>
+            {section.description}
+          </Typography>
+          
+          <View style={styles.statusContainer}>
+            <TouchableOpacity
+              style={[
+                styles.statusBadge,
+                section.isCompleted ? styles.completedBadge : styles.notCompletedBadge
+              ]}
+              onPress={handleMarkComplete}
+            >
+              <Ionicons 
+                name={section.isCompleted ? "checkmark-circle" : "ellipse-outline"} 
+                size={20} 
+                color={section.isCompleted ? colors.status.success : colors.text.secondary} 
+              />
+              <Typography 
+                variant="label" 
+                color={section.isCompleted ? colors.status.success : colors.text.secondary}
+                style={styles.statusText}
               >
-                <View style={[
-                  styles.optionCircle,
-                  isSelected && styles.selectedCircle,
-                  isCorrect && styles.correctCircle,
-                  isWrong && styles.wrongCircle
-                ]}>
-                  {isSelected && (
-                    <View style={[
-                      styles.optionInnerCircle,
-                      isCorrect && styles.correctInnerCircle,
-                      isWrong && styles.wrongInnerCircle
-                    ]} />
-                  )}
-                </View>
-                <Typography 
-                  variant="body2" 
-                  style={styles.optionText}
-                  color={isCorrect ? "success" : (isWrong ? "error" : "primary")}
-                >
-                  {option}
+                {section.isCompleted ? "Completed" : "Mark as Completed"}
+              </Typography>
+            </TouchableOpacity>
+            
+            {section.hasQuiz && (
+              <TouchableOpacity
+                style={styles.quizBadge}
+                onPress={handleStartQuiz}
+              >
+                <Ionicons name="help-circle" size={20} color={colors.primary} />
+                <Typography variant="label" color={colors.primary} style={styles.statusText}>
+                  Take Quiz
                 </Typography>
               </TouchableOpacity>
-            );
-          })}
+            )}
+          </View>
         </Card>
-      ))}
-      
-      {/* Action Buttons */}
-      <View style={styles.buttonContainer}>
-        <Button 
-          variant="secondary"
-          style={styles.checkWorkButton}
-          onPress={handleCheckWork}
-        >
-          Check Work
-        </Button>
         
-        <Button 
-          variant="primary"
-          style={styles.quizButton}
-          onPress={handleStartQuiz}
-        >
-          Take Quiz
-        </Button>
+        <Card style={styles.contentCard}>
+          <Typography variant="body1" style={styles.contentText}>
+            {section.content || "No content available for this section yet."}
+          </Typography>
+        </Card>
+        
+        <View style={styles.buttonsContainer}>
+          {section.hasQuiz && (
+            <Button
+              title="Start Quiz"
+              onPress={handleStartQuiz}
+              style={styles.quizButton}
+              variant="primary"
+            />
+          )}
+          
+          <Button
+            title={section.isCompleted ? "Mark as Incomplete" : "Mark as Complete"}
+            onPress={handleMarkComplete}
+            style={styles.completeButton}
+            variant={section.isCompleted ? "secondary" : "primary"}
+          />
+        </View>
       </View>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    padding: spacing.m,
+  },
+  headerCard: {
+    marginBottom: spacing.m,
+    padding: spacing.m,
+  },
+  title: {
+    marginBottom: spacing.s,
+  },
+  description: {
+    marginBottom: spacing.m,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  statusBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.s,
+    borderRadius: 20,
+  },
+  completedBadge: {
+    backgroundColor: colors.status.successLight,
+  },
+  notCompletedBadge: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  quizBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.s,
+    borderRadius: 20,
+    backgroundColor: colors.primaryLight,
+  },
+  statusText: {
+    marginLeft: spacing.xs,
+  },
+  contentCard: {
+    padding: spacing.m,
+    marginBottom: spacing.m,
+  },
+  contentText: {
+    lineHeight: 24,
+  },
+  buttonsContainer: {
+    marginTop: spacing.m,
+    marginBottom: spacing.xl,
+  },
+  quizButton: {
+    marginBottom: spacing.s,
+  },
+  completeButton: {
+  },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: spacing.l,
   },
-  infoBar: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+  loadingText: {
+    marginTop: spacing.m,
+    textAlign: 'center',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: spacing.m,
-    marginTop: spacing.s,
-    marginBottom: spacing.m,
-    paddingVertical: spacing.s,
+    paddingHorizontal: spacing.l,
   },
-  infoItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  infoText: {
-    marginLeft: spacing.xs,
-  },
-  contentCard: {
-    marginHorizontal: spacing.m,
-    marginBottom: spacing.m,
-    padding: spacing.m,
-  },
-  contentTitle: {
-    marginBottom: spacing.m,
-  },
-  paragraph: {
-    marginBottom: spacing.m,
-    lineHeight: 22,
-  },
-  practiceQuizTitle: {
-    marginHorizontal: spacing.m,
+  errorTitle: {
     marginTop: spacing.m,
     marginBottom: spacing.s,
+    textAlign: 'center',
   },
-  questionCard: {
-    marginHorizontal: spacing.m,
-    marginBottom: spacing.m,
-    padding: spacing.m,
-  },
-  questionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.s,
-  },
-  questionNumber: {
-    color: colors.primary,
-  },
-  questionText: {
-    marginBottom: spacing.m,
-  },
-  optionContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: spacing.m,
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.s,
-    borderRadius: borderRadius.s,
-  },
-  selectedOption: {
-    backgroundColor: colors.primaryLight + '20', // 20% opacity
-  },
-  correctOption: {
-    backgroundColor: colors.status.success + '20', // 20% opacity
-  },
-  wrongOption: {
-    backgroundColor: colors.status.error + '20', // 20% opacity
-  },
-  optionCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: colors.border,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: spacing.s,
-  },
-  selectedCircle: {
-    borderColor: colors.primary,
-  },
-  correctCircle: {
-    borderColor: colors.status.success,
-  },
-  wrongCircle: {
-    borderColor: colors.status.error,
-  },
-  optionInnerCircle: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: colors.primary,
-  },
-  correctInnerCircle: {
-    backgroundColor: colors.status.success,
-  },
-  wrongInnerCircle: {
-    backgroundColor: colors.status.error,
-  },
-  optionText: {
-    flex: 1,
-  },
-  buttonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginHorizontal: spacing.m,
-    marginTop: spacing.s,
-    marginBottom: spacing.xl,
-  },
-  checkWorkButton: {
-    flex: 1,
-    marginRight: spacing.xs,
-  },
-  quizButton: {
-    flex: 1,
-    marginLeft: spacing.xs,
+  errorMessage: {
+    textAlign: 'center',
+    color: colors.text.secondary,
   },
 });
 

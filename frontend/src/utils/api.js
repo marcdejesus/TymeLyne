@@ -1,12 +1,11 @@
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import apiConfig from '../config/apiConfig';
 
-// Base URL for API
-const API_URL = 'http://10.0.2.2:5001/api'; // Android emulator
-// Use 'http://localhost:5001/api' for iOS simulator or web
-
+// Create an axios instance with config from apiConfig
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: apiConfig.apiUrl,
+  timeout: apiConfig.timeout,
   headers: {
     'Content-Type': 'application/json',
   },

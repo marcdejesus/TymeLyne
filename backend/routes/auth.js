@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const authController = require('../controllers/authController');
-const auth = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 // @route   POST /api/auth/register
 // @desc    Register a user
@@ -26,6 +26,6 @@ router.post('/resend-verification', authController.resendVerificationEmail);
 // @route   GET /api/auth/me
 // @desc    Get current user
 // @access  Private
-router.get('/me', auth, authController.getCurrentUser);
+router.get('/me', protect, authController.getCurrentUser);
 
 module.exports = router; 

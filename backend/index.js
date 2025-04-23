@@ -80,6 +80,7 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/profiles', require('./routes/profiles'));
+app.use('/api/courses', require('./routes/courses'));
 
 // Test route
 app.get('/', (req, res) => {

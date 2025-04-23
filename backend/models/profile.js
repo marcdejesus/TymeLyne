@@ -77,7 +77,7 @@ const ProfileSchema = new Schema({
   },
   course_generations: {
     type: Number,
-    default: 0
+    default: 5
   },
   password: {
     type: String,

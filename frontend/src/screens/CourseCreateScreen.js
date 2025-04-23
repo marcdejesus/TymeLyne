@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
+import React, { useState } from 'react';
+import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Typography from '../components/Typography';
@@ -7,11 +7,17 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
 import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { Picker } from '@react-native-picker/picker';
+import Slider from '@react-native-community/slider';
+import { createCourse } from '../services/courseService';
+import { useAuth } from '../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 
 const CourseCreateScreen = ({ navigation }) => {
-  // State variables for form inputs
+  const { user } = useAuth();
+  
+  // Form state
   const [courseTitle, setCourseTitle] = useState('');
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [skillLevel, setSkillLevel] = useState(null);
@@ -20,6 +26,10 @@ const CourseCreateScreen = ({ navigation }) => {
   const [aiSupport, setAiSupport] = useState(null);
   const [deadline, setDeadline] = useState('');
   const [includeRealWorldTasks, setIncludeRealWorldTasks] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [sectionsCount, setSectionsCount] = useState(3);
+  const [difficulty, setDifficulty] = useState('Beginner');
   
   // Radio button options
   const goalOptions = [
@@ -57,6 +67,90 @@ const CourseCreateScreen = ({ navigation }) => {
   const handleSelectOption = (option, setter, currentValue) => {
     setter(option === currentValue ? null : option);
   };
+
+  // Map skill level to difficulty
+  const mapSkillLevelToDifficulty = (level) => {
+    switch(level) {
+      case 'I\'m a total beginner':
+        return 'Beginner';
+      case 'I\'ve dabbled a bit':
+        return 'Beginner';
+      case 'I\'m intermediate':
+        return 'Intermediate';
+      case 'I\'m advanced and want to refine':
+        return 'Advanced';
+      default:
+        return 'Beginner';
+    }
+  };
+
+  // Handle course generation with all form data
+  const handleCreateCourse = async () => {
+    if (!courseTitle.trim()) {
+      Alert.alert('Error', 'Please enter a topic for your course');
+      return;
+    }
+
+    // Validate required fields
+    if (!selectedGoal || !skillLevel || !timePerDay) {
+      Alert.alert('Missing Information', 'Please fill out all required fields (Goal, Skill Level, and Time Commitment)');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      // Create a detailed prompt based on questionnaire
+      const userPreferences = {
+        topic: courseTitle.trim(),
+        goal: selectedGoal,
+        skillLevel: skillLevel,
+        hasTriedBefore: hasTriedBefore,
+        timePerDay: timePerDay,
+        aiSupport: aiSupport,
+        deadline: deadline,
+        includeRealWorldTasks: includeRealWorldTasks,
+        sectionsCount: sectionsCount,
+        difficulty: mapSkillLevelToDifficulty(skillLevel)
+      };
+      
+      const result = await createCourse(userPreferences);
+      
+      setLoading(false);
+      
+      if (result && result.course) {
+        Alert.alert(
+          'Success',
+          `Course "${result.course.title}" created successfully!`,
+          [
+            {
+              text: 'View Course',
+              onPress: () => navigation.navigate('CourseDetails', { course: result.course })
+            },
+            {
+              text: 'OK',
+              onPress: () => {
+                // Reset form
+                setCourseTitle('');
+                setSelectedGoal(null);
+                setSkillLevel(null);
+                setHasTriedBefore(null);
+                setTimePerDay(null);
+                setAiSupport(null);
+                setDeadline('');
+                setIncludeRealWorldTasks(null);
+              }
+            }
+          ]
+        );
+      }
+    } catch (err) {
+      setLoading(false);
+      setError(err.message || 'Failed to generate course. Please try again.');
+      Alert.alert('Error', err.message || 'Failed to generate course. Please try again.');
+    }
+  };
   
   // Render radio button
   const RadioButton = ({ selected, onPress, label }) => (
@@ -83,12 +177,6 @@ const CourseCreateScreen = ({ navigation }) => {
     </View>
   );
   
-  // Handle course creation
-  const handleCreateCourse = () => {
-    // Validate form and create course
-    navigation.navigate('Home');
-  };
-  
   return (
     <View style={styles.mainContainer}>
       {/* Static header */}
@@ -114,6 +202,14 @@ const CourseCreateScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false}
       >
         <Card style={styles.cardContainer}>
+          <Typography variant="h2" style={styles.heading}>
+            AI Course Generator
+          </Typography>
+            
+          <Typography variant="body1" style={styles.description}>
+            Answer a few questions to help our AI create a personalized learning experience for you.
+          </Typography>
+        
           <SectionHeader title="Definition" />
           
           <View style={styles.questionContainer}>
@@ -180,7 +276,7 @@ const CourseCreateScreen = ({ navigation }) => {
           <SectionHeader title="Motivation" />
           
           <View style={styles.questionContainer}>
-            <QuestionLabel number={8} text="How do you want the AI to support you?" />
+            <QuestionLabel number={6} text="How do you want the AI to support you?" />
             {aiSupportOptions.map((option, index) => (
               <RadioButton
                 key={index}
@@ -194,7 +290,7 @@ const CourseCreateScreen = ({ navigation }) => {
           <SectionHeader title="Customization" />
           
           <View style={styles.questionContainer}>
-            <QuestionLabel number={9} text="Is there a deadline you're working toward? (Optional)" />
+            <QuestionLabel number={7} text="Is there a deadline you're working toward? (Optional)" />
             <View style={styles.dateInputContainer}>
               <Input
                 placeholder="MM/DD/YYYY"
@@ -207,7 +303,7 @@ const CourseCreateScreen = ({ navigation }) => {
           </View>
           
           <View style={styles.questionContainer}>
-            <QuestionLabel number={10} text="Would you like the course to include real-world tasks or project-based learning?" />
+            <QuestionLabel number={8} text="Would you like the course to include real-world tasks or project-based learning?" />
             {yesNoOptions.map((option, index) => (
               <RadioButton
                 key={index}
@@ -218,17 +314,53 @@ const CourseCreateScreen = ({ navigation }) => {
             ))}
           </View>
           
+          <View style={styles.questionContainer}>
+            <Typography variant="label" style={styles.pickerLabel}>
+              Number of Sections: {sectionsCount}
+            </Typography>
+            <Slider
+              style={styles.slider}
+              minimumValue={1}
+              maximumValue={15}
+              step={1}
+              value={sectionsCount}
+              onValueChange={(value) => setSectionsCount(Math.round(value))}
+              minimumTrackTintColor={colors.primary}
+              maximumTrackTintColor={colors.border}
+              thumbTintColor={colors.primary}
+            />
+            <View style={styles.sliderLabels}>
+              <Typography variant="caption">1</Typography>
+              <Typography variant="caption">15</Typography>
+            </View>
+          </View>
+          
+          {error && (
+            <Typography variant="body2" style={styles.errorText}>
+              {error}
+            </Typography>
+          )}
+          
           <View style={styles.actionContainer}>
             <Typography variant="body" color={colors.text.primary}>
-              1 Use Left
+              AI-Powered Learning
             </Typography>
             <Button
-              variant="primary"
+              title={loading ? "Generating..." : "Generate Course"}
               onPress={handleCreateCourse}
-            >
-              Create
-            </Button>
+              style={styles.button}
+              disabled={loading || !courseTitle.trim() || !selectedGoal || !skillLevel || !timePerDay}
+            />
           </View>
+          
+          {loading && (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.primary} />
+              <Typography variant="body2" style={styles.loadingText}>
+                Creating your personalized course... This may take a minute.
+              </Typography>
+            </View>
+          )}
         </Card>
       </ScrollView>
     </View>
@@ -248,13 +380,16 @@ const SectionHeader = ({ title }) => (
 );
 
 const QuestionLabel = ({ number, text }) => (
-  <Typography 
-    variant="body" 
-    weight="medium" 
-    style={styles.questionText}
-  >
-    {number}. {text}
-  </Typography>
+  <View style={styles.questionLabelContainer}>
+    <View style={styles.questionNumberCircle}>
+      <Typography variant="body" weight="semiBold" color="white">
+        {number}
+      </Typography>
+    </View>
+    <Typography variant="body" weight="semiBold" style={styles.questionText}>
+      {text}
+    </Typography>
+  </View>
 );
 
 const styles = StyleSheet.create({
@@ -268,34 +403,47 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.m,
     paddingVertical: spacing.m,
-    backgroundColor: colors.background,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    backgroundColor: colors.card,
   },
   backButton: {
-    padding: 4,
+    padding: spacing.xs,
   },
   scrollView: {
     flex: 1,
   },
   scrollContent: {
-    padding: spacing.m,
-    paddingBottom: spacing.xxl,
+    paddingVertical: spacing.m,
+    paddingHorizontal: spacing.s,
   },
   cardContainer: {
-    backgroundColor: colors.card,
-    padding: spacing.l,
-    borderRadius: borderRadius.m,
-    ...shadows.medium,
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.l,
+    marginBottom: spacing.m,
   },
   sectionTitle: {
     marginVertical: spacing.m,
   },
-  questionContainer: {
-    marginBottom: spacing.l,
+  questionLabelContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.s,
+  },
+  questionNumberCircle: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: spacing.s,
   },
   questionText: {
-    marginBottom: spacing.s,
+    flex: 1,
+  },
+  questionContainer: {
+    marginBottom: spacing.l,
   },
   radioOptionContainer: {
     flexDirection: 'row',
@@ -306,25 +454,26 @@ const styles = StyleSheet.create({
     marginRight: spacing.m,
   },
   radioCircle: {
-    height: 20,
     width: 20,
+    height: 20,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.text.secondary,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   radioCircleSelected: {
     borderColor: colors.primary,
   },
   radioInner: {
-    height: 10,
     width: 10,
+    height: 10,
     borderRadius: 5,
     backgroundColor: colors.primary,
   },
   dateInputContainer: {
     flexDirection: 'row',
+    alignItems: 'center',
   },
   dateInput: {
     flex: 1,
@@ -334,6 +483,55 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginTop: spacing.l,
+    paddingTop: spacing.m,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  heading: {
+    marginBottom: spacing.s,
+    textAlign: 'center',
+  },
+  description: {
+    marginBottom: spacing.l,
+    textAlign: 'center',
+  },
+  pickerLabel: {
+    marginBottom: spacing.xs,
+  },
+  pickerContainer: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: borderRadius.m,
+    marginBottom: spacing.m,
+    backgroundColor: colors.surface,
+  },
+  picker: {
+    height: 50,
+  },
+  button: {
+    marginTop: spacing.m,
+  },
+  loadingContainer: {
+    marginTop: spacing.l,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.s,
+    textAlign: 'center',
+  },
+  errorText: {
+    color: colors.status.error,
+    marginBottom: spacing.s,
+  },
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  sliderLabels: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    paddingHorizontal: spacing.xs,
   },
 });
 

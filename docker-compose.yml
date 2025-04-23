@@ -5,11 +5,8 @@ services:
       - "5001:5001"
     depends_on:
       - mongo
-    environment:
-      - NODE_ENV=development
-      - PORT=5001
-      - MONGODB_URI=mongodb://mongo:27017/tymelyne
-      - JWT_SECRET=your_jwt_secret_key_change_in_production
+    env_file:
+      - ./backend/.env
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules

@@ -110,9 +110,8 @@ const styles = StyleSheet.create({
     minHeight: 48, // Ensure touch targets are at least 48px tall
   },
   activeNavItem: {
-    borderTopWidth: 3,
-    borderTopColor: colors.primary,
-    paddingTop: 0, // Adjust for the added border
+    // Removed borderTopWidth and borderTopColor properties
+    // No need to adjust paddingTop anymore as there's no border
   },
   navLabel: {
     marginTop: 4,

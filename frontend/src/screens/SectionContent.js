@@ -14,7 +14,7 @@ import Card from '../components/Card';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
-import { getCourseById, updateSectionCompletion } from '../services/courseService';
+import { getCourseById } from '../services/courseService';
 
 const { width } = Dimensions.get('window');
 
@@ -89,30 +89,6 @@ const SectionContent = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const handleMarkComplete = async () => {
-    try {
-      // Optimistically update UI
-      setSection(prev => ({
-        ...prev,
-        isCompleted: !prev.isCompleted
-      }));
-      
-      // Send to backend
-      if (courseId && sectionId) {
-        await updateSectionCompletion(courseId, sectionId, !section.isCompleted);
-      }
-      
-      // Optional: Show success message
-    } catch (err) {
-      console.error('Failed to update completion status:', err);
-      // Revert the optimistic update
-      setSection(prev => ({
-        ...prev,
-        isCompleted: !prev.isCompleted
-      }));
-    }
-  };
-
   const handleStartQuiz = () => {
     if (section && section.hasQuiz) {
       navigation.navigate('SectionQuiz', {
@@ -182,26 +158,22 @@ const SectionContent = ({ navigation, route }) => {
           </Typography>
           
           <View style={styles.statusContainer}>
-            <TouchableOpacity
-              style={[
-                styles.statusBadge,
-                section.isCompleted ? styles.completedBadge : styles.notCompletedBadge
-              ]}
-              onPress={handleMarkComplete}
-            >
-              <Ionicons 
-                name={section.isCompleted ? "checkmark-circle" : "ellipse-outline"} 
-                size={20} 
-                color={section.isCompleted ? colors.status.success : colors.text.secondary} 
-              />
-              <Typography 
-                variant="label" 
-                color={section.isCompleted ? colors.status.success : colors.text.secondary}
-                style={styles.statusText}
-              >
-                {section.isCompleted ? "Completed" : "Mark as Completed"}
-              </Typography>
-            </TouchableOpacity>
+            {section.isCompleted && (
+              <View style={styles.completedBadge}>
+                <Ionicons 
+                  name="checkmark-circle" 
+                  size={20} 
+                  color={colors.status.success} 
+                />
+                <Typography 
+                  variant="label" 
+                  color={colors.status.success}
+                  style={styles.statusText}
+                >
+                  Completed
+                </Typography>
+              </View>
+            )}
             
             {section.hasQuiz && (
               <TouchableOpacity
@@ -223,23 +195,16 @@ const SectionContent = ({ navigation, route }) => {
           </Typography>
         </Card>
         
-        <View style={styles.buttonsContainer}>
-          {section.hasQuiz && (
+        {section.hasQuiz && (
+          <View style={styles.buttonsContainer}>
             <Button
               title="Start Quiz"
               onPress={handleStartQuiz}
               style={styles.quizButton}
               variant="primary"
             />
-          )}
-          
-          <Button
-            title={section.isCompleted ? "Mark as Incomplete" : "Mark as Complete"}
-            onPress={handleMarkComplete}
-            style={styles.completeButton}
-            variant={section.isCompleted ? "secondary" : "primary"}
-          />
-        </View>
+          </View>
+        )}
       </View>
     </Screen>
   );
@@ -262,22 +227,18 @@ const styles = StyleSheet.create({
   },
   statusContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    marginTop: spacing.s,
   },
-  statusBadge: {
+  completedBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.s,
     borderRadius: 20,
-  },
-  completedBadge: {
     backgroundColor: colors.status.successLight,
-  },
-  notCompletedBadge: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
+    marginRight: 'auto', // This pushes it to the left
   },
   quizBadge: {
     flexDirection: 'row',
@@ -300,11 +261,10 @@ const styles = StyleSheet.create({
   buttonsContainer: {
     marginTop: spacing.m,
     marginBottom: spacing.xl,
+    paddingHorizontal: spacing.m,
   },
   quizButton: {
-    marginBottom: spacing.s,
-  },
-  completeButton: {
+    width: '100%',
   },
   loadingContainer: {
     flex: 1,

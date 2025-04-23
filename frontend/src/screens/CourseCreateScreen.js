@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Screen from '../components/Screen';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
-import { colors, spacing, borderRadius, shadows } from '../constants/theme';
+import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { createCourse } from '../services/courseService';
 import { useAuth } from '../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
+const isIphoneWithNotch = Platform.OS === 'ios' && Dimensions.get('window').height > 800;
 
 const CourseCreateScreen = ({ navigation }) => {
   const { user } = useAuth();
@@ -193,13 +195,19 @@ const CourseCreateScreen = ({ navigation }) => {
   );
   
   return (
-    <View style={styles.mainContainer}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.background}
+        translucent={Platform.OS === 'android'}
+      />
+      
       {/* Static header */}
       <View style={styles.header}>
         <TouchableOpacity 
           onPress={() => navigation.goBack()} 
           style={styles.backButton}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+          hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
         >
           <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
         </TouchableOpacity>
@@ -378,7 +386,7 @@ const CourseCreateScreen = ({ navigation }) => {
           )}
         </Card>
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -408,7 +416,7 @@ const QuestionLabel = ({ number, text }) => (
 );
 
 const styles = StyleSheet.create({
-  mainContainer: {
+  safeArea: {
     flex: 1,
     backgroundColor: colors.background,
   },
@@ -421,9 +429,15 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     backgroundColor: colors.card,
+    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + spacing.s : spacing.m,
   },
   backButton: {
     padding: spacing.xs,
+    zIndex: 10, // Ensure the button is above other elements
+    width: 44, // Minimum Apple recommended touch target size
+    height: 44, // Minimum Apple recommended touch target size
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   scrollView: {
     flex: 1,

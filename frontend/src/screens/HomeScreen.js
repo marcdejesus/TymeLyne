@@ -85,7 +85,7 @@ const HomeScreen = ({ navigation }) => {
               <CourseCard
                 key={course.id}
                 course={course}
-                onPress={() => handleNavigation('CourseDetails', { course })}
+                onPress={() => handleNavigation('CourseSections', { courseId: course.id })}
                 onOptionsPress={() => Alert.alert('Options', 'Course options')}
               />
             ))
@@ -146,7 +146,7 @@ const HomeScreen = ({ navigation }) => {
               <CourseCard
                 course={item}
                 variant="grid"
-                onPress={() => handleNavigation('CourseDetails', { course: item })}
+                onPress={() => handleNavigation('CourseSections', { courseId: item.id })}
               />
             )}
             contentContainerStyle={styles.gridContainer}

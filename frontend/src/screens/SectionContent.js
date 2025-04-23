@@ -1,66 +1,87 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
-  Dimensions
+  Dimensions,
+  Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
-import { colors } from '../constants/theme';
+import Typography from '../components/Typography';
+import Button from '../components/Button';
+import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 
 const { width } = Dimensions.get('window');
 
+/**
+ * Section Content Screen
+ * Displays the content of a specific section in a course
+ * 
+ * @param {object} navigation - React Navigation object
+ * @param {object} route - Route parameters with courseId, sectionId, sectionData, and courseData
+ */
 const SectionContent = ({ navigation, route }) => {
-  const { courseId, sectionId } = route.params;
+  const { courseId, sectionId, sectionData, courseData } = route.params;
+  const [loading, setLoading] = useState(true);
+  const [section, setSection] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState({});
   
-  // Mock section content
-  const sectionContent = {
-    title: 'Section Title',
-    paragraphs: [
-      'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.',
-      'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.',
-      'Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis convallis. Tempus leo eu aenean sed diam urna tempor. Pulvinar vivamus fringilla lacus nec metus bibendum egestas. Iaculis massa nisl malesuada lacinia integer nunc posuere.'
+  // Mock section content - In a real app, this would come from an API based on sectionId
+  const mockSectionContent = {
+    id: sectionId,
+    title: sectionData?.title || 'Section Content',
+    content: [
+      courseData?.paragraph1 || 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+      courseData?.paragraph2 || 'Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      courseData?.paragraph3 || 'Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris.'
     ],
     practiceQuiz: [
       {
         id: 1,
-        question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
+        question: 'What is the primary focus of this section?',
         options: [
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
+          'Understanding core concepts',
+          'Practical application',
+          'Advanced techniques',
+          'All of the above'
         ],
         correctOption: 0
       },
       {
         id: 2,
-        question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
+        question: 'Which of the following is NOT discussed in this section?',
         options: [
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
-        ],
-        correctOption: 1
-      },
-      {
-        id: 3,
-        question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        options: [
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-          'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
+          'Fundamental principles',
+          'Implementation strategies',
+          'Quantum physics',
+          'Best practices'
         ],
         correctOption: 2
       }
-    ]
+    ],
+    isCompleted: sectionData?.isCompleted || false,
+    difficulty: courseData?.difficulty || 'Intermediate',
+    experiencePoints: Math.floor((courseData?.course_exp || 500) / (courseData?.sections?.length || 1))
   };
+
+  useEffect(() => {
+    // Simulate API fetch for section data
+    const fetchSectionData = () => {
+      // In a real app, this would be an API call
+      // const response = await fetch(`/api/courses/${courseId}/sections/${sectionId}`);
+      // const data = await response.json();
+      
+      setTimeout(() => {
+        setSection(mockSectionContent);
+        setLoading(false);
+      }, 300);
+    };
+
+    fetchSectionData();
+  }, [courseId, sectionId]);
 
   const handleBackPress = () => {
     navigation.goBack();
@@ -70,168 +91,294 @@ const SectionContent = ({ navigation, route }) => {
     navigation.navigate('SectionQuiz', { 
       courseId, 
       sectionId,
-      quizType: 'practice'
+      sectionTitle: section.title,
+      quizType: 'practice',
+      experiencePoints: section.experiencePoints
     });
   };
 
+  const handleCheckWork = () => {
+    // In a real app, this would validate user's practice quiz answers
+    // and provide feedback
+    alert('This would check your practice answers and provide feedback.');
+  };
+
+  const handleOptionSelect = (questionIndex, optionIndex) => {
+    setSelectedOptions({
+      ...selectedOptions,
+      [questionIndex]: optionIndex
+    });
+  };
+
+  if (loading) {
+    return (
+      <Screen
+        title="Loading..."
+        onBackPress={handleBackPress}
+        backgroundColor={colors.background}
+        showBottomNav={false}
+      >
+        <View style={styles.loadingContainer}>
+          <Typography variant="body" color="secondary">
+            Loading section content...
+          </Typography>
+        </View>
+      </Screen>
+    );
+  }
+
   return (
     <Screen
-      title={sectionContent.title}
+      title={section.title}
       onBackPress={handleBackPress}
-      backgroundColor="#F9F1E0"
+      backgroundColor={colors.background}
       showBottomNav={false}
       scrollable={true}
     >
-      {/* Section paragraphs */}
-      <Text style={styles.sectionTitle}>Section Title</Text>
+      {/* Section Info Bar */}
+      <Card variant="elevated" style={styles.infoBar}>
+        <View style={styles.infoItem}>
+          <Ionicons name="trophy-outline" size={18} color={colors.primary} />
+          <Typography variant="caption" color="secondary" style={styles.infoText}>
+            {section.experiencePoints} XP
+          </Typography>
+        </View>
+        
+        <View style={styles.infoItem}>
+          <Ionicons name="stats-chart-outline" size={18} color={colors.primary} />
+          <Typography variant="caption" color="secondary" style={styles.infoText}>
+            {section.difficulty}
+          </Typography>
+        </View>
+
+        {section.isCompleted && (
+          <View style={styles.infoItem}>
+            <Ionicons name="checkmark-circle" size={18} color={colors.status.success} />
+            <Typography variant="caption" color={colors.status.success} style={styles.infoText}>
+              Completed
+            </Typography>
+          </View>
+        )}
+      </Card>
       
-      {sectionContent.paragraphs.map((paragraph, index) => (
-        <Text key={index} style={styles.paragraph}>
-          {paragraph}
-        </Text>
-      ))}
+      {/* Section Content */}
+      <Card variant="elevated" style={styles.contentCard}>
+        <Typography variant="title" weight="semiBold" style={styles.contentTitle}>
+          {section.title}
+        </Typography>
+        
+        {section.content.map((paragraph, index) => (
+          <Typography key={index} variant="body" style={styles.paragraph}>
+            {paragraph}
+          </Typography>
+        ))}
+      </Card>
       
       {/* Practice Quiz Section */}
-      <Text style={styles.practiceQuizTitle}>Practice Quiz</Text>
+      <Typography variant="title" weight="semiBold" style={styles.practiceQuizTitle}>
+        Practice Quiz
+      </Typography>
       
-      {sectionContent.practiceQuiz.map((question, index) => (
-        <Card key={index} style={styles.questionCard}>
-          <Text style={styles.questionNumber}>{index + 1}.</Text>
-          <Text style={styles.questionText}>{question.question}</Text>
+      {section.practiceQuiz.map((question, questionIndex) => (
+        <Card key={questionIndex} variant="elevated" style={styles.questionCard}>
+          <View style={styles.questionHeader}>
+            <Typography variant="subheading" weight="semiBold" style={styles.questionNumber}>
+              Question {questionIndex + 1}
+            </Typography>
+            <Ionicons name="help-circle-outline" size={20} color={colors.primary} />
+          </View>
           
-          {question.options.map((option, optionIndex) => (
-            <TouchableOpacity 
-              key={optionIndex} 
-              style={styles.optionContainer}
-            >
-              <View style={styles.optionCircle}>
-                {optionIndex === question.correctOption && (
-                  <View style={styles.optionInnerCircle} />
-                )}
-              </View>
-              <Text style={styles.optionText}>{option}</Text>
-            </TouchableOpacity>
-          ))}
+          <Typography variant="body" style={styles.questionText}>
+            {question.question}
+          </Typography>
+          
+          {question.options.map((option, optionIndex) => {
+            const isSelected = selectedOptions[questionIndex] === optionIndex;
+            const isCorrect = isSelected && optionIndex === question.correctOption;
+            const isWrong = isSelected && optionIndex !== question.correctOption;
+            
+            return (
+              <TouchableOpacity 
+                key={optionIndex} 
+                style={[
+                  styles.optionContainer,
+                  isSelected && styles.selectedOption,
+                  isCorrect && styles.correctOption,
+                  isWrong && styles.wrongOption
+                ]}
+                activeOpacity={0.7}
+                onPress={() => handleOptionSelect(questionIndex, optionIndex)}
+              >
+                <View style={[
+                  styles.optionCircle,
+                  isSelected && styles.selectedCircle,
+                  isCorrect && styles.correctCircle,
+                  isWrong && styles.wrongCircle
+                ]}>
+                  {isSelected && (
+                    <View style={[
+                      styles.optionInnerCircle,
+                      isCorrect && styles.correctInnerCircle,
+                      isWrong && styles.wrongInnerCircle
+                    ]} />
+                  )}
+                </View>
+                <Typography 
+                  variant="body2" 
+                  style={styles.optionText}
+                  color={isCorrect ? "success" : (isWrong ? "error" : "primary")}
+                >
+                  {option}
+                </Typography>
+              </TouchableOpacity>
+            );
+          })}
         </Card>
       ))}
       
-      {/* Quiz button */}
+      {/* Action Buttons */}
       <View style={styles.buttonContainer}>
-        <TouchableOpacity 
+        <Button 
+          variant="secondary"
           style={styles.checkWorkButton}
-          onPress={() => {}}
+          onPress={handleCheckWork}
         >
-          <Text style={styles.checkWorkButtonText}>Check Work</Text>
-        </TouchableOpacity>
+          Check Work
+        </Button>
         
-        <TouchableOpacity 
+        <Button 
+          variant="primary"
           style={styles.quizButton}
           onPress={handleStartQuiz}
         >
-          <Text style={styles.quizButtonText}>Quiz</Text>
-        </TouchableOpacity>
+          Take Quiz
+        </Button>
       </View>
     </Screen>
   );
 };
 
 const styles = StyleSheet.create({
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 16,
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  infoBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+    marginHorizontal: spacing.m,
+    marginTop: spacing.s,
+    marginBottom: spacing.m,
+    paddingVertical: spacing.s,
+  },
+  infoItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  infoText: {
+    marginLeft: spacing.xs,
+  },
+  contentCard: {
+    marginHorizontal: spacing.m,
+    marginBottom: spacing.m,
+    padding: spacing.m,
+  },
+  contentTitle: {
+    marginBottom: spacing.m,
   },
   paragraph: {
-    fontSize: 16,
-    color: colors.text,
-    lineHeight: 24,
-    marginBottom: 20,
+    marginBottom: spacing.m,
+    lineHeight: 22,
   },
   practiceQuizTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.text,
-    marginTop: 20,
-    marginBottom: 16,
+    marginHorizontal: spacing.m,
+    marginTop: spacing.m,
+    marginBottom: spacing.s,
   },
   questionCard: {
-    marginBottom: 16,
-    backgroundColor: "#F9F1E0",
+    marginHorizontal: spacing.m,
+    marginBottom: spacing.m,
+    padding: spacing.m,
+  },
+  questionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.s,
   },
   questionNumber: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+    color: colors.primary,
   },
   questionText: {
-    fontSize: 16,
-    color: colors.text,
-    marginBottom: 16,
+    marginBottom: spacing.m,
   },
   optionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.m,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.s,
+    borderRadius: borderRadius.s,
+  },
+  selectedOption: {
+    backgroundColor: colors.primaryLight + '20', // 20% opacity
+  },
+  correctOption: {
+    backgroundColor: colors.status.success + '20', // 20% opacity
+  },
+  wrongOption: {
+    backgroundColor: colors.status.error + '20', // 20% opacity
   },
   optionCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.text,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: spacing.s,
+  },
+  selectedCircle: {
+    borderColor: colors.primary,
+  },
+  correctCircle: {
+    borderColor: colors.status.success,
+  },
+  wrongCircle: {
+    borderColor: colors.status.error,
   },
   optionInnerCircle: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.text,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    backgroundColor: colors.primary,
+  },
+  correctInnerCircle: {
+    backgroundColor: colors.status.success,
+  },
+  wrongInnerCircle: {
+    backgroundColor: colors.status.error,
   },
   optionText: {
-    fontSize: 14,
-    color: colors.text,
     flex: 1,
   },
   buttonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 20,
-    marginBottom: 30,
+    marginHorizontal: spacing.m,
+    marginTop: spacing.s,
+    marginBottom: spacing.xl,
   },
   checkWorkButton: {
-    backgroundColor: colors.card,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
     flex: 1,
-    marginRight: 10,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  checkWorkButtonText: {
-    color: colors.text,
-    fontSize: 16,
-    fontWeight: '500',
+    marginRight: spacing.xs,
   },
   quizButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
     flex: 1,
-    marginLeft: 10,
-  },
-  quizButtonText: {
-    color: colors.textInverted,
-    fontSize: 16,
-    fontWeight: '500',
+    marginLeft: spacing.xs,
   },
 });
 

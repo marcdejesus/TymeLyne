@@ -23,6 +23,7 @@ import ProfileScreen from './src/screens/ProfileScreen';
 import DevelopmentScreen from './src/screens/DevelopmentScreen';
 import CourseCreateScreen from './src/screens/CourseCreateScreen';
 import CourseDetailsScreen from './src/screens/CourseDetailsScreen';
+import CourseSectionsScreen from './src/screens/CourseSectionsScreen';
 import SectionContent from './src/screens/SectionContent';
 import SectionQuiz from './src/screens/SectionQuiz';
 import MessagesScreen from './src/screens/MessagesScreen';
@@ -87,6 +88,11 @@ const AppContent = () => {
           <Stack.Screen 
             name="CourseDetails" 
             component={CourseDetailsScreen} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="CourseSections" 
+            component={CourseSectionsScreen} 
             options={{ animationEnabled: true }}
           />
           <Stack.Screen 

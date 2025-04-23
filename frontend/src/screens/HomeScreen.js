@@ -44,17 +44,32 @@ const HomeScreen = ({ navigation }) => {
         setError(null);
         const courses = await getMyCourses();
         
+        // Debug log to see actual course data
+        console.log('Fetched courses from API:', courses);
+        
         // Map courses to include icons and format for CourseCard
-        const formattedCourses = courses.map((course, index) => ({
-          id: course._id || course.course_id,
-          title: course.title,
-          // Assign a default icon based on index
-          icon: defaultCourseIcons[index % defaultCourseIcons.length],
-          // Calculate progress based on completed sections
-          progress: calculateProgress(course),
-          // Store the original course data for details view
-          courseData: course
-        }));
+        const formattedCourses = courses.map((course, index) => {
+          // Get the correct title from the course data - handle both title and course_name
+          const courseTitle = course.title || course.course_name || 'Untitled Course';
+          
+          console.log(`Formatting course: ${courseTitle}`);
+          
+          return {
+            id: course._id || course.course_id,
+            title: courseTitle,
+            // Assign a default icon based on index
+            icon: defaultCourseIcons[index % defaultCourseIcons.length],
+            // Calculate progress based on completed sections
+            progress: calculateProgress(course),
+            // Store the original course data for details view
+            courseData: {
+              ...course,
+              // Ensure both title and course_name are set for backward compatibility
+              title: courseTitle,
+              course_name: courseTitle
+            }
+          };
+        });
         
         setUserCourses(formattedCourses);
       } catch (err) {
@@ -265,8 +280,9 @@ const styles = StyleSheet.create({
     paddingRight: spacing.l,
   },
   carouselCard: {
-    width: 280,
+    width: 420,
     marginRight: spacing.m,
+    height: 100,
   },
   addCourseContainer: {
     flexDirection: 'row',

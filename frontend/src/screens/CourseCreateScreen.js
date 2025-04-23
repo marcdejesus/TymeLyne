@@ -120,6 +120,18 @@ const CourseCreateScreen = ({ navigation }) => {
       setLoading(false);
       
       if (result && result.course) {
+        // Log the course data structure to help with debugging
+        console.log('Course created successfully:', result.course);
+        
+        // Format course data consistently with expected properties
+        const formattedCourse = {
+          ...result.course,
+          // Ensure necessary fields exist for CourseSections screen
+          course_name: result.course.title,  // Backup for older screens expecting course_name
+          course_exp: 500, // Default XP if not provided
+          tags: result.course.tags || [userPreferences.topic], // Use tags if available or create from topic
+        };
+        
         Alert.alert(
           'Success',
           `Course "${result.course.title}" created successfully!`,
@@ -128,7 +140,7 @@ const CourseCreateScreen = ({ navigation }) => {
               text: 'View Course',
               onPress: () => navigation.navigate('CourseSections', { 
                 courseId: result.course.course_id || result.course._id,
-                courseData: result.course 
+                courseData: formattedCourse
               })
             },
             {

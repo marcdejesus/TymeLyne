@@ -138,7 +138,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
 
   return (
     <Screen
-      title={courseData.course_name}
+      title={courseData.title || courseData.course_name}
       onBackPress={handleBackPress}
       backgroundColor={colors.background}
       showBottomNav={false}
@@ -147,7 +147,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
       {/* Course Header */}
       <View style={styles.courseHeader}>
         <Typography variant="heading" weight="bold" style={styles.courseTitle}>
-          {courseData.course_name}
+          {courseData.title || courseData.course_name}
         </Typography>
         
         <Typography variant="body" style={styles.courseDescription}>
@@ -160,7 +160,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
             <View style={styles.metadataItem}>
               <Ionicons name="trophy-outline" size={20} color={colors.primary} />
               <Typography variant="caption" color="secondary" style={styles.metadataText}>
-                {courseData.course_exp} XP
+                {courseData.course_exp || 500} XP
               </Typography>
             </View>
             
@@ -187,7 +187,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
           style={styles.tagsScrollView}
           contentContainerStyle={styles.tagsContainer}
         >
-          {courseData.tags.map(renderTag)}
+          {(courseData.tags || []).map(renderTag)}
         </ScrollView>
       </View>
 

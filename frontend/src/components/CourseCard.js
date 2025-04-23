@@ -37,7 +37,7 @@ const CourseCard = ({
           variant="subheading" 
           weight="semiBold" 
           center 
-          numberOfLines={2}
+          numberOfLines={3}
           style={styles.gridTitle}
         >
           {course.title}
@@ -62,7 +62,7 @@ const CourseCard = ({
         <Typography 
           variant="subheading" 
           weight="semiBold" 
-          numberOfLines={1}
+          numberOfLines={2}
           style={styles.title}
         >
           {course.title}
@@ -106,7 +106,6 @@ const CourseCard = ({
 const styles = StyleSheet.create({
   // Horizontal card styles
   card: {
-    padding: 0, // Card component has its own padding
     flexDirection: 'row',
     marginBottom: spacing.m,
     borderRadius: borderRadius.m,
@@ -117,11 +116,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   icon: {
-    width: width * 0.12,
-    height: width * 0.12,
-    maxWidth: 50,
-    maxHeight: 50,
-    borderRadius: width * 0.06, // Make it a circle by setting borderRadius to half the width
+    width: width * 0.15,
+    height: width * 0.15,
+    maxWidth: 60,
+    maxHeight: 60,
+    borderRadius: width * 0.075, // Make it a circle by setting borderRadius to half the width
     backgroundColor: colors.border, // Light background for the icon
     padding: spacing.xs, // Add some padding inside the circle
     justifyContent: 'center',
@@ -131,13 +130,14 @@ const styles = StyleSheet.create({
   contentContainer: {
     flex: 1,
     justifyContent: 'center',
+    paddingRight: spacing.s,
   },
   title: {
     marginBottom: spacing.xs,
   },
   progressContainer: {
     marginTop: spacing.xs,
-    width: '90%', // Avoid overlap with options dots
+    width: '95%', // More space for progress bar
   },
   progressText: {
     marginBottom: spacing.xs,
@@ -171,11 +171,11 @@ const styles = StyleSheet.create({
     padding: spacing.m,
   },
   gridIcon: {
-    width: width * 0.1,
-    height: width * 0.1,
-    maxWidth: 40,
-    maxHeight: 40,
-    borderRadius: width * 0.05, // Make it a circle by setting borderRadius to half the width
+    width: width * 0.14,
+    height: width * 0.14,
+    maxWidth: 55,
+    maxHeight: 55,
+    borderRadius: width * 0.07, // Make it a circle by setting borderRadius to half the width
     backgroundColor: colors.border, // Light background for the icon
     padding: spacing.xs, // Add some padding inside the circle
     justifyContent: 'center',
@@ -185,6 +185,7 @@ const styles = StyleSheet.create({
   },
   gridTitle: {
     textAlign: 'center',
+    marginTop: spacing.xs,
   },
 });
 

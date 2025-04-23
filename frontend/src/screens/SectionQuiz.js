@@ -1,20 +1,23 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
-  Text,
   StyleSheet,
   TouchableOpacity,
   Image,
   Dimensions,
-  Alert
+  Alert,
+  Platform
 } from 'react-native';
 import Screen from '../components/Screen';
-import { colors } from '../constants/theme';
+import Typography from '../components/Typography';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 
 const { width, height } = Dimensions.get('window');
 
 const SectionQuiz = ({ navigation, route }) => {
-  const { courseId, sectionId, quizType } = route.params;
+  const { courseId, sectionId, quizType, sectionTitle, experiencePoints = 500 } = route.params;
   
   // Quiz state
   const [quizStarted, setQuizStarted] = useState(false);
@@ -29,36 +32,36 @@ const SectionQuiz = ({ navigation, route }) => {
   const questions = [
     {
       id: 1,
-      question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
+      question: 'What is the primary focus of digital marketing?',
       options: [
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
-      ],
-      correctOption: 0
-    },
-    {
-      id: 2,
-      question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-      options: [
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
+        'Building offline brand awareness',
+        'Promoting products and services through digital channels',
+        'Creating physical advertising materials',
+        'Reducing marketing budgets'
       ],
       correctOption: 1
     },
     {
-      id: 3,
-      question: 'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
+      id: 2,
+      question: 'Which of the following is NOT a common digital marketing channel?',
       options: [
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.',
-        'Lorem ipsum dolor sit amet consectetur adipiscing elit.'
+        'Social media marketing',
+        'Email marketing',
+        'Billboard advertising',
+        'Search engine optimization'
       ],
       correctOption: 2
+    },
+    {
+      id: 3,
+      question: 'What does SEO stand for in digital marketing?',
+      options: [
+        'Social Engagement Optimization',
+        'Search Engine Optimization',
+        'Sales Enhancement Operations',
+        'System Enhancement Oversight'
+      ],
+      correctOption: 1
     }
   ];
 
@@ -146,7 +149,7 @@ const SectionQuiz = ({ navigation, route }) => {
   };
 
   const handleGoHome = () => {
-    navigation.navigate('CourseDetails', { courseId });
+    navigation.navigate('CourseSections', { courseId });
   };
 
   const renderQuizIntro = () => (
@@ -156,13 +159,19 @@ const SectionQuiz = ({ navigation, route }) => {
         style={styles.logo}
         resizeMode="contain"
       />
-      <Text style={styles.quizTimeText}>Quiz Tyme!</Text>
-      <TouchableOpacity
-        style={styles.startButton}
+      <Typography variant="heading" weight="bold" style={styles.quizTimeText}>
+        Quiz Tyme!
+      </Typography>
+      <Typography variant="body" style={styles.quizDescription} center>
+        {sectionTitle ? `Test your knowledge of ${sectionTitle}` : 'Test your knowledge with this quiz'}
+      </Typography>
+      <Button
+        variant="primary"
         onPress={handleStartQuiz}
+        style={styles.actionButton}
       >
-        <Text style={styles.startButtonText}>Start Quiz</Text>
-      </TouchableOpacity>
+        Start Quiz
+      </Button>
     </View>
   );
 
@@ -171,54 +180,72 @@ const SectionQuiz = ({ navigation, route }) => {
     
     return (
       <View style={styles.questionContainer}>
-        <View style={styles.timerContainer}>
-          <Image 
-            source={require('../../assets/timer-icon.png')} 
-            style={styles.timerIcon}
-            resizeMode="contain"
-          />
-          <Text style={styles.timeRemainingText}>{formatTime(timeRemaining)} REMAINING</Text>
-          <View style={styles.progressBarContainer}>
-            <View 
-              style={[
-                styles.progressBar, 
-                { width: `${(timeRemaining / 300) * 100}%` }
-              ]} 
+        <Card variant="elevated" style={styles.timerCard}>
+          <View style={styles.timerContainer}>
+            <Image 
+              source={require('../../assets/timer-icon.png')} 
+              style={styles.timerIcon}
+              resizeMode="contain"
             />
-          </View>
-        </View>
-        
-        <Text style={styles.questionNumber}>{currentQuestionIndex + 1}.</Text>
-        <Text style={styles.questionText}>{currentQuestion.question}</Text>
-        
-        {currentQuestion.options.map((option, index) => (
-          <TouchableOpacity 
-            key={index} 
-            style={[
-              styles.optionContainer,
-              selectedOption === index && styles.selectedOption
-            ]}
-            onPress={() => handleSelectOption(index)}
-          >
-            <View style={styles.optionCircle}>
-              {selectedOption === index && (
-                <View style={styles.optionInnerCircle} />
-              )}
+            <Typography variant="caption" weight="semiBold" style={styles.timeRemainingText}>
+              {formatTime(timeRemaining)} REMAINING
+            </Typography>
+            <View style={styles.progressBarContainer}>
+              <View 
+                style={[
+                  styles.progressBar, 
+                  { width: `${(timeRemaining / 300) * 100}%` }
+                ]} 
+              />
             </View>
-            <Text style={styles.optionText}>{option}</Text>
-          </TouchableOpacity>
-        ))}
+          </View>
+        </Card>
         
-        <TouchableOpacity 
-          style={[
-            styles.nextButton,
-            selectedOption === null && styles.disabledButton
-          ]}
+        <Card variant="elevated" style={styles.questionCard}>
+          <Typography variant="caption" weight="medium" color="secondary">
+            QUESTION {currentQuestionIndex + 1} OF {questions.length}
+          </Typography>
+          <Typography variant="subheading" weight="semiBold" style={styles.questionText}>
+            {currentQuestion.question}
+          </Typography>
+          
+          {currentQuestion.options.map((option, index) => (
+            <TouchableOpacity 
+              key={index} 
+              style={[
+                styles.optionContainer,
+                selectedOption === index && styles.selectedOption
+              ]}
+              onPress={() => handleSelectOption(index)}
+              activeOpacity={0.7}
+            >
+              <View style={[
+                styles.optionCircle,
+                selectedOption === index && styles.selectedCircle
+              ]}>
+                {selectedOption === index && (
+                  <View style={styles.optionInnerCircle} />
+                )}
+              </View>
+              <Typography 
+                variant="body2" 
+                style={styles.optionText}
+                color={selectedOption === index ? "primary" : "primary"}
+              >
+                {option}
+              </Typography>
+            </TouchableOpacity>
+          ))}
+        </Card>
+        
+        <Button 
+          variant="primary"
           onPress={handleNextQuestion}
           disabled={selectedOption === null}
+          style={styles.actionButton}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
-        </TouchableOpacity>
+          {currentQuestionIndex < questions.length - 1 ? 'Next Question' : 'Finish Quiz'}
+        </Button>
       </View>
     );
   };
@@ -230,22 +257,28 @@ const SectionQuiz = ({ navigation, route }) => {
         style={styles.resultIcon}
         resizeMode="contain"
       />
-      <Text style={styles.failedText}>Oops!</Text>
-      <Text style={styles.failedSubtext}>Level Failed</Text>
+      <Typography variant="heading" weight="bold" style={styles.resultTitle}>
+        Oops!
+      </Typography>
+      <Typography variant="title" style={styles.resultSubtitle}>
+        Level Failed
+      </Typography>
       
-      <TouchableOpacity
-        style={styles.retryButton}
+      <Button
+        variant="primary"
         onPress={handleRetry}
+        style={styles.actionButton}
       >
-        <Text style={styles.retryButtonText}>Retry</Text>
-      </TouchableOpacity>
+        Retry
+      </Button>
       
-      <TouchableOpacity
-        style={styles.homeButton}
+      <Button
+        variant="secondary"
         onPress={handleGoHome}
+        style={styles.actionButton}
       >
-        <Text style={styles.homeButtonText}>Go Home</Text>
-      </TouchableOpacity>
+        Go Home
+      </Button>
     </View>
   );
 
@@ -256,15 +289,20 @@ const SectionQuiz = ({ navigation, route }) => {
         style={styles.resultIcon}
         resizeMode="contain"
       />
-      <Text style={styles.completedText}>Section Complete!</Text>
-      <Text style={styles.xpText}>+500 XP</Text>
+      <Typography variant="heading" weight="bold" style={styles.resultTitle}>
+        Section Complete!
+      </Typography>
+      <Typography variant="title" weight="semiBold" color="primary" style={styles.xpText}>
+        +{experiencePoints} XP
+      </Typography>
       
-      <TouchableOpacity
-        style={styles.nextSectionButton}
+      <Button
+        variant="primary"
         onPress={handleGoHome}
+        style={styles.actionButton}
       >
-        <Text style={styles.nextSectionButtonText}>Next</Text>
-      </TouchableOpacity>
+        Continue
+      </Button>
     </View>
   );
 
@@ -287,9 +325,9 @@ const SectionQuiz = ({ navigation, route }) => {
 
   return (
     <Screen
-      title="Quiz"
+      title={quizStarted ? `Question ${currentQuestionIndex + 1}/${questions.length}` : "Quiz"}
       onBackPress={handleBackPress}
-      backgroundColor="#F9F1E0"
+      backgroundColor={colors.background}
       showBottomNav={false}
       scrollable={false}
     >
@@ -303,197 +341,117 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
+    paddingHorizontal: spacing.l,
   },
   logo: {
     width: width * 0.3,
     height: width * 0.3,
-    marginBottom: 20,
+    marginBottom: spacing.l,
   },
   quizTimeText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 40,
+    marginBottom: spacing.s,
   },
-  startButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 4,
+  quizDescription: {
+    marginBottom: spacing.xl,
+    opacity: 0.8,
   },
-  startButtonText: {
-    color: colors.textInverted,
-    fontSize: 18,
-    fontWeight: '600',
+  actionButton: {
+    minWidth: '80%',
+    marginVertical: spacing.s,
   },
   questionContainer: {
     flex: 1,
-    paddingHorizontal: 16,
-    paddingTop: 20,
+    paddingHorizontal: spacing.m,
+    paddingTop: spacing.m,
+  },
+  timerCard: {
+    marginBottom: spacing.m,
   },
   timerContainer: {
     alignItems: 'center',
-    marginBottom: 30,
   },
   timerIcon: {
-    width: 50,
-    height: 50,
-    marginBottom: 10,
+    width: 40,
+    height: 40,
+    marginBottom: spacing.xs,
   },
   timeRemainingText: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.text,
-    marginBottom: 8,
+    marginBottom: spacing.xs,
   },
   progressBarContainer: {
     width: '100%',
-    height: 10,
-    backgroundColor: '#E0D8C0',
-    borderRadius: 5,
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: borderRadius.s,
     overflow: 'hidden',
   },
   progressBar: {
     height: '100%',
     backgroundColor: colors.primary,
-    borderRadius: 5,
+    borderRadius: borderRadius.s,
   },
-  questionNumber: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+  questionCard: {
+    marginBottom: spacing.m,
+    padding: spacing.m,
   },
   questionText: {
-    fontSize: 18,
-    color: colors.text,
-    marginBottom: 24,
+    marginVertical: spacing.m,
   },
   optionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
+    marginBottom: spacing.m,
+    padding: spacing.m,
+    backgroundColor: colors.card,
+    borderRadius: borderRadius.m,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   selectedOption: {
-    backgroundColor: colors.primaryLight,
-    borderWidth: 1,
+    backgroundColor: colors.primaryLight + '20', // 20% opacity
     borderColor: colors.primary,
   },
   optionCircle: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.text,
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    borderWidth: 2,
+    borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 10,
+    marginRight: spacing.s,
+  },
+  selectedCircle: {
+    borderColor: colors.primary,
   },
   optionInnerCircle: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
+    width: 12,
+    height: 12,
+    borderRadius: 6,
     backgroundColor: colors.primary,
   },
   optionText: {
-    fontSize: 16,
-    color: colors.text,
     flex: 1,
-  },
-  nextButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 4,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-  },
-  disabledButton: {
-    backgroundColor: colors.textTertiary,
-    opacity: 0.7,
-  },
-  nextButtonText: {
-    color: colors.textInverted,
-    fontSize: 16,
-    fontWeight: '500',
   },
   resultContainer: {
     flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.l,
   },
   resultIcon: {
     width: width * 0.3,
     height: width * 0.3,
-    marginBottom: 20,
+    marginBottom: spacing.l,
   },
-  failedText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+  resultTitle: {
+    marginBottom: spacing.xs,
   },
-  failedSubtext: {
-    fontSize: 18,
-    color: colors.text,
-    marginBottom: 40,
-  },
-  completedText: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: colors.text,
-    marginBottom: 8,
+  resultSubtitle: {
+    marginBottom: spacing.xl,
   },
   xpText: {
-    fontSize: 18,
-    color: colors.primary,
-    fontWeight: '600',
-    marginBottom: 40,
-  },
-  retryButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 4,
-    marginBottom: 16,
-    width: '80%',
-    alignItems: 'center',
-  },
-  retryButtonText: {
-    color: colors.textInverted,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  homeButton: {
-    backgroundColor: '#A0A0A0',
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 4,
-    width: '80%',
-    alignItems: 'center',
-  },
-  homeButtonText: {
-    color: colors.textInverted,
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  nextSectionButton: {
-    backgroundColor: colors.primary,
-    paddingVertical: 12,
-    paddingHorizontal: 30,
-    borderRadius: 4,
-    width: '80%',
-    alignItems: 'center',
-  },
-  nextSectionButtonText: {
-    color: colors.textInverted,
-    fontSize: 16,
-    fontWeight: '600',
+    marginBottom: spacing.xl,
   },
 });
 

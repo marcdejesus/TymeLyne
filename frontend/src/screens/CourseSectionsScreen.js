@@ -7,6 +7,7 @@ import Typography from '../components/Typography';
 import SectionTitle from '../components/SectionTitle';
 import Button from '../components/Button';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
+import { tymelyneTutorialData } from '../data/tutorialData';
 
 const { width } = Dimensions.get('window');
 
@@ -39,13 +40,13 @@ const CourseSectionsScreen = ({ navigation, route }) => {
         id: 1,
         title: 'Digital Marketing Fundamentals',
         description: 'Learn the core concepts and principles of digital marketing.',
-        isCompleted: false
+        isCompleted: true
       },
       {
         id: 2,
         title: 'Content Marketing Strategy',
         description: 'Develop effective content marketing strategies that drive engagement and conversions.',
-        isCompleted: true
+        isCompleted: false
       },
       {
         id: 3,
@@ -66,10 +67,18 @@ const CourseSectionsScreen = ({ navigation, route }) => {
     // Simulate API fetch
     const fetchCourseData = () => {
       // In a real app, this would be an API call
-      // const courseId = route.params?.courseId;
-      // const response = await fetch(`/api/courses/${courseId}`);
-      // const data = await response.json();
+      const courseId = route.params?.courseId;
       
+      // For tutorial course
+      if (courseId === '1') {
+        setTimeout(() => {
+          setCourseData(tymelyneTutorialData);
+          setLoading(false);
+        }, 500);
+        return;
+      }
+      
+      // For other courses, use existing mock data
       setTimeout(() => {
         setCourseData(mockCourseData);
         setLoading(false);
@@ -77,7 +86,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
     };
 
     fetchCourseData();
-  }, []);
+  }, [route.params?.courseId]);
 
   const handleBackPress = () => {
     navigation.goBack();

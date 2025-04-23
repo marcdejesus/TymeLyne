@@ -179,7 +179,7 @@ const RegisterScreen = ({ navigation }) => {
             {/* Logo and App Name */}
             <View style={styles.logoContainer}>
               <Image 
-                source={require('../../assets/favicon.png')} 
+                source={require('../../assets/logo.png')} 
                 style={styles.logo} 
                 resizeMode="contain"
               />
@@ -201,12 +201,13 @@ const RegisterScreen = ({ navigation }) => {
                   Please check your inbox and click the verification link to complete your registration.
                 </Typography>
                 <Button
-                  label="Go to Login"
                   variant="primary"
                   onPress={() => navigation.navigate('Login', { email })}
                   style={styles.loginRedirectButton}
                   fullWidth
-                />
+                >
+                  Go to Login
+                </Button>
               </Card>
             ) : (
               <>
@@ -278,13 +279,14 @@ const RegisterScreen = ({ navigation }) => {
                   )}
                   
                   <Button
-                    label="Create Account"
                     variant="primary"
-          onPress={handleRegister}
+                    onPress={handleRegister}
                     loading={isLoading}
                     style={styles.registerButton}
                     fullWidth
-                  />
+                  >
+                    Create Account
+                  </Button>
                 </View>
 
                 {/* Login Link */}
@@ -293,11 +295,12 @@ const RegisterScreen = ({ navigation }) => {
                     Already have an account?
                   </Typography>
                   <Button
-                    label="Login"
                     variant="outline"
                     onPress={handleLoginPress}
                     style={styles.loginButton}
-                  />
+                  >
+                    Login
+                  </Button>
         </View>
               </>
             )}

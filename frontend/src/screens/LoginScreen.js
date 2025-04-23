@@ -134,7 +134,7 @@ const LoginScreen = ({ navigation, route }) => {
             {/* Logo and App Name */}
             <View style={styles.logoContainer}>
               <Image 
-                source={require('../../assets/favicon.png')} 
+                source={require('../../assets/logo.png')} 
                 style={styles.logo} 
                 resizeMode="contain"
               />
@@ -172,18 +172,19 @@ const LoginScreen = ({ navigation, route }) => {
               />
               
               <Button
-                label="Log In"
                 variant="primary"
                 onPress={handleLogin}
                 loading={isLoading}
                 style={styles.loginButton}
                 fullWidth
-              />
+              >
+                Log In
+              </Button>
               
               {/* Demo Account Info */}
               <View style={styles.demoContainer}>
                 <Typography variant="caption" color={colors.text.tertiary} center>
-                  Demo Account: demo@user.com / password123
+                  Demo Account: demo@example.com | password
                 </Typography>
               </View>
               
@@ -193,22 +194,24 @@ const LoginScreen = ({ navigation, route }) => {
                   Don't have an account?
                 </Typography>
                 <Button
-                  label="Register"
                   variant="outline"
                   onPress={handleRegisterPress}
                   style={styles.registerButton}
-                />
+                >
+                  Register
+                </Button>
               </View>
               
               {/* Need to Resend Verification Email */}
               {needsVerification && (
                 <Button
-                  label="Resend Verification Email"
                   variant="outline"
                   onPress={handleResendVerification}
                   loading={isLoading}
                   style={styles.resendButton}
-                />
+                >
+                  Resend Verification Email
+                </Button>
               )}
             </View>
           </ScrollView>

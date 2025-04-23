@@ -12,9 +12,12 @@ import Card from '../components/Card';
 
 // Mock data - replace with API call
 const activeCourses = [
-  { id: '1', title: 'Introduction to Design Thinking', icon: require('../../assets/course-icons/design.png'), progress: 75 },
-  { id: '2', title: 'Advanced UX Research Methods', icon: require('../../assets/course-icons/marketing.png'), progress: 32 },
+  { id: '1', title: 'Tymelyne Tutorial', icon: require('../../assets/logo.png'), progress: 90 },
+  { id: '2', title: 'Introduction to Digital Marketing', icon: require('../../assets/course-icons/marketing.png'), progress: 32 },
 ];
+
+// Import tutorial data
+import { tymelyneTutorialData } from '../data/tutorialData';
 
 // Mock friend courses - replace with API call
 const friendCourses = [
@@ -65,14 +68,7 @@ const HomeScreen = ({ navigation }) => {
       onProfilePress={() => handleNavigation('Profile')}
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-        <View style={styles.welcomeSection}>
-          <Typography variant="h1" weight="bold">
-            Welcome back,
-          </Typography>
-          <Typography variant="h2" weight="semiBold">
-            {userInfo?.name || 'User'}
-          </Typography>
-        </View>
+        
 
         <SectionTitle 
           title="Active Courses" 

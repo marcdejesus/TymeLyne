@@ -98,7 +98,7 @@ const ProfileScreen = ({ navigation }) => {
       <View style={styles.profileSection}>
         <View style={styles.profileImageContainer}>
           <Image 
-            source={require('../../assets/favicon.png')} // Placeholder for profile picture
+            source={require('../../assets/default-avatar.png')} // Placeholder for profile picture
             style={styles.profileImage} 
           />
           <Text style={styles.levelText}>LEVEL {level}</Text>

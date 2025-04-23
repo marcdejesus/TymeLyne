@@ -226,6 +226,12 @@ const styles = StyleSheet.create({
     height: width * 0.1,
     maxWidth: 40,
     maxHeight: 40,
+    borderRadius: width * 0.05,
+    backgroundColor: theme.colors.background.card,
+    padding: theme.spacing.xs,
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden',
     marginBottom: 12,
   },
   courseTitle: {

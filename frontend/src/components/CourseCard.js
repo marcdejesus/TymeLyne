@@ -121,6 +121,12 @@ const styles = StyleSheet.create({
     height: width * 0.12,
     maxWidth: 50,
     maxHeight: 50,
+    borderRadius: width * 0.06, // Make it a circle by setting borderRadius to half the width
+    backgroundColor: colors.border, // Light background for the icon
+    padding: spacing.xs, // Add some padding inside the circle
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
   },
   contentContainer: {
     flex: 1,
@@ -169,6 +175,12 @@ const styles = StyleSheet.create({
     height: width * 0.1,
     maxWidth: 40,
     maxHeight: 40,
+    borderRadius: width * 0.05, // Make it a circle by setting borderRadius to half the width
+    backgroundColor: colors.border, // Light background for the icon
+    padding: spacing.xs, // Add some padding inside the circle
+    justifyContent: 'center',
+    alignItems: 'center',
+    overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
     marginBottom: spacing.s,
   },
   gridTitle: {

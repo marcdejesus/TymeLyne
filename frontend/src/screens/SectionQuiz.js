@@ -13,11 +13,12 @@ import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
+import { updateSectionCompletion } from '../services/courseService';
 
 const { width, height } = Dimensions.get('window');
 
 const SectionQuiz = ({ navigation, route }) => {
-  const { courseId, sectionId, quizType, sectionTitle, experiencePoints = 500 } = route.params;
+  const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 500 } = route.params;
   
   // Quiz state
   const [quizStarted, setQuizStarted] = useState(false);
@@ -26,44 +27,79 @@ const SectionQuiz = ({ navigation, route }) => {
   const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes in seconds
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizFailed, setQuizFailed] = useState(false);
+  const [questions, setQuestions] = useState([]);
   const timerRef = useRef(null);
   
-  // Mock quiz questions
-  const questions = [
-    {
-      id: 1,
-      question: 'What is the primary focus of digital marketing?',
-      options: [
-        'Building offline brand awareness',
-        'Promoting products and services through digital channels',
-        'Creating physical advertising materials',
-        'Reducing marketing budgets'
-      ],
-      correctOption: 1
-    },
-    {
-      id: 2,
-      question: 'Which of the following is NOT a common digital marketing channel?',
-      options: [
-        'Social media marketing',
-        'Email marketing',
-        'Billboard advertising',
-        'Search engine optimization'
-      ],
-      correctOption: 2
-    },
-    {
-      id: 3,
-      question: 'What does SEO stand for in digital marketing?',
-      options: [
-        'Social Engagement Optimization',
-        'Search Engine Optimization',
-        'Sales Enhancement Operations',
-        'System Enhancement Oversight'
-      ],
-      correctOption: 1
+  // Initialize quiz questions from the passed quiz data or use mock data if not available
+  useEffect(() => {
+    console.log('Quiz data received:', quiz);
+    
+    if (quiz) {
+      // Check what ID field is being used
+      console.log('Quiz ID fields check:', { 
+        hasQuizId: !!quiz.quiz_id, 
+        hasUnderscoreId: !!quiz._id,
+        quizId: quiz.quiz_id,
+        underscoreId: quiz._id
+      });
+      
+      if (quiz.questions && quiz.questions.length > 0) {
+        console.log('Using real quiz data with', quiz.questions.length, 'questions');
+        console.log('First question ID fields:', {
+          hasId: !!quiz.questions[0].id,
+          hasUnderscoreId: !!quiz.questions[0]._id,
+          id: quiz.questions[0].id,
+          underscoreId: quiz.questions[0]._id
+        });
+        setQuestions(quiz.questions);
+      } else {
+        console.warn('Quiz object exists but no questions found');
+        loadMockData();
+      }
+    } else {
+      console.warn('No quiz data provided, using mock data instead');
+      loadMockData();
     }
-  ];
+  }, [quiz]);
+  
+  const loadMockData = () => {
+    // Mock quiz questions as fallback
+    setQuestions([
+      {
+        _id: '1',
+        question: 'What is the primary focus of digital marketing?',
+        options: [
+          'Building offline brand awareness',
+          'Promoting products and services through digital channels',
+          'Creating physical advertising materials',
+          'Reducing marketing budgets'
+        ],
+        correctOption: 1
+      },
+      {
+        _id: '2',
+        question: 'Which of the following is NOT a common digital marketing channel?',
+        options: [
+          'Social media marketing',
+          'Email marketing',
+          'Billboard advertising',
+          'Search engine optimization'
+        ],
+        correctOption: 2
+      },
+      {
+        _id: '3',
+        question: 'What does SEO stand for in digital marketing?',
+        options: [
+          'Social Engagement Optimization',
+          'Search Engine Optimization',
+          'Sales Enhancement Operations',
+          'System Enhancement Oversight'
+        ],
+        correctOption: 1
+      }
+    ]);
+  };
 
   useEffect(() => {
     if (quizStarted && !quizCompleted && !quizFailed) {
@@ -123,6 +159,11 @@ const SectionQuiz = ({ navigation, route }) => {
   };
 
   const handleNextQuestion = () => {
+    if (questions.length === 0 || currentQuestionIndex >= questions.length) {
+      console.warn('No questions available or index out of bounds');
+      return;
+    }
+    
     const isCorrect = selectedOption === questions[currentQuestionIndex].correctOption;
     
     if (!isCorrect) {
@@ -137,6 +178,19 @@ const SectionQuiz = ({ navigation, route }) => {
       // Quiz completed
       clearInterval(timerRef.current);
       setQuizCompleted(true);
+      
+      // Mark the section as completed
+      try {
+        updateSectionCompletion(courseId, sectionId, true)
+          .then(result => {
+            console.log('Section marked as completed:', result);
+          })
+          .catch(error => {
+            console.error('Error updating section completion status:', error);
+          });
+      } catch (error) {
+        console.error('Error updating section completion:', error);
+      }
     }
   };
 
@@ -176,6 +230,23 @@ const SectionQuiz = ({ navigation, route }) => {
   );
 
   const renderQuestion = () => {
+    if (questions.length === 0 || currentQuestionIndex >= questions.length) {
+      return (
+        <View style={styles.errorContainer}>
+          <Typography variant="body" style={styles.errorText}>
+            No questions available for this quiz.
+          </Typography>
+          <Button
+            variant="primary"
+            onPress={handleGoHome}
+            style={styles.actionButton}
+          >
+            Go Back
+          </Button>
+        </View>
+      );
+    }
+
     const currentQuestion = questions[currentQuestionIndex];
     
     return (
@@ -325,7 +396,7 @@ const SectionQuiz = ({ navigation, route }) => {
 
   return (
     <Screen
-      title={quizStarted ? `Question ${currentQuestionIndex + 1}/${questions.length}` : "Quiz"}
+      title={quizStarted && questions.length > 0 ? `Question ${currentQuestionIndex + 1}/${questions.length}` : "Quiz"}
       onBackPress={handleBackPress}
       backgroundColor={colors.background}
       showBottomNav={false}
@@ -452,6 +523,16 @@ const styles = StyleSheet.create({
   },
   xpText: {
     marginBottom: spacing.xl,
+  },
+  errorContainer: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.l,
+  },
+  errorText: {
+    marginBottom: spacing.l,
+    textAlign: 'center',
   },
 });
 

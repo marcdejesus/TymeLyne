@@ -57,12 +57,34 @@ const SectionContent = ({ navigation, route }) => {
           setCourse(courseData);
           
           // Find the specific section by _id or id
-          const sectionData = courseData.sections.find(s => 
-            (s._id && s._id === sectionId) || (s.id && s.id === sectionId)
-          );
+          const sectionData = courseData.sections.find(s => {
+            // Log the available IDs for debugging
+            console.log(`Section IDs for "${s.title}":`, { 
+              sectionId: sectionId,
+              _id: s._id, 
+              id: s.id 
+            });
+            
+            return (s._id && s._id === sectionId) || 
+                   (s._id && s._id.toString() === sectionId) ||
+                   (s.id && s.id === sectionId) ||
+                   (s.id && s.id.toString() === sectionId);
+          });
           
           if (sectionData) {
             console.log('Section Content: Found section data:', sectionData);
+            
+            // Log the quiz data if it exists
+            if (sectionData.hasQuiz && sectionData.quiz) {
+              console.log('Quiz data found:', {
+                quiz: sectionData.quiz,
+                hasQuizId: !!sectionData.quiz.quiz_id,
+                hasUnderscoreId: !!sectionData.quiz._id,
+                quizId: sectionData.quiz.quiz_id,
+                underscoreId: sectionData.quiz._id
+              });
+            }
+            
             setSection(sectionData);
           } else {
             console.error('Section Content: Section not found in course data. Available sections:', 
@@ -91,11 +113,14 @@ const SectionContent = ({ navigation, route }) => {
 
   const handleStartQuiz = () => {
     if (section && section.hasQuiz) {
+      console.log('Starting quiz for section:', section.title);
+      console.log('Quiz data:', section.quiz);
+      
       navigation.navigate('SectionQuiz', {
         courseId: courseId,
         sectionId: sectionId,
         sectionTitle: section.title,
-        quiz: section.quiz
+        quiz: section.quiz || null
       });
     }
   };

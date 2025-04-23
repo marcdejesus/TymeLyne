@@ -16,11 +16,12 @@ export const getCourses = async () => {
 
 /**
  * Get a specific course by ID
- * @param {number} id Course ID
+ * @param {string|number} id Course ID (can be MongoDB _id or course_id)
  * @returns {Promise} Promise object with course data
  */
 export const getCourseById = async (id) => {
   try {
+    console.log(`Getting course with ID: ${id}`);
     const response = await api.get(`/courses/${id}`);
     return response.data;
   } catch (error) {
@@ -95,14 +96,15 @@ export const deleteCourse = async (id) => {
 
 /**
  * Update a section's completion status
- * @param {number} courseId Course ID
+ * @param {string|number} courseId Course ID (can be MongoDB _id or course_id)
  * @param {string} sectionId Section ID
  * @param {boolean} isCompleted New completion status
  * @returns {Promise} Promise object with updated section
  */
 export const updateSectionCompletion = async (courseId, sectionId, isCompleted) => {
   try {
-    const response = await api.patch(`/courses/${courseId}/sections/${sectionId}/complete`, {
+    console.log(`Updating section completion: courseId=${courseId}, sectionId=${sectionId}, isCompleted=${isCompleted}`);
+    const response = await api.post(`/courses/${courseId}/section/${sectionId}/complete`, {
       isCompleted
     });
     return response.data;

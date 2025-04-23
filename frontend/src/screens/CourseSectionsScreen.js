@@ -82,6 +82,11 @@ const CourseSectionsScreen = ({ navigation, route }) => {
       // If course data is passed from previous screen, use it directly
       if (passedCourseData) {
         console.log('Using passed course data:', passedCourseData);
+        console.log('Course ID types:', { 
+          _id: passedCourseData._id, 
+          course_id: passedCourseData.course_id,
+        });
+        console.log('First section format:', passedCourseData.sections[0]);
         setCourseData(passedCourseData);
         setLoading(false);
         return;
@@ -101,11 +106,13 @@ const CourseSectionsScreen = ({ navigation, route }) => {
     navigation.goBack();
   };
 
-  const handleSectionPress = (sectionId) => {
+  const handleSectionPress = (section) => {
+    // Pass the entire section object instead of just the ID
+    // Use _id if available (MongoDB format) or id as fallback (mock data format)
     navigation.navigate('SectionContent', { 
-      courseId: courseData.course_id,
-      sectionId: sectionId,
-      sectionData: courseData.sections.find(section => section.id === sectionId),
+      courseId: courseData._id || courseData.course_id,
+      sectionId: section._id || section.id,
+      section: section,
       courseData: courseData
     });
   };
@@ -197,10 +204,10 @@ const CourseSectionsScreen = ({ navigation, route }) => {
       {courseData.sections && courseData.sections.length > 0 ? (
         courseData.sections.map((section) => (
           <Card
-            key={section.id}
+            key={section._id || section.id}
             variant="elevated"
             style={styles.sectionCard}
-            onPress={() => handleSectionPress(section.id)}
+            onPress={() => handleSectionPress(section)}
           >
             <Typography variant="subheading" weight="semiBold" style={styles.sectionTitle}>
               {section.title}
@@ -250,7 +257,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
         <Button 
           variant="primary"
           style={styles.startButton}
-          onPress={() => handleSectionPress(courseData.sections[0].id)}
+          onPress={() => handleSectionPress(courseData.sections[0])}
         >
           Begin Course
         </Button>

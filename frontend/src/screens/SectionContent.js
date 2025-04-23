@@ -39,33 +39,43 @@ const SectionContent = ({ navigation, route }) => {
   useEffect(() => {
     const loadData = async () => {
       try {
-        if (initialSection) {
-          // If we already have the section data, use it
-          setSection(initialSection);
+        console.log('Section Content: Loading data with params:', { courseId, sectionId });
+        
+        // If section data is passed directly
+        if (route.params?.section) {
+          console.log('Section Content: Using passed section data:', route.params.section);
+          setSection(route.params.section);
+          setCourse(route.params.courseData);
           setLoading(false);
           return;
         }
         
         // Otherwise load the course to get the section
         if (courseId && sectionId) {
+          console.log('Section Content: Fetching course data for:', courseId);
           const courseData = await getCourseById(courseId);
           setCourse(courseData);
           
-          // Find the specific section
+          // Find the specific section by _id or id
           const sectionData = courseData.sections.find(s => 
-            s._id === sectionId || s.id === sectionId
+            (s._id && s._id === sectionId) || (s.id && s.id === sectionId)
           );
           
           if (sectionData) {
+            console.log('Section Content: Found section data:', sectionData);
             setSection(sectionData);
           } else {
-            setError('Section not found');
+            console.error('Section Content: Section not found in course data. Available sections:', 
+              courseData.sections.map(s => ({ _id: s._id, id: s.id, title: s.title }))
+            );
+            setError('Section not found in course data');
           }
         } else {
+          console.error('Section Content: Missing course or section information');
           setError('Missing course or section information');
         }
       } catch (err) {
-        console.error('Error loading section:', err);
+        console.error('Section Content: Error loading section:', err);
         setError(err.message || 'Failed to load section content');
       } finally {
         setLoading(false);
@@ -73,7 +83,7 @@ const SectionContent = ({ navigation, route }) => {
     };
     
     loadData();
-  }, [courseId, sectionId, initialSection]);
+  }, [courseId, sectionId, route.params]);
 
   const handleBackPress = () => {
     navigation.goBack();

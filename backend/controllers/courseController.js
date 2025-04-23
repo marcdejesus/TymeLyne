@@ -120,8 +120,23 @@ exports.getCourses = async (req, res) => {
  */
 exports.getCourseById = async (req, res) => {
   try {
-    const course = await Course.findOne({ course_id: req.params.id });
+    const courseId = req.params.id;
+    let course;
+    
+    // Try to find by MongoDB ObjectId first (handle if the id is a valid MongoDB ObjectId)
+    if (courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log(`Looking for course by _id: ${courseId}`);
+      course = await Course.findById(courseId);
+    }
+    
+    // If not found by _id, try to find by course_id (which is a number)
+    if (!course && !isNaN(Number(courseId))) {
+      console.log(`Looking for course by course_id: ${courseId}`);
+      course = await Course.findOne({ course_id: Number(courseId) });
+    }
+    
     if (!course) {
+      console.log(`Course not found with id: ${courseId}`);
       return res.status(404).json({ message: 'Course not found' });
     }
     
@@ -130,6 +145,7 @@ exports.getCourseById = async (req, res) => {
       return res.status(403).json({ message: 'Not authorized to access this course' });
     }
     
+    console.log(`Course found: ${course.title}, with ${course.sections.length} sections`);
     res.json(course);
   } catch (error) {
     console.error('Error fetching course:', error);
@@ -270,24 +286,41 @@ exports.deleteCourse = async (req, res) => {
 
 /**
  * Update a section's completion status
- * @route PATCH /api/courses/:id/sections/:sectionId/complete
+ * @route POST /api/courses/:courseId/section/:sectionId/complete
  * @access Private
  */
 exports.updateSectionCompletion = async (req, res) => {
   try {
-    const { id, sectionId } = req.params;
+    const { courseId, sectionId } = req.params;
     const { isCompleted } = req.body;
     
-    const course = await Course.findOne({ course_id: id });
+    console.log(`Updating section completion: courseId=${courseId}, sectionId=${sectionId}, isCompleted=${isCompleted}`);
+    
+    let course;
+    
+    // Try to find by MongoDB ObjectId first
+    if (courseId.match(/^[0-9a-fA-F]{24}$/)) {
+      console.log(`Looking for course by _id: ${courseId}`);
+      course = await Course.findById(courseId);
+    }
+    
+    // If not found by _id, try to find by course_id
+    if (!course && !isNaN(Number(courseId))) {
+      console.log(`Looking for course by course_id: ${courseId}`);
+      course = await Course.findOne({ course_id: Number(courseId) });
+    }
     
     if (!course) {
+      console.log(`Course not found with id: ${courseId}`);
       return res.status(404).json({ message: 'Course not found' });
     }
     
-    // Find the section to update
-    const section = course.sections.id(sectionId);
+    // Find the section to update - could be by _id or by a custom id field
+    const section = course.sections.id(sectionId) || 
+                    course.sections.find(s => s.id && s.id.toString() === sectionId.toString());
     
     if (!section) {
+      console.log(`Section not found with id: ${sectionId}`);
       return res.status(404).json({ message: 'Section not found' });
     }
     
@@ -296,6 +329,7 @@ exports.updateSectionCompletion = async (req, res) => {
     
     await course.save();
     
+    console.log(`Section completion updated successfully: ${section.title} isCompleted=${isCompleted}`);
     res.json({ message: 'Section completion status updated', section });
   } catch (error) {
     console.error('Error updating section completion:', error);

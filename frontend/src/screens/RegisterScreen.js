@@ -1,8 +1,8 @@
 import React, { useState, useContext, useRef } from 'react';
-import {
-  View,
+import { 
+  View, 
   Image,
-  ScrollView,
+  ScrollView, 
   Alert,
   SafeAreaView,
   StatusBar,
@@ -108,7 +108,7 @@ const RegisterScreen = ({ navigation }) => {
     if (hasError) {
       return;
     }
-
+    
     // Set loading state
     setIsLoading(true);
 
@@ -125,7 +125,7 @@ const RegisterScreen = ({ navigation }) => {
       fName,
       lName
     };
-
+    
     // Call register from AuthContext
     const result = await register(userData);
     
@@ -190,7 +190,7 @@ const RegisterScreen = ({ navigation }) => {
                 Create your account
               </Typography>
             </View>
-
+        
             {registrationSuccess ? (
               <Card variant="elevated" style={styles.successContainer}>
                 <Typography variant="heading" weight="bold" center style={styles.successTitle}>
@@ -225,11 +225,11 @@ const RegisterScreen = ({ navigation }) => {
                   <Input
                     label="Email"
                     placeholder="Enter your email address"
-                    value={email}
-                    onChangeText={setEmail}
+          value={email}
+          onChangeText={setEmail}
                     error={emailError}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
+          keyboardType="email-address"
+          autoCapitalize="none"
                     returnKeyType="next"
                     leftIcon={<Icon name="mail-outline" size={20} color={colors.text.tertiary} />}
                   />
@@ -249,20 +249,20 @@ const RegisterScreen = ({ navigation }) => {
                   <Input
                     label="Password"
                     placeholder="Create a password"
-                    value={password}
-                    onChangeText={setPassword}
+          value={password}
+          onChangeText={setPassword}
                     error={passwordError}
                     secureTextEntry={true}
                     returnKeyType="next"
                     leftIcon={<Icon name="lock-closed-outline" size={20} color={colors.text.tertiary} />}
                     helperText="Password must be at least 6 characters"
-                  />
-                  
+        />
+        
                   <Input
                     label="Confirm Password"
                     placeholder="Confirm your password"
-                    value={confirmPassword}
-                    onChangeText={setConfirmPassword}
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
                     error={confirmPasswordError}
                     secureTextEntry={true}
                     returnKeyType="done"
@@ -280,7 +280,7 @@ const RegisterScreen = ({ navigation }) => {
                   <Button
                     label="Create Account"
                     variant="primary"
-                    onPress={handleRegister}
+          onPress={handleRegister}
                     loading={isLoading}
                     style={styles.registerButton}
                     fullWidth
@@ -288,7 +288,7 @@ const RegisterScreen = ({ navigation }) => {
                 </View>
 
                 {/* Login Link */}
-                <View style={styles.loginContainer}>
+        <View style={styles.loginContainer}>
                   <Typography variant="body" color={colors.text.secondary}>
                     Already have an account?
                   </Typography>
@@ -298,10 +298,10 @@ const RegisterScreen = ({ navigation }) => {
                     onPress={handleLoginPress}
                     style={styles.loginButton}
                   />
-                </View>
+        </View>
               </>
             )}
-          </ScrollView>
+    </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
     </TouchableWithoutFeedback>

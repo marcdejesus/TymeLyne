@@ -64,19 +64,51 @@ const AppContent = () => {
         <Stack.Navigator
           screenOptions={{
             headerShown: false,
-            cardStyle: { backgroundColor: colors.background }
+            cardStyle: { backgroundColor: colors.background },
+            // Disable animations by default
+            animationEnabled: false
           }}
         >
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="Development" component={DevelopmentScreen} />
-          <Stack.Screen name="Create" component={CourseCreateScreen} />
-          <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
-          <Stack.Screen name="SectionContent" component={SectionContent} />
-          <Stack.Screen name="SectionQuiz" component={SectionQuiz} />
-          <Stack.Screen name="Messages" component={MessagesScreen} />
-          <Stack.Screen name="Conversation" component={ConversationScreen} />
           <Stack.Screen name="Leaderboards" component={LeaderboardsScreen} />
+          
+          {/* Enable animations for non-bottom tab screens */}
+          <Stack.Screen 
+            name="Development" 
+            component={DevelopmentScreen} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="Create" 
+            component={CourseCreateScreen} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="CourseDetails" 
+            component={CourseDetailsScreen} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="SectionContent" 
+            component={SectionContent} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="SectionQuiz" 
+            component={SectionQuiz} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="Messages" 
+            component={MessagesScreen} 
+            options={{ animationEnabled: true }}
+          />
+          <Stack.Screen 
+            name="Conversation" 
+            component={ConversationScreen} 
+            options={{ animationEnabled: true }}
+          />
         </Stack.Navigator>
       )}
     </NavigationContainer>

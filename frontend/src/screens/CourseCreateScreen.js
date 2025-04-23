@@ -1,488 +1,302 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TextInput,
-  TouchableOpacity,
-  Image,
-  KeyboardAvoidingView,
-  Platform,
-  Alert,
-  SafeAreaView,
-  StatusBar,
-  Dimensions
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons'; // Make sure to install expo/vector-icons
+import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Screen from '../components/Screen';
+import Typography from '../components/Typography';
+import Button from '../components/Button';
+import Card from '../components/Card';
+import Input from '../components/Input';
+import { colors, spacing, borderRadius, shadows } from '../constants/theme';
 
-const { width, height } = Dimensions.get('window');
+const { width } = Dimensions.get('window');
 
 const CourseCreateScreen = ({ navigation }) => {
-  // State for course creation form
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
-  const [quizQuestions, setQuizQuestions] = useState([
-    { id: 1, question: '', options: ['', '', '', ''], correctOption: 0 }
-  ]);
-
-  // Categories
-  const categories = [
-    { id: 'marketing', name: 'Digital Marketing', icon: require('../../assets/course-icons/marketing.png') },
-    { id: 'finance', name: 'Finance', icon: require('../../assets/course-icons/finance.png') },
-    { id: 'programming', name: 'Programming', icon: require('../../assets/course-icons/computer.png') },
+  // State variables for form inputs
+  const [courseTitle, setCourseTitle] = useState('');
+  const [selectedGoal, setSelectedGoal] = useState(null);
+  const [skillLevel, setSkillLevel] = useState(null);
+  const [hasTriedBefore, setHasTriedBefore] = useState(null);
+  const [timePerDay, setTimePerDay] = useState(null);
+  const [aiSupport, setAiSupport] = useState(null);
+  const [deadline, setDeadline] = useState('');
+  const [includeRealWorldTasks, setIncludeRealWorldTasks] = useState(null);
+  
+  // Radio button options
+  const goalOptions = [
+    'Learn a new skill from scratch',
+    'Improve existing skills',
+    'Prepare for an exam/certification',
+    'Build a habit or routine',
+    'Explore a topic casually'
   ];
-
-  // Handle navigation back to home
-  const handleBackPress = () => {
-    navigation.goBack();
+  
+  const skillLevelOptions = [
+    'I\'m a total beginner',
+    'I\'ve dabbled a bit',
+    'I\'m intermediate',
+    'I\'m advanced and want to refine'
+  ];
+  
+  const timeOptions = [
+    'Less than 10 minutes',
+    '10-20 minutes',
+    '20-30 minutes',
+    '30+ minutes'
+  ];
+  
+  const aiSupportOptions = [
+    'Push me hard',
+    'Keep things casual and fun',
+    'Help me stay consistent',
+    'Just give me structure and get out of the way'
+  ];
+  
+  const yesNoOptions = ['Yes', 'No'];
+  
+  // Handle radio button selection
+  const handleSelectOption = (option, setter, currentValue) => {
+    setter(option === currentValue ? null : option);
   };
-
-  // Handle category selection
-  const handleCategorySelect = (categoryId) => {
-    setSelectedCategory(categoryId);
-  };
-
-  // Add a new question to the quiz
-  const addQuestion = () => {
-    const newQuestion = {
-      id: quizQuestions.length + 1,
-      question: '',
-      options: ['', '', '', ''],
-      correctOption: 0
-    };
-    setQuizQuestions([...quizQuestions, newQuestion]);
-  };
-
-  // Update a question text
-  const updateQuestionText = (id, text) => {
-    const updatedQuestions = quizQuestions.map(q => 
-      q.id === id ? { ...q, question: text } : q
-    );
-    setQuizQuestions(updatedQuestions);
-  };
-
-  // Update an option text
-  const updateOptionText = (questionId, optionIndex, text) => {
-    const updatedQuestions = quizQuestions.map(q => {
-      if (q.id === questionId) {
-        const newOptions = [...q.options];
-        newOptions[optionIndex] = text;
-        return { ...q, options: newOptions };
-      }
-      return q;
-    });
-    setQuizQuestions(updatedQuestions);
-  };
-
-  // Set correct option
-  const setCorrectOption = (questionId, optionIndex) => {
-    const updatedQuestions = quizQuestions.map(q => 
-      q.id === questionId ? { ...q, correctOption: optionIndex } : q
-    );
-    setQuizQuestions(updatedQuestions);
-  };
-
+  
+  // Render radio button
+  const RadioButton = ({ selected, onPress, label }) => (
+    <View style={styles.radioOptionContainer}>
+      <TouchableOpacity 
+        style={styles.radioButton}
+        onPress={onPress}
+        activeOpacity={0.7}
+      >
+        <View style={[
+          styles.radioCircle,
+          selected && styles.radioCircleSelected
+        ]}>
+          {selected && <View style={styles.radioInner} />}
+        </View>
+      </TouchableOpacity>
+      <Typography 
+        variant="body" 
+        color={colors.text.primary}
+      >
+        {label}
+      </Typography>
+    </View>
+  );
+  
   // Handle course creation
   const handleCreateCourse = () => {
-    // Validate form
-    if (!title.trim()) {
-      Alert.alert('Error', 'Please enter a course title');
-      return;
-    }
-    if (!description.trim()) {
-      Alert.alert('Error', 'Please enter a course description');
-      return;
-    }
-    if (!selectedCategory) {
-      Alert.alert('Error', 'Please select a course category');
-      return;
-    }
-
-    // Validate quiz questions
-    let isQuizValid = true;
-    quizQuestions.forEach((q, index) => {
-      if (!q.question.trim()) {
-        Alert.alert('Error', `Question ${index + 1} is empty`);
-        isQuizValid = false;
-        return;
-      }
-      q.options.forEach((option, i) => {
-        if (!option.trim()) {
-          Alert.alert('Error', `Option ${i + 1} in Question ${index + 1} is empty`);
-          isQuizValid = false;
-          return;
-        }
-      });
-    });
-
-    if (!isQuizValid) return;
-
-    // In a real app, send data to API
-    // For now, simulate success and navigate back
-    Alert.alert(
-      'Success',
-      'Course created successfully!',
-      [
-        { text: 'OK', onPress: () => navigation.navigate('Home') }
-      ]
-    );
+    // Validate form and create course
+    navigation.navigate('Home');
   };
-
+  
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" backgroundColor="#F9F1E0" />
-      <KeyboardAvoidingView 
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.container}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <TouchableOpacity onPress={handleBackPress} style={styles.backButtonContainer}>
-            <Text style={styles.backButton}>←</Text>
-          </TouchableOpacity>
-          <Text style={styles.headerTitle}>Create Course</Text>
-          <View style={styles.placeholder} />
+    <Screen
+      title="Course Creation"
+      onBackPress={() => navigation.goBack()}
+      backgroundColor={colors.background}
+      showBottomNav={false}
+      statusBarLight={false}
+      contentContainerStyle={styles.contentContainer}
+    >
+      <Card style={styles.cardContainer}>
+        <SectionHeader title="Definition" />
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={1} text="What would you like to get better at?" />
+          <Input
+            placeholder="Enter skill or topic"
+            value={courseTitle}
+            onChangeText={setCourseTitle}
+          />
         </View>
-
-        <ScrollView 
-          style={styles.content}
-          contentContainerStyle={styles.contentContainer}
-          showsVerticalScrollIndicator={false}
-        >
-          {/* Course Title Section */}
-          <Text style={styles.sectionTitle}>Course Title</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Enter course title"
-            value={title}
-            onChangeText={setTitle}
-            maxLength={50}
-          />
-
-          {/* Course Description */}
-          <Text style={styles.sectionTitle}>Description</Text>
-          <TextInput
-            style={[styles.input, styles.textArea]}
-            placeholder="Enter course description"
-            value={description}
-            onChangeText={setDescription}
-            multiline
-            numberOfLines={4}
-            maxLength={500}
-          />
-
-          {/* Course Category */}
-          <Text style={styles.sectionTitle}>Category</Text>
-          <View style={styles.categoriesContainer}>
-            {categories.map(category => (
-              <TouchableOpacity
-                key={category.id}
-                style={[
-                  styles.categoryItem,
-                  selectedCategory === category.id && styles.selectedCategory
-                ]}
-                onPress={() => handleCategorySelect(category.id)}
-              >
-                <Image source={category.icon} style={styles.categoryIcon} />
-                <Text style={styles.categoryName}>{category.name}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          {/* Practice Quiz */}
-          <Text style={styles.sectionTitle}>Practice Quiz</Text>
-          {quizQuestions.map((question, questionIndex) => (
-            <View key={question.id} style={styles.questionContainer}>
-              <Text style={styles.questionNumber}>
-                {questionIndex + 1}. {`Question ${questionIndex + 1}`}
-              </Text>
-              <TextInput
-                style={styles.questionInput}
-                placeholder="Enter your question"
-                value={question.question}
-                onChangeText={(text) => updateQuestionText(question.id, text)}
-              />
-              
-              {question.options.map((option, optionIndex) => (
-                <View key={optionIndex} style={styles.optionContainer}>
-                  <TouchableOpacity
-                    style={[
-                      styles.radioButton,
-                      question.correctOption === optionIndex && styles.radioButtonSelected
-                    ]}
-                    onPress={() => setCorrectOption(question.id, optionIndex)}
-                  >
-                    {question.correctOption === optionIndex && (
-                      <View style={styles.radioButtonInner} />
-                    )}
-                  </TouchableOpacity>
-                  <TextInput
-                    style={styles.optionInput}
-                    placeholder={`Option ${optionIndex + 1}`}
-                    value={option}
-                    onChangeText={(text) => updateOptionText(question.id, optionIndex, text)}
-                  />
-                </View>
-              ))}
-            </View>
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={2} text="Which best describes your goal?" />
+          {goalOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={selectedGoal === option}
+              onPress={() => handleSelectOption(option, setSelectedGoal, selectedGoal)}
+              label={option}
+            />
           ))}
-
-          {/* Add Question Button */}
-          <TouchableOpacity style={styles.addQuestionButton} onPress={addQuestion}>
-            <Text style={styles.addQuestionButtonText}>+ Add Question</Text>
-          </TouchableOpacity>
-
-          {/* Create Course Button */}
-          <TouchableOpacity style={styles.createButton} onPress={handleCreateCourse}>
-            <Text style={styles.createButtonText}>Create Course</Text>
-          </TouchableOpacity>
-
-          {/* Check Work and Quiz buttons */}
-          <View style={styles.actionButtonsContainer}>
-            <TouchableOpacity style={styles.checkWorkButton}>
-              <Text style={styles.checkWorkButtonText}>Check Work</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.quizButton}>
-              <Text style={styles.quizButtonText}>Quiz</Text>
-            </TouchableOpacity>
+        </View>
+        
+        <SectionHeader title="Skill Level" />
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={3} text="How experienced are you in this topic?" />
+          {skillLevelOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={skillLevel === option}
+              onPress={() => handleSelectOption(option, setSkillLevel, skillLevel)}
+              label={option}
+            />
+          ))}
+        </View>
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={4} text="Have you tried learning this topic before?" />
+          {yesNoOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={hasTriedBefore === option}
+              onPress={() => handleSelectOption(option, setHasTriedBefore, hasTriedBefore)}
+              label={option}
+            />
+          ))}
+        </View>
+        
+        <SectionHeader title="Learning Style" />
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={5} text="How much time can you dedicate per day?" />
+          {timeOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={timePerDay === option}
+              onPress={() => handleSelectOption(option, setTimePerDay, timePerDay)}
+              label={option}
+            />
+          ))}
+        </View>
+        
+        <SectionHeader title="Motivation" />
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={8} text="How do you want the AI to support you?" />
+          {aiSupportOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={aiSupport === option}
+              onPress={() => handleSelectOption(option, setAiSupport, aiSupport)}
+              label={option}
+            />
+          ))}
+        </View>
+        
+        <SectionHeader title="Customization" />
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={9} text="Is there a deadline you're working toward? (Optional)" />
+          <View style={styles.dateInputContainer}>
+            <Input
+              placeholder="MM/DD/YYYY"
+              value={deadline}
+              onChangeText={setDeadline}
+              rightIcon={<Ionicons name="calendar-outline" size={20} color={colors.text.tertiary} />}
+              style={styles.dateInput}
+            />
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+        </View>
+        
+        <View style={styles.questionContainer}>
+          <QuestionLabel number={10} text="Would you like the course to include real-world tasks or project-based learning?" />
+          {yesNoOptions.map((option, index) => (
+            <RadioButton
+              key={index}
+              selected={includeRealWorldTasks === option}
+              onPress={() => handleSelectOption(option, setIncludeRealWorldTasks, includeRealWorldTasks)}
+              label={option}
+            />
+          ))}
+        </View>
+        
+        <View style={styles.actionContainer}>
+          <Typography variant="body" color={colors.text.primary}>
+            1 Use Left
+          </Typography>
+          <Button
+            variant="primary"
+            onPress={handleCreateCourse}
+          >
+            Create
+          </Button>
+        </View>
+      </Card>
+    </Screen>
   );
 };
 
+// Helper components for consistent sections
+const SectionHeader = ({ title }) => (
+  <Typography 
+    variant="title" 
+    weight="semiBold" 
+    style={styles.sectionTitle}
+    center
+  >
+    {title}
+  </Typography>
+);
+
+const QuestionLabel = ({ number, text }) => (
+  <Typography 
+    variant="body" 
+    weight="medium" 
+    style={styles.questionText}
+  >
+    {number}. {text}
+  </Typography>
+);
+
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-    paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight : 0,
-  },
-  container: {
-    flex: 1,
-    backgroundColor: '#F9F1E0',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    paddingTop: Platform.OS === 'ios' ? 8 : 16,
-    paddingBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0D8C0',
-    backgroundColor: '#F9F1E0',
-  },
-  backButtonContainer: {
-    padding: 5, // Increase touch area
-  },
-  backButton: {
-    fontSize: 24,
-    color: '#4A4A3A',
-  },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-  },
-  placeholder: {
-    width: 34, // Balance for back button with padding
-  },
-  content: {
-    flex: 1,
-  },
   contentContainer: {
-    padding: 16,
-    paddingBottom: 40, // Extra padding at the bottom for better scrolling
+    paddingBottom: spacing.xxl,
+  },
+  cardContainer: {
+    backgroundColor: colors.card,
+    padding: spacing.l,
+    margin: spacing.m,
+    borderRadius: borderRadius.m,
+    ...shadows.medium,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  input: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    marginBottom: 16,
-    fontSize: 16,
-  },
-  textArea: {
-    height: Math.max(100, height * 0.12),
-    textAlignVertical: 'top',
-    paddingTop: 12,
-  },
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  categoryItem: {
-    width: width >= 375 ? '30%' : '48%', // Adjust for smaller screens
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 12,
-    alignItems: 'center',
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
-  },
-  selectedCategory: {
-    borderColor: '#D35C34',
-    borderWidth: 2,
-    backgroundColor: '#F4ECE1',
-  },
-  categoryIcon: {
-    width: 40,
-    height: 40,
-    marginBottom: 8,
-  },
-  categoryName: {
-    fontSize: 12,
-    color: '#4A4A3A',
-    textAlign: 'center',
+    marginVertical: spacing.m,
   },
   questionContainer: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 1,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2,
+    marginBottom: spacing.l,
   },
-  questionNumber: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#4A4A3A',
-    marginBottom: 8,
+  questionText: {
+    marginBottom: spacing.s,
   },
-  questionInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    marginBottom: 8,
-    fontSize: 16,
-  },
-  optionContainer: {
+  radioOptionContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: spacing.s,
   },
   radioButton: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    borderWidth: 2,
-    borderColor: '#D35C34',
-    marginRight: 10,
+    marginRight: spacing.m,
+  },
+  radioCircle: {
+    height: 20,
+    width: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
     justifyContent: 'center',
-    alignItems: 'center',
-    padding: 2,
   },
-  radioButtonSelected: {
-    borderColor: '#D35C34',
+  radioCircleSelected: {
+    borderColor: colors.primary,
   },
-  radioButtonInner: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    backgroundColor: '#D35C34',
+  radioInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: colors.primary,
   },
-  optionInput: {
+  dateInputContainer: {
+    flexDirection: 'row',
+  },
+  dateInput: {
     flex: 1,
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#E0D8C0',
-    fontSize: 16,
   },
-  addQuestionButton: {
-    backgroundColor: '#F4ECE1',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: '#D35C34',
-    borderStyle: 'dashed',
-  },
-  addQuestionButtonText: {
-    color: '#D35C34',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  createButton: {
-    backgroundColor: '#D35C34',
-    borderRadius: 8,
-    padding: 16,
-    alignItems: 'center',
-    marginVertical: 16,
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  actionButtonsContainer: {
+  actionContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 30,
-  },
-  checkWorkButton: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 8,
-    padding: 14,
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#4A4A3A',
-    flex: 1,
-    marginRight: 8,
-  },
-  checkWorkButtonText: {
-    color: '#4A4A3A',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  quizButton: {
-    backgroundColor: '#D35C34',
-    borderRadius: 8,
-    padding: 14,
-    alignItems: 'center',
-    flex: 1,
-    marginLeft: 8,
-  },
-  quizButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
+    marginTop: spacing.l,
   },
 });
 

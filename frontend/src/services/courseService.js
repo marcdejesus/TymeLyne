@@ -35,7 +35,7 @@ export const getCourseById = async (id) => {
  */
 export const getMyCourses = async () => {
   try {
-    const response = await api.get('/courses/user/mycourses');
+    const response = await api.get('/courses/user/courses');
     return response.data;
   } catch (error) {
     console.error('Error fetching my courses:', error);
@@ -109,5 +109,35 @@ export const updateSectionCompletion = async (courseId, sectionId, isCompleted) 
   } catch (error) {
     console.error(`Error updating section completion:`, error);
     throw new Error(error.response?.data?.message || 'Failed to update section completion status');
+  }
+};
+
+/**
+ * Add a course to user's current courses
+ * @param {string|number} courseId The ID of the course to add
+ * @returns {Promise} Promise object with status and message
+ */
+export const addToCurrentCourses = async (courseId) => {
+  try {
+    const response = await api.post('/profiles/courses', { courseId });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding course to current courses:', error);
+    throw new Error(error.response?.data?.message || 'Failed to add course');
+  }
+};
+
+/**
+ * Remove a course from user's current courses
+ * @param {string|number} courseId The ID of the course to remove
+ * @returns {Promise} Promise object with status and message
+ */
+export const removeFromCurrentCourses = async (courseId) => {
+  try {
+    const response = await api.delete(`/profiles/courses/${courseId}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error removing course from current courses:', error);
+    throw new Error(error.response?.data?.message || 'Failed to remove course');
   }
 }; 

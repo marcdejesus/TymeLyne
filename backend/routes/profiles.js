@@ -13,4 +13,14 @@ router.get('/:id', profileController.getProfileById);
 // @access  Private
 router.put('/:id', protect, profileController.updateProfile);
 
+// @route   POST /api/profiles/courses
+// @desc    Add a course to user's current_courses
+// @access  Private
+router.post('/courses', protect, profileController.addCurrentCourse);
+
+// @route   DELETE /api/profiles/courses/:courseId
+// @desc    Remove a course from user's current_courses
+// @access  Private
+router.delete('/courses/:courseId', protect, profileController.removeCurrentCourse);
+
 module.exports = router; 

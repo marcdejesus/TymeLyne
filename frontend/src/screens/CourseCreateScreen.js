@@ -126,7 +126,10 @@ const CourseCreateScreen = ({ navigation }) => {
           [
             {
               text: 'View Course',
-              onPress: () => navigation.navigate('CourseDetails', { course: result.course })
+              onPress: () => navigation.navigate('CourseSections', { 
+                courseId: result.course.course_id || result.course._id,
+                courseData: result.course 
+              })
             },
             {
               text: 'OK',

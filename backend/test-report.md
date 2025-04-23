@@ -16,7 +16,7 @@ Tests are organized in the following structure:
 __tests__/
   ├── unit/             # Unit tests for individual components
   │   ├── auth.controller.test.js
-  │   ├── auth.middleware.test.js
+  │   ├── auth.test.js
   │   ├── db.config.test.js
   │   ├── email.service.test.js
   │   └── profile.model.test.js
@@ -32,7 +32,7 @@ __tests__/
 
 | Category | Test File | Description | Status |
 |----------|-----------|-------------|--------|
-| **Unit** | auth.middleware.test.js | Tests authentication middleware | ✅ Passing |
+| **Unit** | auth.test.js | Tests authentication middleware | ✅ Passing |
 | **Unit** | email.service.test.js | Tests email sending functionality | ✅ Passing |
 | **Unit** | db.config.test.js | Tests database connection | ✅ Passing |
 | **Unit** | auth.controller.test.js | Tests authentication controller functions | ⚠️ In Progress |

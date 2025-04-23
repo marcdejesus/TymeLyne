@@ -139,13 +139,64 @@ exports.getCourseById = async (req, res) => {
 
 /**
  * Get courses created by the logged-in user
- * @route GET /api/courses/user/mycourses
+ * @route GET /api/courses/user/courses
  * @access Private
  */
 exports.getUserCourses = async (req, res) => {
   try {
-    const courses = await Course.find({ created_by: req.user.id });
-    res.json(courses);
+    // First, find all courses created by the user
+    const createdCourses = await Course.find({ created_by: req.user.id });
+    
+    // Then, get the user's profile to fetch current_courses
+    const userProfile = await Profile.findOne({ user_id: req.user.id });
+    
+    if (!userProfile) {
+      return res.status(404).json({ message: 'User profile not found' });
+    }
+    
+    // Get the course ids from the current_courses array
+    const currentCourseIds = userProfile.current_courses || [];
+    
+    // If there are current courses, fetch their details
+    let enrolledCourses = [];
+    if (currentCourseIds.length > 0) {
+      // Convert any string ids or non-numeric ids to appropriate format
+      const courseIds = currentCourseIds.map(id => {
+        // If id is a number or can be parsed as a number, return it
+        return isNaN(Number(id)) ? id : Number(id);
+      });
+      
+      // Fetch courses based on whether ids are numeric or not
+      const numericIds = courseIds.filter(id => !isNaN(Number(id)));
+      const nonNumericIds = courseIds.filter(id => isNaN(Number(id)));
+      
+      // Find courses with course_id in numericIds or _id in nonNumericIds
+      if (numericIds.length > 0) {
+        const numericCourses = await Course.find({ course_id: { $in: numericIds } });
+        enrolledCourses = [...enrolledCourses, ...numericCourses];
+      }
+      
+      if (nonNumericIds.length > 0) {
+        const nonNumericCourses = await Course.find({ _id: { $in: nonNumericIds } });
+        enrolledCourses = [...enrolledCourses, ...nonNumericCourses];
+      }
+    }
+    
+    // Combine the lists, removing duplicates
+    const allCourses = [...createdCourses];
+    
+    // Add enrolled courses that aren't already in the created courses list
+    enrolledCourses.forEach(enrolledCourse => {
+      const isDuplicate = createdCourses.some(
+        createdCourse => String(createdCourse._id) === String(enrolledCourse._id)
+      );
+      
+      if (!isDuplicate) {
+        allCourses.push(enrolledCourse);
+      }
+    });
+    
+    res.json(allCourses);
   } catch (error) {
     console.error('Error fetching user courses:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const authMiddleware = require('../../middleware/auth');
+const { protect } = require('../../middleware/auth');
 
 // Mock dependencies
 jest.mock('jsonwebtoken');
@@ -33,11 +33,13 @@ describe('Auth Middleware', () => {
     jwt.verify.mockReturnValue(decodedToken);
     
     // Act
-    authMiddleware(req, res, next);
+    protect(req, res, next);
     
     // Assert
     expect(req.header).toHaveBeenCalledWith('x-auth-token');
-    expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
+    expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET, {
+      algorithms: ['HS256']
+    });
     expect(req.user).toEqual(decodedToken);
     expect(next).toHaveBeenCalled();
     expect(res.status).not.toHaveBeenCalled();
@@ -49,7 +51,7 @@ describe('Auth Middleware', () => {
     req.header.mockReturnValue(undefined);
     
     // Act
-    authMiddleware(req, res, next);
+    protect(req, res, next);
     
     // Assert
     expect(req.header).toHaveBeenCalledWith('x-auth-token');
@@ -69,11 +71,13 @@ describe('Auth Middleware', () => {
     });
     
     // Act
-    authMiddleware(req, res, next);
+    protect(req, res, next);
     
     // Assert
     expect(req.header).toHaveBeenCalledWith('x-auth-token');
-    expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET);
+    expect(jwt.verify).toHaveBeenCalledWith(mockToken, process.env.JWT_SECRET, {
+      algorithms: ['HS256']
+    });
     expect(res.status).toHaveBeenCalledWith(401);
     expect(res.json).toHaveBeenCalledWith({ message: 'Token is not valid' });
     expect(next).not.toHaveBeenCalled();

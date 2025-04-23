@@ -1,5 +1,5 @@
-import React, { useContext } from 'react';
-import { View, StyleSheet, Alert, SafeAreaView, FlatList, ScrollView } from 'react-native';
+import React, { useContext, useState, useEffect } from 'react';
+import { View, StyleSheet, Alert, SafeAreaView, FlatList, ScrollView, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import SectionTitle from '../components/SectionTitle';
@@ -9,11 +9,14 @@ import { colors, spacing } from '../constants/theme';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import { getMyCourses } from '../services/courseService';
 
-// Mock data - replace with API call
-const activeCourses = [
-  { id: '1', title: 'Tymelyne Tutorial', icon: require('../../assets/logo.png'), progress: 90 },
-  { id: '2', title: 'Introduction to Digital Marketing', icon: require('../../assets/course-icons/marketing.png'), progress: 32 },
+// For fallback icons when course has no specific icon
+const defaultCourseIcons = [
+  require('../../assets/course-icons/computer.png'),
+  require('../../assets/course-icons/design.png'),
+  require('../../assets/course-icons/finance.png'),
+  require('../../assets/course-icons/marketing.png'),
 ];
 
 // Import tutorial data
@@ -28,7 +31,50 @@ const friendCourses = [
 ];
 
 const HomeScreen = ({ navigation }) => {
-  const { logout, userInfo } = useContext(AuthContext);
+  const { logout, user } = useContext(AuthContext);
+  const [userCourses, setUserCourses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Fetch user's courses
+  useEffect(() => {
+    const fetchUserCourses = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const courses = await getMyCourses();
+        
+        // Map courses to include icons and format for CourseCard
+        const formattedCourses = courses.map((course, index) => ({
+          id: course._id || course.course_id,
+          title: course.title,
+          // Assign a default icon based on index
+          icon: defaultCourseIcons[index % defaultCourseIcons.length],
+          // Calculate progress based on completed sections
+          progress: calculateProgress(course),
+          // Store the original course data for details view
+          courseData: course
+        }));
+        
+        setUserCourses(formattedCourses);
+      } catch (err) {
+        console.error('Failed to fetch user courses:', err);
+        setError('Could not load your courses');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchUserCourses();
+  }, []);
+
+  // Calculate course progress percentage
+  const calculateProgress = (course) => {
+    if (!course.sections || course.sections.length === 0) return 0;
+    
+    const completedSections = course.sections.filter(section => section.isCompleted).length;
+    return Math.round((completedSections / course.sections.length) * 100);
+  };
 
   const handleNavigation = (screen, params = {}) => {
     navigation.navigate(screen, params);
@@ -54,6 +100,65 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  // Render the Active Courses section
+  const renderActiveCourses = () => {
+    if (loading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Typography variant="body" style={styles.loadingText}>
+            Loading your courses...
+          </Typography>
+        </View>
+      );
+    }
+
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Typography variant="body" style={styles.errorText}>
+            {error}
+          </Typography>
+          <Button
+            title="Try Again"
+            onPress={() => navigation.navigate('Home')}
+            variant="secondary"
+            style={styles.tryAgainButton}
+          />
+        </View>
+      );
+    }
+
+    if (userCourses.length === 0) {
+      return (
+        <Typography variant="body" style={styles.emptyCourseText}>
+          You don't have any active courses yet.
+        </Typography>
+      );
+    }
+
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselContainer}
+      >
+        {userCourses.map(course => (
+          <CourseCard
+            key={course.id}
+            course={course}
+            style={styles.carouselCard}
+            onPress={() => handleNavigation('CourseSections', { 
+              courseId: course.id,
+              courseData: course.courseData
+            })}
+            onOptionsPress={() => Alert.alert('Options', 'Course options')}
+          />
+        ))}
+      </ScrollView>
+    );
+  };
+
   return (
     <Screen
       title="Home"
@@ -69,27 +174,13 @@ const HomeScreen = ({ navigation }) => {
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         
-
         <SectionTitle 
           title="Active Courses" 
           rightText="View All" 
           onRightPress={() => handleNavigation('Development')} 
         />
         <View style={styles.coursesContainer}>
-          {activeCourses && activeCourses.length > 0 ? (
-            activeCourses.map(course => (
-              <CourseCard
-                key={course.id}
-                course={course}
-                onPress={() => handleNavigation('CourseSections', { courseId: course.id })}
-                onOptionsPress={() => Alert.alert('Options', 'Course options')}
-              />
-            ))
-          ) : (
-            <Typography variant="body" style={styles.emptyCourseText}>
-              You don't have any active courses yet.
-            </Typography>
-          )}
+          {renderActiveCourses()}
         </View>
 
         <SectionTitle title="Add a Course" />
@@ -169,6 +260,14 @@ const styles = StyleSheet.create({
   coursesContainer: {
     marginBottom: spacing.l,
   },
+  carouselContainer: {
+    paddingBottom: spacing.s,
+    paddingRight: spacing.l,
+  },
+  carouselCard: {
+    width: 280,
+    marginRight: spacing.m,
+  },
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -191,6 +290,25 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.m,
   },
+  loadingContainer: {
+    padding: spacing.l,
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: spacing.m,
+    color: colors.text.secondary,
+  },
+  errorContainer: {
+    padding: spacing.l,
+    alignItems: 'center',
+  },
+  errorText: {
+    color: colors.error,
+    marginBottom: spacing.m,
+  },
+  tryAgainButton: {
+    marginTop: spacing.s,
+  }
 });
 
 export default HomeScreen; 

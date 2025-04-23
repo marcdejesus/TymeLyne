@@ -6,7 +6,7 @@
     "start": "node index.js",
     "dev": "nodemon index.js",
     "test": "cross-env NODE_ENV=test jest --detectOpenHandles --forceExit",
-    "test:middleware": "cross-env NODE_ENV=test jest auth.middleware",
+    "test:middleware": "cross-env NODE_ENV=test jest auth.test",
     "test:email": "cross-env NODE_ENV=test jest email.service",
     "test:db": "cross-env NODE_ENV=test jest db.config",
     "test:watch": "cross-env NODE_ENV=test jest --watch",

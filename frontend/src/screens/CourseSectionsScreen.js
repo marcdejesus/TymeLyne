@@ -64,29 +64,38 @@ const CourseSectionsScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    // Simulate API fetch
+    // Load course data
     const fetchCourseData = () => {
-      // In a real app, this would be an API call
+      // Get courseId and courseData from route params
       const courseId = route.params?.courseId;
+      const passedCourseData = route.params?.courseData;
+      
+      setLoading(true);
       
       // For tutorial course
       if (courseId === '1') {
-        setTimeout(() => {
-          setCourseData(tymelyneTutorialData);
-          setLoading(false);
-        }, 500);
+        setCourseData(tymelyneTutorialData);
+        setLoading(false);
         return;
       }
       
-      // For other courses, use existing mock data
-      setTimeout(() => {
-        setCourseData(mockCourseData);
+      // If course data is passed from previous screen, use it directly
+      if (passedCourseData) {
+        console.log('Using passed course data:', passedCourseData);
+        setCourseData(passedCourseData);
         setLoading(false);
-      }, 500);
+        return;
+      }
+      
+      // Otherwise, use the mock data for now
+      // In a real app, this would be an API call using the courseId
+      console.log('No course data passed, using mock data for course ID:', courseId);
+      setCourseData(mockCourseData);
+      setLoading(false);
     };
 
     fetchCourseData();
-  }, [route.params?.courseId]);
+  }, [route.params?.courseId, route.params?.courseData]);
 
   const handleBackPress = () => {
     navigation.goBack();

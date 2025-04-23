@@ -51,7 +51,12 @@ const Input = ({
   // Handle focus events
   const handleFocus = () => {
     setIsFocused(true);
-    if (props.onFocus) props.onFocus();
+    if (props.onFocus) {
+      // Use setTimeout to avoid immediate layout changes that can cause scroll jumps
+      setTimeout(() => {
+        props.onFocus();
+      }, 100);
+    }
   };
 
   const handleBlur = () => {
@@ -108,6 +113,7 @@ const Input = ({
           onFocus={handleFocus}
           onBlur={handleBlur}
           multiline={multiline}
+          returnKeyType={multiline ? "default" : "done"}
           {...props}
         />
 

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { colors } from '../constants/theme';
 
@@ -13,18 +13,19 @@ import { colors } from '../constants/theme';
  * @param {boolean} keyboardShouldPersistTaps - How keyboard should behave when tapping outside of keyboard
  * @param {object} props - Additional props to pass to ScrollView/View
  */
-const ContentContainer = ({
+const ContentContainer = forwardRef(({
   children,
   scrollable = true,
   style,
   contentContainerStyle,
   showsVerticalScrollIndicator = false,
-  keyboardShouldPersistTaps = 'handled',
+  keyboardShouldPersistTaps = 'always',
   ...props
-}) => {
+}, ref) => {
   if (scrollable) {
     return (
       <ScrollView
+        ref={ref}
         style={[styles.scrollContainer, style]}
         contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
@@ -41,7 +42,7 @@ const ContentContainer = ({
       {children}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {

@@ -25,6 +25,8 @@ import { colors } from '../constants/theme';
  * @param {boolean} statusBarLight - Whether to use light status bar content
  * @param {object} style - Additional styles for the content container
  * @param {object} contentContainerStyle - Additional styles for the scroll content container
+ * @param {string} keyboardShouldPersistTaps - Keyboard persistence setting for scroll view
+ * @param {object} scrollViewRef - Reference to the scroll view
  */
 const Screen = ({
   children,
@@ -42,7 +44,9 @@ const Screen = ({
   backgroundColor = colors.background,
   statusBarLight = false,
   style,
-  contentContainerStyle
+  contentContainerStyle,
+  keyboardShouldPersistTaps,
+  scrollViewRef
 }) => {
   return (
     <SafeAreaContainer 
@@ -66,6 +70,8 @@ const Screen = ({
         scrollable={scrollable}
         style={style}
         contentContainerStyle={contentContainerStyle}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        ref={scrollViewRef}
       >
         {children}
       </ContentContainer>

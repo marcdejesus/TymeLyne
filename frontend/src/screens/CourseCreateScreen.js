@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Typography from '../components/Typography';
@@ -65,6 +65,7 @@ const CourseCreateScreen = ({ navigation }) => {
         style={styles.radioButton}
         onPress={onPress}
         activeOpacity={0.7}
+        hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       >
         <View style={[
           styles.radioCircle,
@@ -89,132 +90,148 @@ const CourseCreateScreen = ({ navigation }) => {
   };
   
   return (
-    <Screen
-      title="Course Creation"
-      onBackPress={() => navigation.goBack()}
-      backgroundColor={colors.background}
-      showBottomNav={false}
-      statusBarLight={false}
-      contentContainerStyle={styles.contentContainer}
-    >
-      <Card style={styles.cardContainer}>
-        <SectionHeader title="Definition" />
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={1} text="What would you like to get better at?" />
-          <Input
-            placeholder="Enter skill or topic"
-            value={courseTitle}
-            onChangeText={setCourseTitle}
-          />
-        </View>
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={2} text="Which best describes your goal?" />
-          {goalOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={selectedGoal === option}
-              onPress={() => handleSelectOption(option, setSelectedGoal, selectedGoal)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <SectionHeader title="Skill Level" />
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={3} text="How experienced are you in this topic?" />
-          {skillLevelOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={skillLevel === option}
-              onPress={() => handleSelectOption(option, setSkillLevel, skillLevel)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={4} text="Have you tried learning this topic before?" />
-          {yesNoOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={hasTriedBefore === option}
-              onPress={() => handleSelectOption(option, setHasTriedBefore, hasTriedBefore)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <SectionHeader title="Learning Style" />
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={5} text="How much time can you dedicate per day?" />
-          {timeOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={timePerDay === option}
-              onPress={() => handleSelectOption(option, setTimePerDay, timePerDay)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <SectionHeader title="Motivation" />
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={8} text="How do you want the AI to support you?" />
-          {aiSupportOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={aiSupport === option}
-              onPress={() => handleSelectOption(option, setAiSupport, aiSupport)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <SectionHeader title="Customization" />
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={9} text="Is there a deadline you're working toward? (Optional)" />
-          <View style={styles.dateInputContainer}>
+    <View style={styles.mainContainer}>
+      {/* Static header */}
+      <View style={styles.header}>
+        <TouchableOpacity 
+          onPress={() => navigation.goBack()} 
+          style={styles.backButton}
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.text.primary} />
+        </TouchableOpacity>
+        <Typography variant="title" weight="semiBold">
+          Course Creation
+        </Typography>
+        <View style={{ width: 24 }} />
+      </View>
+
+      {/* Scrollable content */}
+      <ScrollView 
+        style={styles.scrollView} 
+        contentContainerStyle={styles.scrollContent}
+        keyboardShouldPersistTaps="always"
+        showsVerticalScrollIndicator={false}
+      >
+        <Card style={styles.cardContainer}>
+          <SectionHeader title="Definition" />
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={1} text="What would you like to get better at?" />
             <Input
-              placeholder="MM/DD/YYYY"
-              value={deadline}
-              onChangeText={setDeadline}
-              rightIcon={<Ionicons name="calendar-outline" size={20} color={colors.text.tertiary} />}
-              style={styles.dateInput}
+              placeholder="Enter skill or topic"
+              value={courseTitle}
+              onChangeText={text => setCourseTitle(text)}
             />
           </View>
-        </View>
-        
-        <View style={styles.questionContainer}>
-          <QuestionLabel number={10} text="Would you like the course to include real-world tasks or project-based learning?" />
-          {yesNoOptions.map((option, index) => (
-            <RadioButton
-              key={index}
-              selected={includeRealWorldTasks === option}
-              onPress={() => handleSelectOption(option, setIncludeRealWorldTasks, includeRealWorldTasks)}
-              label={option}
-            />
-          ))}
-        </View>
-        
-        <View style={styles.actionContainer}>
-          <Typography variant="body" color={colors.text.primary}>
-            1 Use Left
-          </Typography>
-          <Button
-            variant="primary"
-            onPress={handleCreateCourse}
-          >
-            Create
-          </Button>
-        </View>
-      </Card>
-    </Screen>
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={2} text="Which best describes your goal?" />
+            {goalOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={selectedGoal === option}
+                onPress={() => handleSelectOption(option, setSelectedGoal, selectedGoal)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <SectionHeader title="Skill Level" />
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={3} text="How experienced are you in this topic?" />
+            {skillLevelOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={skillLevel === option}
+                onPress={() => handleSelectOption(option, setSkillLevel, skillLevel)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={4} text="Have you tried learning this topic before?" />
+            {yesNoOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={hasTriedBefore === option}
+                onPress={() => handleSelectOption(option, setHasTriedBefore, hasTriedBefore)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <SectionHeader title="Learning Style" />
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={5} text="How much time can you dedicate per day?" />
+            {timeOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={timePerDay === option}
+                onPress={() => handleSelectOption(option, setTimePerDay, timePerDay)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <SectionHeader title="Motivation" />
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={8} text="How do you want the AI to support you?" />
+            {aiSupportOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={aiSupport === option}
+                onPress={() => handleSelectOption(option, setAiSupport, aiSupport)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <SectionHeader title="Customization" />
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={9} text="Is there a deadline you're working toward? (Optional)" />
+            <View style={styles.dateInputContainer}>
+              <Input
+                placeholder="MM/DD/YYYY"
+                value={deadline}
+                onChangeText={setDeadline}
+                rightIcon={<Ionicons name="calendar-outline" size={20} color={colors.text.tertiary} />}
+                style={styles.dateInput}
+              />
+            </View>
+          </View>
+          
+          <View style={styles.questionContainer}>
+            <QuestionLabel number={10} text="Would you like the course to include real-world tasks or project-based learning?" />
+            {yesNoOptions.map((option, index) => (
+              <RadioButton
+                key={index}
+                selected={includeRealWorldTasks === option}
+                onPress={() => handleSelectOption(option, setIncludeRealWorldTasks, includeRealWorldTasks)}
+                label={option}
+              />
+            ))}
+          </View>
+          
+          <View style={styles.actionContainer}>
+            <Typography variant="body" color={colors.text.primary}>
+              1 Use Left
+            </Typography>
+            <Button
+              variant="primary"
+              onPress={handleCreateCourse}
+            >
+              Create
+            </Button>
+          </View>
+        </Card>
+      </ScrollView>
+    </View>
   );
 };
 
@@ -241,13 +258,33 @@ const QuestionLabel = ({ number, text }) => (
 );
 
 const styles = StyleSheet.create({
-  contentContainer: {
+  mainContainer: {
+    flex: 1,
+    backgroundColor: colors.background,
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.m,
+    paddingVertical: spacing.m,
+    backgroundColor: colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  backButton: {
+    padding: 4,
+  },
+  scrollView: {
+    flex: 1,
+  },
+  scrollContent: {
+    padding: spacing.m,
     paddingBottom: spacing.xxl,
   },
   cardContainer: {
     backgroundColor: colors.card,
     padding: spacing.l,
-    margin: spacing.m,
     borderRadius: borderRadius.m,
     ...shadows.medium,
   },

@@ -12,6 +12,7 @@ import SectionTitle from './SectionTitle';
 import BottomNavigation from './BottomNavigation';
 import ComponentUsageExample from './ComponentUsageExample';
 import Typography from './Typography';
+import SkeletonLoader from './SkeletonLoader';
 
 // Constants and Theme
 import theme from '../constants/theme';
@@ -31,6 +32,7 @@ export {
   BottomNavigation,
   ComponentUsageExample,
   Typography,
+  SkeletonLoader,
   
   // Constants and Theme
   theme

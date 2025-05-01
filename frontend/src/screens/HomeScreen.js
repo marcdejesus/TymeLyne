@@ -1,10 +1,11 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, SafeAreaView, FlatList, ScrollView, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, Alert, FlatList, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
 import SectionTitle from '../components/SectionTitle';
 import CourseCard from '../components/CourseCard';
+import SkeletonLoader from '../components/SkeletonLoader';
 import { AuthContext } from '../contexts/AuthContext';
 import { colors, spacing } from '../constants/theme';
 import Typography from '../components/Typography';
@@ -36,6 +37,8 @@ const HomeScreen = ({ navigation }) => {
   const [userCourses, setUserCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // Separate visual loading state to show skeletons
+  const [visibleLoading, setVisibleLoading] = useState(true);
 
   // Function to fetch user's courses
   const fetchUserCourses = async () => {
@@ -72,17 +75,26 @@ const HomeScreen = ({ navigation }) => {
       });
       
       setUserCourses(formattedCourses);
+      
+      // Slightly delay hiding the loading state to ensure smooth transition
+      setTimeout(() => {
+        setVisibleLoading(false);
+        setLoading(false);
+      }, 300);
     } catch (err) {
       console.error('Failed to fetch user courses:', err);
       setError('Could not load your courses');
-    } finally {
       setLoading(false);
+      setVisibleLoading(false);
     }
   };
 
   // Refresh courses when screen comes into focus
   useFocusEffect(
     useCallback(() => {
+      // Show skeleton loader immediately when screen is focused
+      setVisibleLoading(true);
+      
       // Fetch latest course data whenever the screen is focused
       console.log('Home screen focused - refreshing courses');
       fetchUserCourses();
@@ -138,15 +150,8 @@ const HomeScreen = ({ navigation }) => {
 
   // Render the Active Courses section
   const renderActiveCourses = () => {
-    if (loading) {
-      return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={colors.primary} />
-          <Typography variant="body" style={styles.loadingText}>
-            Loading your courses...
-          </Typography>
-        </View>
-      );
+    if (visibleLoading) {
+      return <SkeletonLoader variant="course" count={2} />;
     }
 
     if (error) {
@@ -192,6 +197,38 @@ const HomeScreen = ({ navigation }) => {
           />
         ))}
       </ScrollView>
+    );
+  };
+  
+  // Render Friend Courses
+  const renderFriendCourses = () => {
+    if (visibleLoading) {
+      return <SkeletonLoader variant="grid" count={4} />;
+    }
+    
+    if (friendCourses && friendCourses.length > 0) {
+      return (
+        <FlatList
+          data={friendCourses}
+          keyExtractor={(item) => item.id}
+          numColumns={2}
+          scrollEnabled={false}
+          renderItem={({ item }) => (
+            <CourseCard
+              course={item}
+              variant="grid"
+              onPress={() => handleNavigation('CourseSections', { courseId: item.id })}
+            />
+          )}
+          contentContainerStyle={styles.gridContainer}
+        />
+      );
+    }
+    
+    return (
+      <Typography variant="body" style={styles.emptyCourseText}>
+        No courses from friends to display.
+      </Typography>
     );
   };
 
@@ -256,26 +293,7 @@ const HomeScreen = ({ navigation }) => {
           rightText="See More" 
           onRightPress={() => handleNavigation('Development')} 
         />
-        {friendCourses && friendCourses.length > 0 ? (
-          <FlatList
-            data={friendCourses}
-            keyExtractor={(item) => item.id}
-            numColumns={2}
-            scrollEnabled={false}
-            renderItem={({ item }) => (
-              <CourseCard
-                course={item}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { courseId: item.id })}
-              />
-            )}
-            contentContainerStyle={styles.gridContainer}
-          />
-        ) : (
-          <Typography variant="body" style={styles.emptyCourseText}>
-            No courses from friends to display.
-          </Typography>
-        )}
+        {renderFriendCourses()}
       </ScrollView>
     </Screen>
   );

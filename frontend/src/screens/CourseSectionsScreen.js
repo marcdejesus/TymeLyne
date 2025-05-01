@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform } from 'react-native';
+import { View, StyleSheet, Dimensions, TouchableOpacity, ScrollView, Platform, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import Card from '../components/Card';
@@ -126,6 +126,14 @@ const CourseSectionsScreen = ({ navigation, route }) => {
     </View>
   );
 
+  // Calculate course progress percentage
+  const calculateCourseProgress = () => {
+    if (!courseData.sections || courseData.sections.length === 0) return 0;
+    
+    const completedSections = courseData.sections.filter(section => section.isCompleted).length;
+    return Math.round((completedSections / courseData.sections.length) * 100);
+  };
+
   if (loading) {
     return (
       <Screen
@@ -153,39 +161,82 @@ const CourseSectionsScreen = ({ navigation, route }) => {
     >
       {/* Course Header */}
       <View style={styles.courseHeader}>
-        <Typography variant="heading" weight="bold" style={styles.courseTitle}>
-          {courseData.title || courseData.course_name}
+        {/* Course Metadata - Moved to the top */}
+        <Card variant="elevated" style={styles.metadataCard}>
+          <View style={styles.metadataRow}>
+            {/* Course Logo */}
+            <View style={styles.logoContainer}>
+              <Image 
+                source={
+                  courseData.icon || 
+                  (courseData.courseData && courseData.courseData.icon) ||
+                  require('../../assets/course-icons/computer.png')
+                } 
+                style={styles.courseLogo}
+                resizeMode="contain"
+              />
+            </View>
+            
+            {/* Course Metadata - Wrapped in a ScrollView for small screens */}
+            <ScrollView 
+              horizontal 
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.metadataScrollContent}
+            >
+              <View style={styles.metadataContainer}>
+                <View style={styles.metadataItem}>
+                  <Ionicons name="trophy-outline" size={20} color={colors.primary} />
+                  <Typography variant="caption" color="secondary" style={styles.metadataText}>
+                    {courseData.course_exp || 500} XP
+                  </Typography>
+                </View>
+                
+                <View style={styles.metadataItem}>
+                  <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
+                  <Typography variant="caption" color="secondary" style={styles.metadataText}>
+                    {courseData.difficulty}
+                  </Typography>
+                </View>
+                
+                <View style={styles.metadataItem}>
+                  <Ionicons name="calendar-outline" size={20} color={colors.primary} />
+                  <Typography variant="caption" color="secondary" style={styles.metadataText}>
+                    {new Date(courseData.created_at).toLocaleDateString()}
+                  </Typography>
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+          
+          {/* Progress Bar */}
+          <View style={styles.progressContainer}>
+            <View style={styles.progressLabelContainer}>
+              <Typography variant="caption" color="secondary">
+                Course Progress
+              </Typography>
+              <Typography variant="caption" color="secondary">
+                {calculateCourseProgress()}%
+              </Typography>
+            </View>
+            <View style={styles.progressBarBackground}>
+              <View 
+                style={[
+                  styles.progressBarFill, 
+                  { width: `${calculateCourseProgress()}%` }
+                ]} 
+              />
+            </View>
+          </View>
+        </Card>
+        
+        {/* Description Subheader */}
+        <Typography variant="subheading" weight="semiBold" style={styles.descriptionHeader}>
+          Description:
         </Typography>
         
         <Typography variant="body" style={styles.courseDescription}>
           {courseData.description}
         </Typography>
-        
-        {/* Course Metadata */}
-        <Card variant="elevated" style={styles.metadataCard}>
-          <View style={styles.metadataContainer}>
-            <View style={styles.metadataItem}>
-              <Ionicons name="trophy-outline" size={20} color={colors.primary} />
-              <Typography variant="caption" color="secondary" style={styles.metadataText}>
-                {courseData.course_exp || 500} XP
-              </Typography>
-            </View>
-            
-            <View style={styles.metadataItem}>
-              <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
-              <Typography variant="caption" color="secondary" style={styles.metadataText}>
-                {courseData.difficulty}
-              </Typography>
-            </View>
-            
-            <View style={styles.metadataItem}>
-              <Ionicons name="calendar-outline" size={20} color={colors.primary} />
-              <Typography variant="caption" color="secondary" style={styles.metadataText}>
-                {new Date(courseData.created_at).toLocaleDateString()}
-              </Typography>
-            </View>
-          </View>
-        </Card>
         
         {/* Tags */}
         <ScrollView 
@@ -199,7 +250,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
       </View>
 
       {/* Course Content */}
-      <SectionTitle title="Course Content" />
+      <SectionTitle title="Course Content" style={styles.contentTitle} />
       
       {courseData.sections && courseData.sections.length > 0 ? (
         courseData.sections.map((section) => (
@@ -245,32 +296,59 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   courseHeader: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginVertical: spacing.m,
     paddingHorizontal: spacing.m,
   },
   courseTitle: {
     marginBottom: spacing.s,
-    textAlign: 'center',
   },
   courseDescription: {
-    textAlign: 'center',
     marginBottom: spacing.m,
+  },
+  descriptionHeader: {
+    marginTop: spacing.m,
+    marginBottom: spacing.xs,
+    alignSelf: 'flex-start',
+    color: colors.text.primary,
   },
   metadataCard: {
     width: '100%',
     marginBottom: spacing.m,
     ...shadows.small,
+    padding: spacing.s,
+  },
+  metadataRow: {
+    flexDirection: 'row',
+    width: '100%',
+    marginBottom: spacing.m,
+  },
+  logoContainer: {
+    marginRight: spacing.m,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 50,
+  },
+  courseLogo: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    backgroundColor: colors.cardDark,
+  },
+  metadataScrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
   },
   metadataContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    flexWrap: 'wrap',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
   },
   metadataItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.xs / 2,
+    marginRight: spacing.m,
   },
   metadataText: {
     marginLeft: spacing.xs,
@@ -278,9 +356,11 @@ const styles = StyleSheet.create({
   tagsScrollView: {
     maxHeight: 40,
     marginTop: spacing.xs,
+    alignSelf: 'flex-start',
   },
   tagsContainer: {
-    paddingHorizontal: spacing.xs,
+    paddingHorizontal: 0,
+    justifyContent: 'flex-start',
   },
   tagContainer: {
     backgroundColor: colors.cardDark,
@@ -324,7 +404,31 @@ const styles = StyleSheet.create({
   },
   startButton: {
     marginTop: spacing.s,
-  }
+  },
+  contentTitle: {
+    paddingHorizontal: spacing.m,
+    alignItems: 'flex-start',
+  },
+  progressContainer: {
+    width: '100%',
+    marginTop: 0,
+  },
+  progressLabelContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xs / 2,
+  },
+  progressBarBackground: {
+    height: 6,
+    backgroundColor: colors.cardDark,
+    borderRadius: 3,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 3,
+  },
 });
 
 export default CourseSectionsScreen; 

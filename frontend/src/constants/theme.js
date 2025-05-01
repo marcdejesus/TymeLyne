@@ -15,37 +15,37 @@ export const deviceInfo = {
 // Colors - Modern, clean palette
 export const colors = {
   // Primary colors
-  primary: '#6200EE', // Indigo - main brand color
-  primaryDark: '#3700B3', // Darker variant for pressed states
-  primaryLight: '#BB86FC', // Light variant for backgrounds and accents
+  primary: '#6366F1', // Soft Blue-Violet (calm + smart)
+  primaryDark: '#4338CA', // Darker variant for pressed states
+  primaryLight: '#C7D2FE', // Light variant for backgrounds and accents
   
   // Secondary colors
-  secondary: '#03DAC5', // Teal - secondary brand color
-  secondaryDark: '#018786', // Darker teal for pressed states
-  secondaryLight: '#B2EBF2', // Light teal for backgrounds
+  secondary: '#14B8A6', // Teal (learning, progress)
+  secondaryDark: '#0F766E', // Darker teal for pressed states
+  secondaryLight: '#99F6E4', // Light teal for backgrounds
   
   // Accent color
-  accent: '#FF0266', // Pink - for highlighting important elements
+  accent: '#F97316', // Vibrant Orange (for pop & reward)
   
   // Background colors
-  background: '#FFFFFF', // Main background
-  card: '#FAFAFA', // Card background
-  cardDark: '#F2F3F5', // Darker card background
-  input: '#F5F5F5', // Input field background
+  background: '#FAFAFA', // Main background
+  card: '#F4F4F5', // Card background
+  cardDark: '#E4E4E7', // Slightly darker card background
+  input: '#E5E7EB', // Input field background
   
   // Text colors
   text: {
-    primary: '#121212', // Primary text
-    secondary: '#555555', // Secondary text
-    tertiary: '#888888', // Tertiary text
-    disabled: '#AAAAAA', // Disabled text
+    primary: '#1F2937', // Primary text
+    secondary: '#6B7280', // Secondary text
+    tertiary: '#9CA3AF', // Tertiary text
+    disabled: '#D1D5DB', // Disabled text
     inverted: '#FFFFFF', // Text on dark backgrounds
   },
   
   // UI colors
-  border: '#E0E0E0', // Border color
-  separator: '#EEEEEE', // Separator line color
-  highlight: '#FFF9C4', // Highlight background
+  border: '#E2E8F0', // Border color
+  separator: '#F1F5F9', // Separator line color
+  highlight: '#FEF3C7', // Highlight background
   
   // Status colors
   status: {

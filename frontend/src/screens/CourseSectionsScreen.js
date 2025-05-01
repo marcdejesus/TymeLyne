@@ -234,34 +234,6 @@ const CourseSectionsScreen = ({ navigation, route }) => {
           </Typography>
         </Card>
       )}
-      
-      {/* Course Overview Section */}
-      <SectionTitle title="Course Overview" />
-      <Card variant="elevated" style={styles.overviewCard}>
-        <Typography variant="body" style={styles.paragraphText}>
-          {courseData.paragraph1}
-        </Typography>
-        
-        {courseData.paragraph2 && (
-          <Typography variant="body" style={styles.paragraphText}>
-            {courseData.paragraph2}
-          </Typography>
-        )}
-        
-        {courseData.paragraph3 && (
-          <Typography variant="body" style={styles.paragraphText}>
-            {courseData.paragraph3}
-          </Typography>
-        )}
-        
-        <Button 
-          variant="primary"
-          style={styles.startButton}
-          onPress={() => handleSectionPress(courseData.sections[0])}
-        >
-          Begin Course
-        </Button>
-      </Card>
     </Screen>
   );
 };

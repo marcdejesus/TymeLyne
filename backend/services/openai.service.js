@@ -16,12 +16,12 @@ const getMockCourse = (topic, difficulty) => {
   
   return {
     "title": `Introduction to ${topic}`,
-    "description": `A beginner-friendly course designed to introduce you to the world of ${topic}. Whether you're completely new or have some basic knowledge, this course will help you build a solid foundation and develop practical skills.`,
+    "description": `A beginner-friendly course designed to introduce you to the world of ${topic}. Whether you're completely new or have some basic knowledge, this course will help you build a solid foundation and develop practical skills. NOTE: This is using pre-configured demo content.`,
     "sections": [
       {
         "title": "Getting Started with Basics",
         "description": "Learn the fundamental concepts and terminology that every beginner needs to know.",
-        "content": `Welcome to the first section of your ${topic} journey! In this section, we'll cover the absolute basics that every beginner needs to understand.\n\nFirst, let's talk about what ${topic} actually is and why it's worth learning. ${topic} is a versatile skill that can be applied in numerous ways, from personal projects to professional applications. The fundamentals we'll cover here will serve as building blocks for everything else you'll learn.\n\nIn this section, we'll explore the core terminology, basic concepts, and simple techniques that form the foundation of ${topic}. We'll take things slowly and make sure you understand each concept before moving on to the next one. By the end of this section, you'll have a clear understanding of what ${topic} is all about and feel confident in your ability to progress further.`,
+        "content": `Welcome to the first section of your ${topic} journey! In this section, we'll cover the absolute basics that every beginner needs to understand. \n\nNOTE: This course is currently using pre-configured demo content because the OpenAI API quota has been exceeded. Please contact the administrator to update the API key.\n\nFirst, let's talk about what ${topic} actually is and why it's worth learning. ${topic} is a versatile skill that can be applied in numerous ways, from personal projects to professional applications. The fundamentals we'll cover here will serve as building blocks for everything else you'll learn.\n\nIn this section, we'll explore the core terminology, basic concepts, and simple techniques that form the foundation of ${topic}. We'll take things slowly and make sure you understand each concept before moving on to the next one. By the end of this section, you'll have a clear understanding of what ${topic} is all about and feel confident in your ability to progress further.`,
         "hasQuiz": true,
         "quiz": {
           "questions": [
@@ -184,8 +184,8 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
     console.log(`🔍 OpenAI Service: Starting course generation for: "${topic}"`);
     console.log(`🔧 Parameters: difficulty=${difficulty}, sectionsCount=${sectionsCount}`);
     
-    // Check if we should use mock data (when in development mode or no API key)
-    const useMockData = process.env.NODE_ENV === 'development' || !process.env.OPENAI_API_KEY || process.env.USE_MOCK_OPENAI === 'true';
+    // Check if we should use mock data (only when explicitly set to use mock data)
+    const useMockData = process.env.USE_MOCK_OPENAI === 'true';
     
     if (useMockData) {
       console.log('🧪 Using mock data for course generation');
@@ -280,23 +280,25 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
     if (error.code === 'insufficient_quota') {
       console.error('💰 OpenAI Service: API quota exceeded');
       console.log('🧪 Falling back to mock data due to quota exceeded');
-      return getMockCourse(topic, difficulty);
+      // Create a customized mock course with a clear message about API quota
+      const mockCourse = getMockCourse(topic, difficulty);
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API quota has been exceeded. Please contact the administrator to update the API key. This is using pre-configured example content.`;
+      return mockCourse;
     } else if (error.code === 'invalid_api_key') {
       console.error('🔑 OpenAI Service: Invalid API key');
       console.log('🧪 Falling back to mock data due to invalid API key');
-      return getMockCourse(topic, difficulty);
+      const mockCourse = getMockCourse(topic, difficulty);
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API key is invalid. Please contact the administrator to update the API key. This is using pre-configured example content.`;
+      return mockCourse;
     } else if (error.status === 429) {
       console.error('⏱️ OpenAI Service: Rate limit exceeded');
       console.log('🧪 Falling back to mock data due to rate limit');
-      return getMockCourse(topic, difficulty);
+      const mockCourse = getMockCourse(topic, difficulty);
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API rate limit exceeded. Please try again in a few minutes. This is using pre-configured example content.`;
+      return mockCourse;
     }
     
-    // For any other error, still use mock data in development
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🧪 Falling back to mock data due to general error');
-      return getMockCourse(topic, difficulty);
-    }
-    
+    // For any other error, don't use mock data - throw the error
     throw error;
   }
 };

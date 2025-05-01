@@ -50,8 +50,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.m,
-    marginTop: spacing.xl,
+    marginBottom: spacing.s,
+    marginTop: spacing.l,
     paddingHorizontal: spacing.m,
   },
   title: {

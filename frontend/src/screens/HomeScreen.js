@@ -170,7 +170,7 @@ const HomeScreen = ({ navigation }) => {
   };
 
   // Render a section title or skeleton
-  const renderSectionTitle = (title, rightText, onRightPress) => {
+  const renderSectionTitle = (title, rightText, onRightPress, style) => {
     if (visibleLoading) {
       return <SkeletonLoader variant="section-title" />;
     }
@@ -180,6 +180,7 @@ const HomeScreen = ({ navigation }) => {
         title={title} 
         rightText={rightText} 
         onRightPress={onRightPress} 
+        style={style}
       />
     );
   };
@@ -354,11 +355,11 @@ const HomeScreen = ({ navigation }) => {
         </View>
 
         {/* Add a Course Section */}
-        {renderSectionTitle("Add a Course", null, null)}
+        {renderSectionTitle("Add a Course", null, null, styles.addCourseSectionTitle)}
         {renderAddCourseCards()}
 
         {/* Friends' Courses Section */}
-        {renderSectionTitle("Friends' Courses", "See More", () => handleNavigation('Development'))}
+        {renderSectionTitle("Friends' Courses", "See More", () => handleNavigation('Development'), styles.friendsSectionTitle)}
         {renderFriendCourses()}
       </ScrollView>
     </Screen>
@@ -371,7 +372,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.m,
   },
   contentContainer: {
-    paddingTop: spacing.m,
+    paddingTop: spacing.s,
     paddingBottom: spacing.xl * 2, // Add extra padding at the bottom
   },
   welcomeSection: {
@@ -382,7 +383,7 @@ const styles = StyleSheet.create({
     marginTop: 0, // No extra margin for the first section title
   },
   coursesContainer: {
-    marginBottom: spacing.xl, // Increased spacing
+    marginBottom: spacing.xs, // Further reduced from spacing.m to spacing.xs
     minHeight: 120, // Fixed height to prevent layout shifts
   },
   carouselContainer: {
@@ -397,7 +398,7 @@ const styles = StyleSheet.create({
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl, // Increased spacing
+    marginBottom: spacing.m, // Reduced from spacing.xl
     minHeight: 100, // Fixed height to prevent layout shifts
   },
   addCourseCard: {
@@ -411,7 +412,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gridContainer: {
-    paddingBottom: spacing.xl,
+    paddingBottom: spacing.m, // Reduced from spacing.xl
   },
   emptyCourseText: {
     textAlign: 'center',
@@ -433,6 +434,12 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     padding: spacing.m,
     justifyContent: 'center',
+  },
+  addCourseSectionTitle: {
+    marginTop: -spacing.xs, // Increased negative top margin to reduce more space
+  },
+  friendsSectionTitle: {
+    marginTop: spacing.m,
   },
 });
 

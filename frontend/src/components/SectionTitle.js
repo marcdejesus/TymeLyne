@@ -34,8 +34,7 @@ const SectionTitle = ({
       {rightText && onRightPress && (
         <TouchableOpacity onPress={onRightPress} activeOpacity={0.7}>
           <Typography 
-            variant="button" 
-            color={colors.primary}
+            variant="button"
             style={[styles.rightText, rightTextStyle]}
           >
             {rightText}
@@ -51,8 +50,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: spacing.s,
-    marginTop: spacing.m,
+    marginBottom: spacing.m,
+    marginTop: spacing.xl,
     paddingHorizontal: spacing.m,
   },
   title: {
@@ -60,6 +59,7 @@ const styles = StyleSheet.create({
   },
   rightText: {
     marginLeft: spacing.s,
+    color: colors.primary,
   }
 });
 

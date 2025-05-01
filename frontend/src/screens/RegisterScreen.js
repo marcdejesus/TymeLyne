@@ -325,8 +325,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl
   },
   logo: {
-    width: 80,
-    height: 80,
+    width: 240,
+    height: 240,
     marginBottom: spacing.m
   },
   appName: {

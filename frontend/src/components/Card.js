@@ -65,7 +65,7 @@ const Card = ({
 
 const styles = StyleSheet.create({
   card: {
-    borderRadius: borderRadius.m,
+    borderRadius: borderRadius.l,
     padding: spacing.m,
     backgroundColor: colors.card,
   },
@@ -76,7 +76,7 @@ const styles = StyleSheet.create({
   },
   
   elevated: {
-    ...shadows.medium,
+    ...shadows.small,
   },
   
   outlined: {

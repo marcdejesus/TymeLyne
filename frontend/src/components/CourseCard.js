@@ -72,7 +72,7 @@ const CourseCard = ({
           <View style={styles.progressContainer}>
             <Typography 
               variant="caption" 
-              color={colors.text.secondary}
+              color={colors.secondary}
               style={styles.progressText}
             >
               {course.progress}% COMPLETE
@@ -121,7 +121,7 @@ const styles = StyleSheet.create({
     maxWidth: 60,
     maxHeight: 60,
     borderRadius: width * 0.075, // Make it a circle by setting borderRadius to half the width
-    backgroundColor: colors.border, // Light background for the icon
+    backgroundColor: colors.primaryLight, // Light background for the icon that matches the brand color
     padding: spacing.xs, // Add some padding inside the circle
     justifyContent: 'center',
     alignItems: 'center',
@@ -150,7 +150,7 @@ const styles = StyleSheet.create({
   },
   progress: {
     height: '100%',
-    backgroundColor: colors.primary,
+    backgroundColor: colors.secondary,
     borderRadius: 3,
   },
   optionsButton: {
@@ -169,6 +169,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     aspectRatio: 1,
     padding: spacing.m,
+    borderRadius: borderRadius.l, // Ensure grid cards use the same rounded corners
   },
   gridIcon: {
     width: width * 0.14,
@@ -176,12 +177,12 @@ const styles = StyleSheet.create({
     maxWidth: 55,
     maxHeight: 55,
     borderRadius: width * 0.07, // Make it a circle by setting borderRadius to half the width
-    backgroundColor: colors.border, // Light background for the icon
+    backgroundColor: colors.primaryLight, // Light background for the icon that matches the brand color
     padding: spacing.xs, // Add some padding inside the circle
     justifyContent: 'center',
     alignItems: 'center',
     overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
-    marginBottom: spacing.s,
+    marginBottom: spacing.m, // Increase spacing between icon and title
   },
   gridTitle: {
     textAlign: 'center',

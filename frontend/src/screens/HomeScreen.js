@@ -346,7 +346,9 @@ const HomeScreen = ({ navigation }) => {
         }
       >
         {/* Active Courses Section */}
-        {renderSectionTitle("Active Courses", "View All", () => handleNavigation('Development'))}
+        <View style={styles.firstSectionTitleContainer}>
+          {renderSectionTitle("Active Courses", "View All", () => handleNavigation('Development'))}
+        </View>
         <View style={styles.coursesContainer}>
           {renderActiveCourses()}
         </View>
@@ -369,14 +371,18 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.m,
   },
   contentContainer: {
+    paddingTop: spacing.m,
     paddingBottom: spacing.xl * 2, // Add extra padding at the bottom
   },
   welcomeSection: {
     marginTop: spacing.m,
     marginBottom: spacing.l,
   },
+  firstSectionTitleContainer: {
+    marginTop: 0, // No extra margin for the first section title
+  },
   coursesContainer: {
-    marginBottom: spacing.l,
+    marginBottom: spacing.xl, // Increased spacing
     minHeight: 120, // Fixed height to prevent layout shifts
   },
   carouselContainer: {
@@ -391,7 +397,7 @@ const styles = StyleSheet.create({
   addCourseContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: spacing.l,
+    marginBottom: spacing.xl, // Increased spacing
     minHeight: 100, // Fixed height to prevent layout shifts
   },
   addCourseCard: {

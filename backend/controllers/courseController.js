@@ -33,17 +33,8 @@ exports.generateCourse = async (req, res) => {
     console.log('👤 User profile found:', {
       user_id: profile.user_id,
       email: profile.email,
-      username: profile.username,
-      course_generations: profile.course_generations
+      username: profile.username
     });
-    
-    // Optional: check if user has remaining course generations
-    if (profile.course_generations !== undefined && profile.course_generations <= 0) {
-      console.log(`⛔ Course generation denied: User ${profile.username} has no generations remaining (current: ${profile.course_generations})`);
-      return res.status(403).json({ message: 'No course generations remaining' });
-    }
-    
-    console.log(`✅ Course generation authorized: ${profile.course_generations} generations remaining`);
     
     // Generate course content using OpenAI
     console.log('🤖 Requesting AI course generation for:', {
@@ -72,20 +63,6 @@ exports.generateCourse = async (req, res) => {
     
     await course.save();
     console.log(`✅ Course saved to database with ID: ${course._id}`);
-    
-    // Optional: Decrement course generations count
-    if (profile.course_generations !== undefined) {
-      const updatedProfile = await Profile.findOneAndUpdate(
-        { user_id },
-        { $inc: { course_generations: -1 } },
-        { new: true }
-      );
-      
-      console.log(`✅ Updated course generations for user ${profile.username}:`, {
-        previous: profile.course_generations,
-        new: updatedProfile.course_generations
-      });
-    }
     
     res.status(201).json({ 
       message: 'Course created successfully',

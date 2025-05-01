@@ -75,10 +75,6 @@ const ProfileSchema = new Schema({
     maxlength: 10,
     default: 'light'
   },
-  course_generations: {
-    type: Number,
-    default: 5
-  },
   password: {
     type: String,
     required: true,

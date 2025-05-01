@@ -225,7 +225,9 @@ const SectionContent = ({ navigation, route }) => {
             <Button
               onPress={handleStartQuiz}
               style={styles.quizButton}
+              textStyle={styles.quizButtonText}
               variant="primary"
+              size="large"
             >
               Take Practice Quiz
             </Button>
@@ -291,6 +293,13 @@ const styles = StyleSheet.create({
   },
   quizButton: {
     width: '100%',
+    backgroundColor: colors.primaryDark,
+    paddingVertical: spacing.m,
+  },
+  quizButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
   loadingContainer: {
     flex: 1,

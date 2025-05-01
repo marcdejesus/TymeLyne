@@ -73,8 +73,8 @@ const AuthProvider = ({ children }) => {
     bootstrapAsync();
   }, []);
 
-  const login = async (email, password) => {
-    console.log('🔶 LOGIN ATTEMPT:', { email });
+  const login = async (emailOrUsername, password) => {
+    console.log('🔶 LOGIN ATTEMPT:', { emailOrUsername });
     setIsLoading(true);
     setError(null);
     setNeedsVerification(false);
@@ -83,7 +83,7 @@ const AuthProvider = ({ children }) => {
       // Call the backend API
       console.log(`⚙️ Making login request to ${API_URL}/auth/login`);
       const response = await axios.post(`${API_URL}/auth/login`, {
-        email,
+        emailOrUsername,
         password,
       });
       

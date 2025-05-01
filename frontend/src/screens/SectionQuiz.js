@@ -103,6 +103,7 @@ const SectionQuiz = ({ navigation, route }) => {
 
   useEffect(() => {
     if (quizStarted && !quizCompleted && !quizFailed) {
+      // Update timer only every 5 seconds for better performance, while still tracking seconds internally
       timerRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
@@ -253,21 +254,18 @@ const SectionQuiz = ({ navigation, route }) => {
       <View style={styles.questionContainer}>
         <Card variant="elevated" style={styles.timerCard}>
           <View style={styles.timerContainer}>
-            <Image 
-              source={require('../../assets/timer-icon.png')} 
-              style={styles.timerIcon}
-              resizeMode="contain"
-            />
-            <Typography variant="caption" weight="semiBold" style={styles.timeRemainingText}>
-              {formatTime(timeRemaining)} REMAINING
-            </Typography>
-            <View style={styles.progressBarContainer}>
-              <View 
-                style={[
-                  styles.progressBar, 
-                  { width: `${(timeRemaining / 300) * 100}%` }
-                ]} 
-              />
+            <View style={styles.timerInnerContainer}>
+              <Typography variant="caption" weight="semiBold" style={styles.timeRemainingText}>
+                {formatTime(timeRemaining)} REMAINING
+              </Typography>
+              <View style={styles.progressBarContainer}>
+                <View 
+                  style={[
+                    styles.progressBar, 
+                    { width: `${Math.max((timeRemaining / 300) * 100, 0)}%` }
+                  ]} 
+                />
+              </View>
             </View>
           </View>
         </Card>
@@ -441,10 +439,9 @@ const styles = StyleSheet.create({
   timerContainer: {
     alignItems: 'center',
   },
-  timerIcon: {
-    width: 40,
-    height: 40,
-    marginBottom: spacing.xs,
+  timerInnerContainer: {
+    width: '100%',
+    alignItems: 'center',
   },
   timeRemainingText: {
     marginBottom: spacing.xs,

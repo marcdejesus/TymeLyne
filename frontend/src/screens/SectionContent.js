@@ -223,7 +223,7 @@ const SectionContent = ({ navigation, route }) => {
         {section.hasQuiz && (
           <View style={styles.buttonsContainer}>
             <Button
-              title="Start Quiz"
+              title="Take Practice Quiz"
               onPress={handleStartQuiz}
               style={styles.quizButton}
               variant="primary"

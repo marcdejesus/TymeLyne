@@ -27,6 +27,13 @@ const CourseGenerationScreen = ({ navigation }) => {
       setLoading(true);
       setError(null);
       
+      Alert.alert(
+        'Generating Course',
+        'Please wait while we generate your course using AI. This may take a minute.',
+        [],
+        { cancelable: false }
+      );
+      
       const result = await createCourse({
         topic: topic.trim(),
         difficulty,

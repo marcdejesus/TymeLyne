@@ -121,39 +121,50 @@ exports.register = async (req, res) => {
 // Login user
 exports.login = async (req, res) => {
   console.log('🔑 LOGIN ATTEMPT:', { 
-    email: req.body.email,
+    emailOrUsername: req.body.emailOrUsername,
     ip: req.ip,
     clientIP: req.headers['x-forwarded-for'] || req.connection.remoteAddress,
     userAgent: req.headers['user-agent']
   });
   
   try {
-    const { email, password } = req.body;
+    const { emailOrUsername, password } = req.body;
     
     console.log('🔍 Login credentials received:', { 
-      email, 
+      emailOrUsername, 
       passwordProvided: !!password,
       passwordLength: password ? password.length : 0
     });
 
-    // Special handling for demo account
-    if (email === 'demo@example.com' && password === 'password') {
-      console.log('👤 Demo account login attempt detected');
+    // Check if required fields are provided
+    if (!emailOrUsername || !password) {
+      return res.status(400).json({ message: 'Email/username and password are required' });
     }
 
-    // Find user by email - handle both real environment and test environment
+    // Find user by email or username
     let user;
     
     // Check if we can use select (available in real mongoose)
     try {
-      user = await Profile.findOne({ email }).select('+password');
+      // Try to find by email first
+      user = await Profile.findOne({ 
+        $or: [
+          { email: emailOrUsername },
+          { username: emailOrUsername }
+        ]
+      }).select('+password');
     } catch (e) {
       // In test environment, select might not be available, so fallback to regular findOne
-      user = await Profile.findOne({ email });
+      user = await Profile.findOne({ 
+        $or: [
+          { email: emailOrUsername },
+          { username: emailOrUsername }
+        ]
+      });
     }
     
     if (!user) {
-      console.log('🔴 LOGIN FAILED: User not found', { email });
+      console.log('🔴 LOGIN FAILED: User not found', { emailOrUsername });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
     
@@ -172,14 +183,14 @@ exports.login = async (req, res) => {
     console.log('🔑 Password comparison result:', isMatch);
     
     if (!isMatch) {
-      console.log('🔴 LOGIN FAILED: Password incorrect', { email });
+      console.log('🔴 LOGIN FAILED: Password incorrect', { emailOrUsername });
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
     // Check if user is verified
     if (!user.is_verified) {
       console.log('🔴 LOGIN FAILED: Email not verified', { 
-        email, 
+        email: user.email, 
         userId: user.user_id, 
         verificationTokenExpires: user.verification_token_expires
       });
@@ -201,7 +212,7 @@ exports.login = async (req, res) => {
 
     console.log('✅ LOGIN SUCCESSFUL', { 
       userId: user.user_id, 
-      email, 
+      email: user.email, 
       username: user.username 
     });
 

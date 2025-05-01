@@ -162,15 +162,10 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-          enabled
-        >
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
           <ScrollView 
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
@@ -226,11 +221,11 @@ const RegisterScreen = ({ navigation }) => {
                   <Input
                     label="Email"
                     placeholder="Enter your email address"
-          value={email}
-          onChangeText={setEmail}
+                    value={email}
+                    onChangeText={setEmail}
                     error={emailError}
-          keyboardType="email-address"
-          autoCapitalize="none"
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                     returnKeyType="next"
                     leftIcon={<Icon name="mail-outline" size={20} color={colors.text.tertiary} />}
                   />
@@ -250,20 +245,20 @@ const RegisterScreen = ({ navigation }) => {
                   <Input
                     label="Password"
                     placeholder="Create a password"
-          value={password}
-          onChangeText={setPassword}
+                    value={password}
+                    onChangeText={setPassword}
                     error={passwordError}
                     secureTextEntry={true}
                     returnKeyType="next"
                     leftIcon={<Icon name="lock-closed-outline" size={20} color={colors.text.tertiary} />}
                     helperText="Password must be at least 6 characters"
-        />
-        
+                  />
+                  
                   <Input
                     label="Confirm Password"
                     placeholder="Confirm your password"
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
+                    value={confirmPassword}
+                    onChangeText={setConfirmPassword}
                     error={confirmPasswordError}
                     secureTextEntry={true}
                     returnKeyType="done"
@@ -290,7 +285,7 @@ const RegisterScreen = ({ navigation }) => {
                 </View>
 
                 {/* Login Link */}
-        <View style={styles.loginContainer}>
+                <View style={styles.loginContainer}>
                   <Typography variant="body" color={colors.text.secondary}>
                     Already have an account?
                   </Typography>
@@ -301,13 +296,13 @@ const RegisterScreen = ({ navigation }) => {
                   >
                     Login
                   </Button>
-        </View>
+                </View>
               </>
             )}
-    </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+          </ScrollView>
+        </View>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 

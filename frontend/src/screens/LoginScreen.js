@@ -23,7 +23,7 @@ import Button from '../components/Button';
 const { width, height } = Dimensions.get('window');
 
 const LoginScreen = ({ navigation, route }) => {
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { login, resendVerification, error, needsVerification } = useContext(AuthContext);
@@ -35,7 +35,7 @@ const LoginScreen = ({ navigation, route }) => {
   // Set email from route params if available
   useEffect(() => {
     if (route?.params?.email) {
-      setEmail(route.params.email);
+      setEmailOrUsername(route.params.email);
     }
     
     // Show verification message if coming from registration
@@ -53,15 +53,15 @@ const LoginScreen = ({ navigation, route }) => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
     
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password');
+    if (!emailOrUsername || !password) {
+      Alert.alert('Error', 'Please enter both email/username and password');
       return;
     }
 
     setIsLoading(true);
     
     // Call login function from AuthContext
-    const result = await login(email, password);
+    const result = await login(emailOrUsername, password);
     
     if (!result.success) {
       setIsLoading(false);
@@ -93,14 +93,14 @@ const LoginScreen = ({ navigation, route }) => {
     // Dismiss keyboard when submitting
     Keyboard.dismiss();
     
-    if (!email) {
+    if (!emailOrUsername) {
       Alert.alert('Error', 'Please enter your email address');
       return;
     }
 
     setIsLoading(true);
     
-    const result = await resendVerification(email);
+    const result = await resendVerification(emailOrUsername);
     
     setIsLoading(false);
     
@@ -117,15 +117,10 @@ const LoginScreen = ({ navigation, route }) => {
   };
 
   return (
-    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
-        <KeyboardAvoidingView 
-          style={styles.container}
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
-          enabled
-        >
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" backgroundColor={colors.background} />
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <View style={styles.container}>
           <ScrollView 
             contentContainerStyle={styles.scrollContainer}
             showsVerticalScrollIndicator={false}
@@ -149,14 +144,14 @@ const LoginScreen = ({ navigation, route }) => {
             {/* Login Form */}
             <View style={styles.formContainer}>
               <Input
-                label="Email"
-                placeholder="Enter your email"
-                value={email}
-                onChangeText={setEmail}
+                label="Email or Username"
+                placeholder="Enter your email or username"
+                value={emailOrUsername}
+                onChangeText={setEmailOrUsername}
                 autoCapitalize="none"
                 keyboardType="email-address"
                 returnKeyType="next"
-                leftIcon={<Icon name="mail-outline" size={20} color={colors.text.tertiary} />}
+                leftIcon={<Icon name="person-outline" size={20} color={colors.text.tertiary} />}
                 error={needsVerification ? "Email not verified" : null}
               />
               
@@ -180,13 +175,6 @@ const LoginScreen = ({ navigation, route }) => {
               >
                 Log In
               </Button>
-              
-              {/* Demo Account Info */}
-              <View style={styles.demoContainer}>
-                <Typography variant="caption" color={colors.text.tertiary} center>
-                  Demo Account: demo@example.com | password
-                </Typography>
-              </View>
               
               {/* Register Button */}
               <View style={styles.registerContainer}>
@@ -215,9 +203,9 @@ const LoginScreen = ({ navigation, route }) => {
               )}
             </View>
           </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-    </TouchableWithoutFeedback>
+        </View>
+      </TouchableWithoutFeedback>
+    </SafeAreaView>
   );
 };
 
@@ -248,36 +236,26 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs
   },
   tagline: {
-    marginBottom: spacing.m
+    marginBottom: spacing.l
   },
   formContainer: {
     width: '100%',
-    maxWidth: 400,
-    alignSelf: 'center'
   },
   loginButton: {
-    marginTop: spacing.m
-  },
-  demoContainer: {
-    marginTop: spacing.l,
-    padding: spacing.m,
-    backgroundColor: colors.cardDark,
-    borderRadius: 8,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.primary
+    marginTop: spacing.m,
   },
   registerContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'center',
+    alignItems: 'center',
     marginTop: spacing.xl,
-    gap: spacing.s
+    marginBottom: spacing.m,
   },
   registerButton: {
-    marginLeft: spacing.s
+    marginLeft: spacing.s,
   },
   resendButton: {
-    marginTop: spacing.m
+    marginTop: spacing.m,
   }
 });
 

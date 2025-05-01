@@ -101,8 +101,19 @@ const HomeScreen = ({ navigation }) => {
     return Math.round((completedSections / course.sections.length) * 100);
   };
 
+  // Function to handle navigation
   const handleNavigation = (screen, params = {}) => {
-    navigation.navigate(screen, params);
+    // If trying to navigate to a tab screen, use the tab name
+    if (screen === 'Home') {
+      navigation.navigate('HomeTab', params);
+    } else if (screen === 'Leaderboards') {
+      navigation.navigate('LeaderboardsTab', params);
+    } else if (screen === 'Profile') {
+      navigation.navigate('ProfileTab', params);
+    } else {
+      // Otherwise use the original screen name
+      navigation.navigate(screen, params);
+    }
   };
 
   const handleMenuPress = () => {
@@ -146,7 +157,7 @@ const HomeScreen = ({ navigation }) => {
           </Typography>
           <Button
             title="Try Again"
-            onPress={() => navigation.navigate('Home')}
+            onPress={() => navigation.navigate('HomeTab')}
             variant="secondary"
             style={styles.tryAgainButton}
           />
@@ -192,10 +203,7 @@ const HomeScreen = ({ navigation }) => {
         icon: 'menu-outline',
         onPress: handleMenuPress,
       }}
-      activeScreen="Home"
-      onHomePress={() => {}}
-      onAchievementsPress={() => handleNavigation('Leaderboards')}
-      onProfilePress={() => handleNavigation('Profile')}
+      showBottomNav={false}
     >
       <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
         

@@ -15,12 +15,8 @@ import { colors } from '../constants/theme';
  * @param {function} onMenuPress - Function for menu button press
  * @param {function} onRightPress - Function for right button press
  * @param {string} rightIcon - Icon name for right button
- * @param {string} activeScreen - Active screen for bottom navigation
- * @param {function} onHomePress - Function for home tab press
- * @param {function} onAchievementsPress - Function for leaderboards tab press
- * @param {function} onProfilePress - Function for profile tab press
  * @param {boolean} scrollable - Whether content should be scrollable
- * @param {boolean} showBottomNav - Whether to show bottom navigation
+ * @param {boolean} showBottomNav - Whether to show bottom navigation (deprecated, use Tab.Navigator instead)
  * @param {string} backgroundColor - Background color for the screen
  * @param {boolean} statusBarLight - Whether to use light status bar content
  * @param {object} style - Additional styles for the content container
@@ -40,7 +36,7 @@ const Screen = ({
   onAchievementsPress,
   onProfilePress,
   scrollable = true,
-  showBottomNav = true,
+  showBottomNav = false,
   backgroundColor = colors.background,
   statusBarLight = false,
   style,
@@ -76,8 +72,10 @@ const Screen = ({
         {children}
       </ContentContainer>
       
-      {/* Bottom Navigation */}
-      {showBottomNav && (
+      {/* Bottom Navigation - only show if explicitly enabled
+          This is kept for backward compatibility with screens
+          that haven't been updated to use Tab.Navigator */}
+      {showBottomNav && onHomePress && onAchievementsPress && onProfilePress && (
         <BottomNavigation 
           activeScreen={activeScreen}
           onHomePress={onHomePress}

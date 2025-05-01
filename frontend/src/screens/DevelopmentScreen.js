@@ -10,10 +10,7 @@ const DevelopmentScreen = ({ navigation }) => {
     <Screen
       title="Under Development"
       onBackPress={() => navigation.goBack()}
-      activeScreen="Home"
-      onHomePress={() => navigation.navigate('Home')}
-      onAchievementsPress={() => navigation.navigate('Leaderboards')}
-      onProfilePress={() => navigation.navigate('Profile')}
+      showBottomNav={false}
       backgroundColor={theme.colors.background.main}
     >
       <Text style={styles.title}>

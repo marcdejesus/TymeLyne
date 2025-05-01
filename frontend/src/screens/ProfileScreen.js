@@ -142,14 +142,8 @@ const ProfileScreen = ({ navigation }) => {
   // };
 
   const handleNavigation = (screenName) => {
-    // For unimplemented screens, navigate to development page
-    if (screenName === 'Home') {
-      navigation.navigate('Home');
-    } else if (screenName === 'Leaderboards') {
-      navigation.navigate('Leaderboards');
-    } else {
-      navigation.navigate('Development');
-    }
+    // Update navigation references to work with new navigation structure
+    navigation.navigate(screenName);
   };
 
   const handleMenuPress = () => {
@@ -163,10 +157,8 @@ const ProfileScreen = ({ navigation }) => {
       onMenuPress={handleMenuPress}
       onRightPress={() => handleNavigation('Settings')}
       rightIcon="settings"
-      activeScreen="Profile"
-      onHomePress={() => handleNavigation('Home')}
-      onAchievementsPress={() => handleNavigation('Leaderboards')}
-      onProfilePress={() => handleNavigation('Profile')}
+      // Remove bottom navigation props since they're now handled by Tab.Navigator
+      showBottomNav={false}
       backgroundColor={theme.colors.background.main}
     >
       {/* Profile Information */}

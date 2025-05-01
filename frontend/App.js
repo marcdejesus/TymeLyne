@@ -1,8 +1,9 @@
 import React, { useContext } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, ActivityIndicator, Platform } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { colors } from './src/constants/theme';
 import * as Font from 'expo-font';
@@ -14,6 +15,7 @@ import {
   Montserrat_600SemiBold,
   Montserrat_700Bold
 } from '@expo-google-fonts/montserrat';
+import { Ionicons } from '@expo/vector-icons';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -34,6 +36,61 @@ import LeaderboardsScreen from './src/screens/LeaderboardsScreen';
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
 
 const Stack = createStackNavigator();
+const Tab = createBottomTabNavigator();
+
+// Main tab navigator
+const MainTabNavigator = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarStyle: {
+          borderTopWidth: 1,
+          borderTopColor: colors.border,
+          backgroundColor: colors.card,
+          height: Platform.OS === 'ios' ? 85 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 25 : 5,
+          paddingTop: 5,
+        },
+        tabBarIcon: ({ focused, color, size }) => {
+          let iconName;
+          
+          if (route.name === 'HomeTab') {
+            iconName = focused ? 'home' : 'home-outline';
+          } else if (route.name === 'LeaderboardsTab') {
+            iconName = focused ? 'trophy' : 'trophy-outline';
+          } else if (route.name === 'ProfileTab') {
+            iconName = focused ? 'person' : 'person-outline';
+          }
+          
+          return <Ionicons name={iconName} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.text.secondary,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontFamily: 'Montserrat_500Medium',
+        },
+      })}
+    >
+      <Tab.Screen 
+        name="HomeTab" 
+        component={HomeScreen}
+        options={{ tabBarLabel: 'Home' }}
+      />
+      <Tab.Screen 
+        name="LeaderboardsTab" 
+        component={LeaderboardsScreen}
+        options={{ tabBarLabel: 'Leaderboards' }}
+      />
+      <Tab.Screen 
+        name="ProfileTab" 
+        component={ProfileScreen}
+        options={{ tabBarLabel: 'Profile' }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 // Component to handle conditional rendering based on auth state
 const AppContent = () => {
@@ -66,55 +123,18 @@ const AppContent = () => {
           screenOptions={{
             headerShown: false,
             cardStyle: { backgroundColor: colors.background },
-            // Disable animations by default
-            animationEnabled: false
+            animationEnabled: true,
           }}
         >
-          <Stack.Screen name="Home" component={HomeScreen} />
-          <Stack.Screen name="Profile" component={ProfileScreen} />
-          <Stack.Screen name="Leaderboards" component={LeaderboardsScreen} />
-          
-          {/* Enable animations for non-bottom tab screens */}
-          <Stack.Screen 
-            name="Development" 
-            component={DevelopmentScreen} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="Create" 
-            component={CourseCreateScreen} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="CourseDetails" 
-            component={CourseDetailsScreen} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="CourseSections" 
-            component={CourseSectionsScreen} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="SectionContent" 
-            component={SectionContent} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="SectionQuiz" 
-            component={SectionQuiz} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="Messages" 
-            component={MessagesScreen} 
-            options={{ animationEnabled: true }}
-          />
-          <Stack.Screen 
-            name="Conversation" 
-            component={ConversationScreen} 
-            options={{ animationEnabled: true }}
-          />
+          <Stack.Screen name="Main" component={MainTabNavigator} />
+          <Stack.Screen name="Development" component={DevelopmentScreen} />
+          <Stack.Screen name="Create" component={CourseCreateScreen} />
+          <Stack.Screen name="CourseDetails" component={CourseDetailsScreen} />
+          <Stack.Screen name="CourseSections" component={CourseSectionsScreen} />
+          <Stack.Screen name="SectionContent" component={SectionContent} />
+          <Stack.Screen name="SectionQuiz" component={SectionQuiz} />
+          <Stack.Screen name="Messages" component={MessagesScreen} />
+          <Stack.Screen name="Conversation" component={ConversationScreen} />
         </Stack.Navigator>
       )}
     </NavigationContainer>

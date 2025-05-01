@@ -88,19 +88,13 @@ const LeaderboardsScreen = ({ navigation }) => {
   })).sort((a, b) => b.xp - a.xp);
   
   const handleBackPress = () => {
-    navigation.navigate('Home');
+    // No need to navigate to Home when back is pressed, as we're in a tab navigator
+    // This can be removed or keep for custom behavior
   };
   
   const handleNavigation = (screenName, params) => {
-    if (screenName === 'Home') {
-      navigation.navigate('Home');
-    } else if (screenName === 'Leaderboards') {
-      // Already on leaderboards
-    } else if (screenName === 'Profile') {
-      navigation.navigate('Profile');
-    } else {
-      navigation.navigate('Development');
-    }
+    // Update to work with new navigation structure
+    navigation.navigate(screenName, params);
   };
   
   const toggleTab = (tab) => {
@@ -134,13 +128,9 @@ const LeaderboardsScreen = ({ navigation }) => {
   return (
     <Screen
       title="Leaderboards"
-      onBackPress={handleBackPress}
-      activeScreen="Leaderboards"
-      onHomePress={() => handleNavigation('Home')}
-      onAchievementsPress={() => handleNavigation('Leaderboards')}
-      onProfilePress={() => handleNavigation('Profile')}
       backgroundColor={colors.background}
-      scrollable={false}
+      // Remove bottom navigation props since they're now handled by Tab.Navigator
+      showBottomNav={false}
     >
       {/* Tab Selector */}
       <View style={styles.tabContainer}>

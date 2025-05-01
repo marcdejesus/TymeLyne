@@ -78,7 +78,7 @@ const MessagesScreen = ({ navigation }) => {
   ];
 
   const handleBackPress = () => {
-    navigation.navigate('Home');
+    navigation.goBack();
   };
 
   const handleMessagePress = (messageId) => {

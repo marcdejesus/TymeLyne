@@ -49,10 +49,7 @@ export {
  *     <Screen 
  *       title="My Screen"
  *       onBackPress={() => navigation.goBack()}
- *       activeScreen="Home"
- *       onHomePress={() => navigation.navigate('Home')}
- *       onAchievementsPress={() => navigation.navigate('Achievements')}
- *       onProfilePress={() => navigation.navigate('Profile')}
+ *       showBottomNav={false} // Bottom navigation now handled by Tab.Navigator
  *     >
  *       <Card>
  *         <Text style={{ color: theme.colors.text.primary }}>Hello World</Text>

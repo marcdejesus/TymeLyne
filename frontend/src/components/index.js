@@ -4,7 +4,7 @@ import Card from './Card';
 import ContentContainer from './ContentContainer';
 import CourseCard from './CourseCard';
 import Header from './Header';
-import InputField from './InputField';
+import Input from './Input';
 import ProgressBar from './ProgressBar';
 import SafeAreaContainer from './SafeAreaContainer';
 import Screen from './Screen';
@@ -22,7 +22,7 @@ export {
   ContentContainer,
   CourseCard,
   Header,
-  InputField,
+  Input,
   ProgressBar,
   SafeAreaContainer,
   Screen,

@@ -10,7 +10,7 @@ import CourseCard from './CourseCard';
 import ProgressBar from './ProgressBar';
 import Card from './Card';
 import Button from './Button';
-import InputField from './InputField';
+import Input from './Input';
 import theme from '../constants/theme';
 
 /**
@@ -98,14 +98,14 @@ const ComponentUsageExample = ({ navigation }) => {
         <SectionTitle title="Form Input Example" />
         
         <Card>
-          <InputField 
+          <Input 
             label="Username"
             placeholder="Enter your username"
             value=""
             onChangeText={() => {}}
           />
           
-          <InputField 
+          <Input 
             label="Password"
             placeholder="Enter your password"
             secureTextEntry

@@ -53,7 +53,17 @@ app.use(express.json());
 
 // Configure CORS to allow requests from the React Native app
 const corsOptions = {
-  origin: ['http://localhost:8081', 'http://192.168.1.145:8081', 'http://192.168.1.145:8082', 'exp://192.168.1.145:8081', 'exp://192.168.1.145:8082'],
+  origin: [
+    'http://localhost:8081', 
+    'http://192.168.1.145:8081', 
+    'http://192.168.1.145:8082', 
+    'exp://192.168.1.145:8081', 
+    'exp://192.168.1.145:8082',
+    'http://107.161.131.246:19000',
+    'exp://107.161.131.246:19000',
+    'http://107.161.131.246:8083',
+    'exp://107.161.131.246:8083'
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

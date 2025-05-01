@@ -7,8 +7,12 @@ const dotenv = require('dotenv');
 // Load environment variables
 dotenv.config();
 
-// Connect to MongoDB - Docker container accessible at localhost:27017
-const MONGODB_URI = 'mongodb://localhost:27017/tymelyne';
+// Determine if running in Docker or locally
+const isDocker = process.env.RUNNING_IN_DOCKER === 'true';
+const MONGODB_URI = process.env.MONGODB_URI || 
+                    (isDocker ? 'mongodb://mongo:27017/tymelyne' : 'mongodb://localhost:27017/tymelyne');
+
+console.log(`Running in ${isDocker ? 'Docker' : 'local'} environment`);
 console.log('Connecting to MongoDB at:', MONGODB_URI);
 
 mongoose.connect(MONGODB_URI)
@@ -72,6 +76,11 @@ const createDemoUser = async () => {
     // Close the MongoDB connection
     mongoose.connection.close();
     console.log('MongoDB connection closed');
+    
+    // Exit process if running in Docker to avoid hanging
+    if (isDocker) {
+      process.exit(0);
+    }
   }
 };
 

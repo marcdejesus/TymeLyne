@@ -60,6 +60,8 @@ const SkeletonLoader = ({
         return { width: customWidth || width * 0.44, height: customHeight || 150 };
       case 'card':
         return { width: customWidth || '100%', height: customHeight || 100 };
+      case 'section-title':
+        return { width: customWidth || '100%', height: customHeight || 30 };
       case 'text':
       default:
         return { width: customWidth || '100%', height: customHeight || 20 };
@@ -80,31 +82,173 @@ const SkeletonLoader = ({
         return borderRadius.s;
     }
   };
+
+  // Render a course card skeleton that matches CourseCard layout
+  const renderCourseCardSkeleton = (key) => {
+    return (
+      <Animated.View
+        key={`skeleton-course-${key}`}
+        style={[
+          styles.skeleton,
+          styles.cardSkeleton,
+          {
+            borderRadius: getBorderRadius(),
+            backgroundColor: colors.card,
+            marginRight: spacing.m,
+          }
+        ]}
+      >
+        {/* Icon circle */}
+        <Animated.View
+          style={[
+            styles.circleIcon,
+            { backgroundColor: shimmerInterpolation }
+          ]}
+        />
+        
+        {/* Content area */}
+        <View style={styles.contentArea}>
+          {/* Title lines */}
+          <Animated.View
+            style={[
+              styles.titleLine,
+              { backgroundColor: shimmerInterpolation, width: '80%' }
+            ]}
+          />
+          <Animated.View
+            style={[
+              styles.titleLine,
+              { backgroundColor: shimmerInterpolation, width: '60%', marginTop: spacing.xs }
+            ]}
+          />
+          
+          {/* Progress text */}
+          <Animated.View
+            style={[
+              styles.progressText,
+              { backgroundColor: shimmerInterpolation, width: '40%', marginTop: spacing.s }
+            ]}
+          />
+          
+          {/* Progress bar */}
+          <Animated.View
+            style={[
+              styles.progressBar,
+              { backgroundColor: shimmerInterpolation, marginTop: spacing.xs }
+            ]}
+          />
+        </View>
+        
+        {/* Options button */}
+        <Animated.View
+          style={[
+            styles.optionsButton,
+            { backgroundColor: shimmerInterpolation }
+          ]}
+        />
+      </Animated.View>
+    );
+  };
+  
+  // Render a grid card skeleton that matches grid layout
+  const renderGridCardSkeleton = (key) => {
+    return (
+      <Animated.View
+        key={`skeleton-grid-${key}`}
+        style={[
+          styles.skeleton,
+          styles.gridSkeleton,
+          {
+            borderRadius: getBorderRadius(),
+            backgroundColor: colors.card,
+            marginRight: key % 2 === 0 ? '4%' : 0,
+            marginBottom: spacing.m,
+          }
+        ]}
+      >
+        {/* Icon circle */}
+        <Animated.View
+          style={[
+            styles.gridCircleIcon,
+            { backgroundColor: shimmerInterpolation }
+          ]}
+        />
+        
+        {/* Title lines */}
+        <Animated.View
+          style={[
+            styles.gridTitleLine,
+            { backgroundColor: shimmerInterpolation, width: '80%', marginTop: spacing.s }
+          ]}
+        />
+        <Animated.View
+          style={[
+            styles.gridTitleLine,
+            { backgroundColor: shimmerInterpolation, width: '60%', marginTop: spacing.xs }
+          ]}
+        />
+      </Animated.View>
+    );
+  };
+  
+  // Render a section title skeleton
+  const renderSectionTitleSkeleton = (key) => {
+    return (
+      <View 
+        key={`skeleton-section-${key}`}
+        style={[styles.sectionTitleContainer, { paddingHorizontal: spacing.m }]}
+      >
+        {/* Title */}
+        <Animated.View
+          style={[
+            styles.sectionTitleLine,
+            { backgroundColor: shimmerInterpolation, width: '60%' }
+          ]}
+        />
+        
+        {/* Right text (if applicable) */}
+        <Animated.View
+          style={[
+            styles.sectionRightText,
+            { backgroundColor: shimmerInterpolation }
+          ]}
+        />
+      </View>
+    );
+  };
   
   // Create skeleton elements based on count
   const renderSkeletons = () => {
     const elements = [];
-    const { width: itemWidth, height: itemHeight } = getDimensions();
-    const itemRadius = getBorderRadius();
     
     for (let i = 0; i < count; i++) {
-      elements.push(
-        <Animated.View
-          key={`skeleton-${i}`}
-          style={[
-            styles.skeleton,
-            {
-              width: itemWidth,
-              height: itemHeight,
-              borderRadius: itemRadius,
-              backgroundColor: shimmerInterpolation,
-              marginRight: variant === 'course' ? spacing.m : 0,
-              marginBottom: variant === 'grid' ? spacing.m : spacing.s,
-            },
-            i % 2 === 0 && variant === 'grid' && { marginRight: '4%' }
-          ]}
-        />
-      );
+      if (variant === 'course') {
+        elements.push(renderCourseCardSkeleton(i));
+      } else if (variant === 'grid') {
+        elements.push(renderGridCardSkeleton(i));
+      } else if (variant === 'section-title') {
+        elements.push(renderSectionTitleSkeleton(i));
+      } else {
+        // Default text or simple skeleton
+        const { width: itemWidth, height: itemHeight } = getDimensions();
+        const itemRadius = getBorderRadius();
+        
+        elements.push(
+          <Animated.View
+            key={`skeleton-${i}`}
+            style={[
+              styles.skeleton,
+              {
+                width: itemWidth,
+                height: itemHeight,
+                borderRadius: itemRadius,
+                backgroundColor: shimmerInterpolation,
+                marginBottom: spacing.s,
+              }
+            ]}
+          />
+        );
+      }
     }
     
     return elements;
@@ -122,6 +266,12 @@ const SkeletonLoader = ({
       case 'grid':
         return (
           <View style={[styles.gridContainer, style]}>
+            {renderSkeletons()}
+          </View>
+        );
+      case 'section-title':
+        return (
+          <View style={[styles.container, style, { marginTop: spacing.m, marginBottom: spacing.s }]}>
             {renderSkeletons()}
           </View>
         );
@@ -153,6 +303,79 @@ const styles = StyleSheet.create({
   skeleton: {
     backgroundColor: colors.border,
     borderRadius: borderRadius.s,
+  },
+  // Course card skeleton styles
+  cardSkeleton: {
+    flexDirection: 'row',
+    padding: spacing.m,
+    height: 100,
+    alignItems: 'center',
+  },
+  circleIcon: {
+    width: width * 0.15,
+    height: width * 0.15,
+    maxWidth: 60,
+    maxHeight: 60,
+    borderRadius: width * 0.075,
+    marginRight: spacing.m,
+  },
+  contentArea: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  titleLine: {
+    height: 12,
+    borderRadius: 4,
+  },
+  progressText: {
+    height: 8,
+    borderRadius: 4,
+  },
+  progressBar: {
+    height: 6,
+    borderRadius: 3,
+    width: '95%',
+  },
+  optionsButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    marginLeft: spacing.s,
+  },
+  // Grid card skeleton styles
+  gridSkeleton: {
+    width: '48%',
+    aspectRatio: 1,
+    padding: spacing.m,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  gridCircleIcon: {
+    width: width * 0.14,
+    height: width * 0.14,
+    maxWidth: 55,
+    maxHeight: 55,
+    borderRadius: width * 0.07,
+  },
+  gridTitleLine: {
+    height: 10,
+    borderRadius: 4,
+  },
+  // Section title skeleton styles
+  sectionTitleContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    height: 30,
+  },
+  sectionTitleLine: {
+    height: 16,
+    borderRadius: 4,
+  },
+  sectionRightText: {
+    width: 60,
+    height: 14,
+    borderRadius: 4,
   },
 });
 

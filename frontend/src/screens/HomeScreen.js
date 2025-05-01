@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, FlatList, ScrollView } from 'react-native';
+import { View, StyleSheet, Alert, FlatList, ScrollView, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
@@ -80,7 +80,7 @@ const HomeScreen = ({ navigation }) => {
       setTimeout(() => {
         setVisibleLoading(false);
         setLoading(false);
-      }, 300);
+      }, 500);
     } catch (err) {
       console.error('Failed to fetch user courses:', err);
       setError('Could not load your courses');
@@ -148,6 +148,21 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
+  // Render a section title or skeleton
+  const renderSectionTitle = (title, rightText, onRightPress) => {
+    if (visibleLoading) {
+      return <SkeletonLoader variant="section-title" />;
+    }
+    
+    return (
+      <SectionTitle 
+        title={title} 
+        rightText={rightText} 
+        onRightPress={onRightPress} 
+      />
+    );
+  };
+
   // Render the Active Courses section
   const renderActiveCourses = () => {
     if (visibleLoading) {
@@ -200,6 +215,59 @@ const HomeScreen = ({ navigation }) => {
     );
   };
   
+  // Render Add Course Cards
+  const renderAddCourseCards = () => {
+    if (visibleLoading) {
+      // Return skeleton that matches the height of the add course cards
+      return (
+        <View style={styles.addCourseContainer}>
+          <View style={styles.addCourseSkeleton}>
+            <SkeletonLoader width="100%" height={60} />
+          </View>
+          <View style={styles.addCourseSkeleton}>
+            <SkeletonLoader width="100%" height={60} />
+          </View>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.addCourseContainer}>
+        <Card
+          variant="elevated"
+          style={styles.addCourseCard}
+          onPress={() => handleNavigation('Development')}
+        >
+          <Ionicons name="people-outline" size={32} color={colors.primary} />
+          <View style={styles.addCourseTextContainer}>
+            <Typography variant="subheading" weight="semiBold">
+              Community
+            </Typography>
+            <Typography variant="body2" color={colors.text.secondary}>
+              Find popular courses
+            </Typography>
+          </View>
+        </Card>
+
+        <Card
+          variant="elevated"
+          style={styles.addCourseCard}
+          onPress={() => handleNavigation('Create')}
+        >
+          <Ionicons name="add-circle-outline" size={32} color={colors.primary} />
+          <View style={styles.addCourseTextContainer}>
+            <Typography variant="subheading" weight="semiBold">
+              Create New
+            </Typography>
+            <Typography variant="body2" color={colors.text.secondary}>
+              Start from scratch
+            </Typography>
+          </View>
+        </Card>
+      </View>
+    );
+  };
+  
   // Render Friend Courses
   const renderFriendCourses = () => {
     if (visibleLoading) {
@@ -242,57 +310,24 @@ const HomeScreen = ({ navigation }) => {
       }}
       showBottomNav={false}
     >
-      <ScrollView showsVerticalScrollIndicator={false} style={styles.container}>
-        
-        <SectionTitle 
-          title="Active Courses" 
-          rightText="View All" 
-          onRightPress={() => handleNavigation('Development')} 
-        />
+      {/* Use a fixed height container for the entire content to prevent layout shifts */}
+      <ScrollView 
+        showsVerticalScrollIndicator={false} 
+        style={styles.container}
+        contentContainerStyle={styles.contentContainer}
+      >
+        {/* Active Courses Section */}
+        {renderSectionTitle("Active Courses", "View All", () => handleNavigation('Development'))}
         <View style={styles.coursesContainer}>
           {renderActiveCourses()}
         </View>
 
-        <SectionTitle title="Add a Course" />
-        <View style={styles.addCourseContainer}>
-          <Card
-            variant="elevated"
-            style={styles.addCourseCard}
-            onPress={() => handleNavigation('Development')}
-          >
-            <Ionicons name="people-outline" size={32} color={colors.primary} />
-            <View style={styles.addCourseTextContainer}>
-              <Typography variant="subheading" weight="semiBold">
-                Community
-              </Typography>
-              <Typography variant="body2" color={colors.text.secondary}>
-                Find popular courses
-              </Typography>
-            </View>
-          </Card>
+        {/* Add a Course Section */}
+        {renderSectionTitle("Add a Course", null, null)}
+        {renderAddCourseCards()}
 
-          <Card
-            variant="elevated"
-            style={styles.addCourseCard}
-            onPress={() => handleNavigation('Create')}
-          >
-            <Ionicons name="add-circle-outline" size={32} color={colors.primary} />
-            <View style={styles.addCourseTextContainer}>
-              <Typography variant="subheading" weight="semiBold">
-                Create New
-              </Typography>
-              <Typography variant="body2" color={colors.text.secondary}>
-                Start from scratch
-              </Typography>
-            </View>
-          </Card>
-        </View>
-
-        <SectionTitle 
-          title="Friends' Courses" 
-          rightText="See More" 
-          onRightPress={() => handleNavigation('Development')} 
-        />
+        {/* Friends' Courses Section */}
+        {renderSectionTitle("Friends' Courses", "See More", () => handleNavigation('Development'))}
         {renderFriendCourses()}
       </ScrollView>
     </Screen>
@@ -304,12 +339,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.m,
   },
+  contentContainer: {
+    paddingBottom: spacing.xl * 2, // Add extra padding at the bottom
+  },
   welcomeSection: {
     marginTop: spacing.m,
     marginBottom: spacing.l,
   },
   coursesContainer: {
     marginBottom: spacing.l,
+    height: 120, // Fixed height to prevent layout shifts
   },
   carouselContainer: {
     paddingBottom: spacing.s,
@@ -324,6 +363,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.l,
+    height: 100, // Fixed height to prevent layout shifts
   },
   addCourseCard: {
     flexDirection: 'row',
@@ -342,14 +382,6 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginTop: spacing.m,
   },
-  loadingContainer: {
-    padding: spacing.l,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: spacing.m,
-    color: colors.text.secondary,
-  },
   errorContainer: {
     padding: spacing.l,
     alignItems: 'center',
@@ -360,7 +392,13 @@ const styles = StyleSheet.create({
   },
   tryAgainButton: {
     marginTop: spacing.s,
-  }
+  },
+  addCourseSkeleton: {
+    width: '48%',
+    borderRadius: 10,
+    padding: spacing.m,
+    justifyContent: 'center',
+  },
 });
 
 export default HomeScreen; 

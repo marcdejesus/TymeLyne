@@ -50,8 +50,24 @@ const sendVerificationEmail = async (to, username, verificationToken) => {
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:8082';
     
     // Create a verification URL that works with the mobile app
-    // For mobile verification, we need to use the API directly since deep linking might not be set up
-    const apiUrl = frontendUrl.replace(':8082', ':5001');
+    // Get backend URL from environment or construct based on frontend URL pattern
+    const backendPort = process.env.PORT || '5001';
+    let apiUrl;
+    
+    if (process.env.BACKEND_URL) {
+      // Use explicit backend URL if provided
+      apiUrl = process.env.BACKEND_URL;
+    } else {
+      // Extract the base URL (without port) from the frontend URL
+      const urlParts = frontendUrl.split(':');
+      if (urlParts.length >= 3) {
+        // URL has a port specification
+        apiUrl = `${urlParts[0]}:${urlParts[1]}:${backendPort}`;
+      } else {
+        // URL doesn't have a port
+        apiUrl = `${frontendUrl}:${backendPort}`;
+      }
+    }
     
     // Direct API verification link (direct to backend)
     const apiVerificationUrl = `${apiUrl}/api/auth/verify/${verificationToken}`;

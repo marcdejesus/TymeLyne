@@ -39,6 +39,7 @@ console.log('📌 SMTP_HOST:', process.env.SMTP_HOST || '[NOT SET]');
 console.log('📌 SMTP_PORT:', process.env.SMTP_PORT || '[NOT SET]');
 console.log('📌 SMTP_USER:', process.env.SMTP_USER ? '[SET]' : '[NOT SET]');
 console.log('📌 FRONTEND_URL:', process.env.FRONTEND_URL || '[NOT SET - Using default]');
+console.log('📌 ALLOWED_ORIGINS:', process.env.ALLOWED_ORIGINS ? '[SET]' : '[NOT SET - Using defaults]');
 
 // Print server network information
 console.log('🌐 SERVER NETWORK INFORMATION:');
@@ -52,18 +53,17 @@ connectDB();
 app.use(express.json());
 
 // Configure CORS to allow requests from the React Native app
+const defaultOrigins = [
+  'http://localhost:8081',
+  'http://localhost:8082', 
+  'exp://localhost:8081',
+  'exp://localhost:8082'
+];
+
 const corsOptions = {
-  origin: [
-    'http://localhost:8081', 
-    'http://192.168.1.145:8081', 
-    'http://192.168.1.145:8082', 
-    'exp://192.168.1.145:8081', 
-    'exp://192.168.1.145:8082',
-    'http://107.161.131.246:19000',
-    'exp://107.161.131.246:19000',
-    'http://107.161.131.246:8083',
-    'exp://107.161.131.246:8083'
-  ],
+  origin: process.env.ALLOWED_ORIGINS ? 
+    process.env.ALLOWED_ORIGINS.split(',').map(origin => origin.trim()) : 
+    defaultOrigins,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true,

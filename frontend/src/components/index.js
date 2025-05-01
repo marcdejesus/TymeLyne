@@ -11,6 +11,7 @@ import Screen from './Screen';
 import SectionTitle from './SectionTitle';
 import BottomNavigation from './BottomNavigation';
 import ComponentUsageExample from './ComponentUsageExample';
+import Typography from './Typography';
 
 // Constants and Theme
 import theme from '../constants/theme';
@@ -29,6 +30,7 @@ export {
   SectionTitle,
   BottomNavigation,
   ComponentUsageExample,
+  Typography,
   
   // Constants and Theme
   theme

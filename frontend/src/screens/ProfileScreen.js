@@ -1,31 +1,106 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { 
   View, 
   Text, 
   StyleSheet, 
   Image, 
   Dimensions,
-  Platform
+  Platform,
+  Animated
 } from 'react-native';
 import { 
   Screen, 
   Card, 
   ProgressBar, 
   SectionTitle,
-  theme 
+  theme, 
+  Typography
 } from '../components';
 import { AuthContext } from '../contexts/AuthContext';
+import { getUserProgressionData } from '../services/userProgressionService';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
+  const [progressData, setProgressData] = useState({
+    level: 1,
+    totalXp: 0,
+    xpToNextLevel: 500,
+    levelProgress: 0
+  });
+  const [loading, setLoading] = useState(true);
+  const [previousLevel, setPreviousLevel] = useState(null);
+  const levelTextScale = useRef(new Animated.Value(1)).current;
   
-  // Mock data for demonstration
-  // In production, this data would come from the user object fetched from the backend
-  const level = 10;
-  const followers = 1;
-  const friends = 1;
+  // Fetch user progression data from backend
+  useEffect(() => {
+    const fetchUserProgression = async () => {
+      try {
+        setLoading(true);
+        const data = await getUserProgressionData();
+        console.log('User progression data:', data);
+        
+        // Store previous level before updating
+        if (previousLevel === null) {
+          setPreviousLevel(data.level);
+        } else if (data.level > previousLevel) {
+          // Level up animation
+          Animated.sequence([
+            Animated.timing(levelTextScale, {
+              toValue: 1.3,
+              duration: 300,
+              useNativeDriver: true,
+            }),
+            Animated.timing(levelTextScale, {
+              toValue: 1,
+              duration: 300,
+              useNativeDriver: true,
+            })
+          ]).start();
+          
+          setPreviousLevel(data.level);
+        }
+        
+        // Ensure data has required fields
+        const processedData = {
+          level: data.level || 1,
+          totalXp: data.totalXp || 0,
+          currentLevelXp: data.currentLevelXp || 0,
+          totalXpForNextLevel: data.totalXpForNextLevel || 500,
+          levelProgress: data.levelProgress || 0
+        };
+        
+        console.log('Processed progression data:', processedData);
+        setProgressData(processedData);
+      } catch (error) {
+        console.error('Error fetching user progression data:', error);
+        // Set fallback data
+        setProgressData({
+          level: 1,
+          totalXp: 0,
+          currentLevelXp: 0,
+          totalXpForNextLevel: 500,
+          levelProgress: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchUserProgression();
+    
+    // Set up interval to refresh data every 30 seconds
+    const refreshInterval = setInterval(fetchUserProgression, 30000);
+    
+    // Clean up the interval on component unmount
+    return () => clearInterval(refreshInterval);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  
+  // Use real data from user and progressData
+  const followers = user?.follower_count || 0;
+  const friends = user?.friends_count || 0;
   const username = user?.username || '@username';
   
   // Mock courses data
@@ -87,7 +162,7 @@ const ProfileScreen = ({ navigation }) => {
       title="Profile"
       onMenuPress={handleMenuPress}
       onRightPress={() => handleNavigation('Settings')}
-      rightIcon="settings-outline"
+      rightIcon="settings"
       activeScreen="Profile"
       onHomePress={() => handleNavigation('Home')}
       onAchievementsPress={() => handleNavigation('Leaderboards')}
@@ -101,7 +176,14 @@ const ProfileScreen = ({ navigation }) => {
             source={require('../../assets/default-avatar.png')} // Placeholder for profile picture
             style={styles.profileImage} 
           />
-          <Text style={styles.levelText}>LEVEL {level}</Text>
+          <Animated.Text 
+            style={[
+              styles.levelText, 
+              { transform: [{ scale: levelTextScale }] }
+            ]}
+          >
+            LEVEL {progressData.level}
+          </Animated.Text>
         </View>
         
         <View style={styles.profileInfo}>
@@ -119,7 +201,18 @@ const ProfileScreen = ({ navigation }) => {
           
           {/* Level Progress */}
           <View style={styles.progressContainer}>
-            <ProgressBar progress={30} showPercentage={false} />
+            <ProgressBar 
+              progress={progressData.levelProgress || 0} 
+              showLabel={false} 
+            />
+            <Typography 
+              variant="caption" 
+              style={styles.progressText}
+            >
+              {progressData && progressData.totalXpForNextLevel 
+                ? `${progressData.currentLevelXp || 0}/${progressData.totalXpForNextLevel} XP`
+                : '0/500 XP'}
+            </Typography>
           </View>
         </View>
       </View>
@@ -207,6 +300,12 @@ const styles = StyleSheet.create({
   },
   progressContainer: {
     marginTop: 10,
+  },
+  progressText: {
+    fontSize: theme.typography.fontSize.small,
+    color: theme.colors.text.secondary,
+    marginTop: 4,
+    textAlign: 'right',
   },
   coursesGrid: {
     flexDirection: 'row',

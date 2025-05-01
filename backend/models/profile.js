@@ -54,6 +54,10 @@ const ProfileSchema = new Schema({
     type: Number,
     default: 0
   },
+  level: {
+    type: Number,
+    default: 1
+  },
   follower_count: {
     type: Number,
     default: 0

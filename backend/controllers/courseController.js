@@ -1,6 +1,7 @@
 const Course = require('../models/course');
 const Profile = require('../models/profile');
 const { generateCourse } = require('../services/openai.service');
+const userProgressionService = require('../services/userProgressionService');
 
 /**
  * Create a new course using OpenAI
@@ -301,13 +302,48 @@ exports.updateSectionCompletion = async (req, res) => {
       return res.status(404).json({ message: 'Section not found' });
     }
     
+    // Check if status is changing to completed
+    const becomingCompleted = !section.isCompleted && isCompleted;
+    
+    // Get the user profile to access current level before update
+    const userProfile = await Profile.findOne({ user_id: req.user.id });
+    if (!userProfile) {
+      return res.status(404).json({ message: 'User profile not found' });
+    }
+    const previousLevel = userProfile.level;
+    
     // Update the section's completion status
     section.isCompleted = isCompleted;
-    
     await course.save();
     
+    // Award XP if the section is being marked as completed
+    let progressData = null;
+    if (becomingCompleted) {
+      // Award XP for section completion
+      progressData = await userProgressionService.awardXp(req.user.id, 'section_completion', { previousLevel });
+      
+      // If the section has a quiz, also award XP for quiz completion
+      if (section.hasQuiz) {
+        progressData = await userProgressionService.awardXp(req.user.id, 'quiz_completion', { previousLevel: progressData.level });
+      }
+      
+      // Check if the entire course is now completed
+      const isFullCourseCompleted = userProgressionService.isCourseCompleted(course);
+      if (isFullCourseCompleted) {
+        // Award XP for completing the entire course
+        progressData = await userProgressionService.awardXp(req.user.id, 'course_completion', { 
+          course, 
+          previousLevel: progressData?.level || previousLevel 
+        });
+      }
+    }
+    
     console.log(`Section completion updated successfully: ${section.title} isCompleted=${isCompleted}`);
-    res.json({ message: 'Section completion status updated', section });
+    res.json({ 
+      message: 'Section completion status updated', 
+      section,
+      progressData: progressData || await userProgressionService.getUserProgressionData(req.user.id)
+    });
   } catch (error) {
     console.error('Error updating section completion:', error);
     res.status(500).json({ message: 'Server error', error: error.message });

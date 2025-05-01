@@ -1,5 +1,5 @@
-import React, { useContext, useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, Alert, FlatList, ScrollView, Animated } from 'react-native';
+import React, { useContext, useState, useEffect, useCallback, useRef } from 'react';
+import { View, StyleSheet, Alert, FlatList, ScrollView, Animated, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
@@ -39,11 +39,19 @@ const HomeScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   // Separate visual loading state to show skeletons
   const [visibleLoading, setVisibleLoading] = useState(true);
+  // Add state for pull-to-refresh
+  const [refreshing, setRefreshing] = useState(false);
+  // Track if initial data has been loaded
+  const initialLoadComplete = useRef(false);
 
   // Function to fetch user's courses
-  const fetchUserCourses = async () => {
+  const fetchUserCourses = async (showLoadingUI = true) => {
     try {
-      setLoading(true);
+      if (showLoadingUI) {
+        setLoading(true);
+        setVisibleLoading(true);
+      }
+      
       setError(null);
       const courses = await getMyCourses();
       
@@ -75,29 +83,42 @@ const HomeScreen = ({ navigation }) => {
       });
       
       setUserCourses(formattedCourses);
+      initialLoadComplete.current = true;
       
       // Slightly delay hiding the loading state to ensure smooth transition
       setTimeout(() => {
         setVisibleLoading(false);
         setLoading(false);
+        if (refreshing) setRefreshing(false);
       }, 500);
     } catch (err) {
       console.error('Failed to fetch user courses:', err);
       setError('Could not load your courses');
       setLoading(false);
       setVisibleLoading(false);
+      if (refreshing) setRefreshing(false);
     }
   };
 
-  // Refresh courses when screen comes into focus
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchUserCourses(false); // Don't show skeleton loaders on refresh
+  }, []);
+
+  // Refresh courses when screen comes into focus, but only on first mount
   useFocusEffect(
     useCallback(() => {
-      // Show skeleton loader immediately when screen is focused
-      setVisibleLoading(true);
-      
-      // Fetch latest course data whenever the screen is focused
-      console.log('Home screen focused - refreshing courses');
-      fetchUserCourses();
+      // Only load data if it hasn't been loaded before
+      if (!initialLoadComplete.current) {
+        console.log('Home screen focused - initial data load');
+        fetchUserCourses();
+      } else {
+        console.log('Home screen focused - using cached data');
+        // If we already have data, just use what we have
+        setLoading(false);
+        setVisibleLoading(false);
+      }
       
       return () => {
         // Cleanup function when screen loses focus (if needed)
@@ -315,6 +336,14 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false} 
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       >
         {/* Active Courses Section */}
         {renderSectionTitle("Active Courses", "View All", () => handleNavigation('Development'))}
@@ -348,7 +377,7 @@ const styles = StyleSheet.create({
   },
   coursesContainer: {
     marginBottom: spacing.l,
-    height: 120, // Fixed height to prevent layout shifts
+    minHeight: 120, // Fixed height to prevent layout shifts
   },
   carouselContainer: {
     paddingBottom: spacing.s,
@@ -363,7 +392,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: spacing.l,
-    height: 100, // Fixed height to prevent layout shifts
+    minHeight: 100, // Fixed height to prevent layout shifts
   },
   addCourseCard: {
     flexDirection: 'row',

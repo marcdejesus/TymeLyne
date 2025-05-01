@@ -16,12 +16,12 @@ const getMockCourse = (topic, difficulty) => {
   
   return {
     "title": `Introduction to ${topic}`,
-    "description": `A beginner-friendly course designed to introduce you to the world of ${topic}. Whether you're completely new or have some basic knowledge, this course will help you build a solid foundation and develop practical skills. NOTE: This is using pre-configured demo content.`,
+    "description": `A beginner-friendly course designed to introduce you to the world of ${topic}. Whether you're completely new or have some basic knowledge, this course will help you build a solid foundation and develop practical skills. NOTE: This is currently using pre-configured example content - real AI-generated content will be more tailored to the specific topic.`,
     "sections": [
       {
         "title": "Getting Started with Basics",
         "description": "Learn the fundamental concepts and terminology that every beginner needs to know.",
-        "content": `Welcome to the first section of your ${topic} journey! In this section, we'll cover the absolute basics that every beginner needs to understand. \n\nNOTE: This course is currently using pre-configured demo content because the OpenAI API quota has been exceeded. Please contact the administrator to update the API key.\n\nFirst, let's talk about what ${topic} actually is and why it's worth learning. ${topic} is a versatile skill that can be applied in numerous ways, from personal projects to professional applications. The fundamentals we'll cover here will serve as building blocks for everything else you'll learn.\n\nIn this section, we'll explore the core terminology, basic concepts, and simple techniques that form the foundation of ${topic}. We'll take things slowly and make sure you understand each concept before moving on to the next one. By the end of this section, you'll have a clear understanding of what ${topic} is all about and feel confident in your ability to progress further.`,
+        "content": `[EXAMPLE CONTENT] Welcome to the first section of your ${topic} journey! This is using placeholder content until API connectivity is established.\n\nIn a fully-generated course, this section would contain detailed information specific to ${topic}, covering fundamental concepts, terminology, and basic techniques.\n\nThe content would be much more specific to ${topic}, discussing its unique aspects, important foundational knowledge, and initial steps to get started. It would explain core principles in detail and provide examples relevant to beginners.`,
         "hasQuiz": true,
         "quiz": {
           "questions": [
@@ -201,11 +201,11 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
     console.log('📝 OpenAI Service: Preparing prompt...');
     
     const response = await openai.chat.completions.create({
-      model: "gpt-3.5-turbo", // Using GPT-3.5 Turbo for creating educational content
+      model: "gpt-4o-mini", // Using GPT-4o-mini for creating educational content
       messages: [
         {
           role: "system",
-          content: "You are an expert course creator specialized in creating educational content. Generate a well-structured, concise course with accurate information."
+          content: "You are an expert course creator specialized in creating educational content. Generate a well-structured, detailed, and engaging course with accurate information. Personalize the content to be specific to the given topic, avoiding generic responses. Create quiz questions that truly test understanding of the material rather than general knowledge. Ensure each section flows logically into the next and builds upon previous content."
         },
         {
           role: "user",
@@ -244,8 +244,8 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
           }`
         }
       ],
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.8,
+      max_tokens: 8000,
       response_format: { type: "json_object" }
     });
 
@@ -273,7 +273,8 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
       message: error.message,
       status: error.status,
       type: error.type,
-      code: error.code
+      code: error.code,
+      model: "gpt-4o-mini"
     });
     
     // Check for specific error types
@@ -282,19 +283,25 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
       console.log('🧪 Falling back to mock data due to quota exceeded');
       // Create a customized mock course with a clear message about API quota
       const mockCourse = getMockCourse(topic, difficulty);
-      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API quota has been exceeded. Please contact the administrator to update the API key. This is using pre-configured example content.`;
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API quota has been exceeded. Please verify you have credits in your OpenAI account (min $5 required). This is using pre-configured example content.`;
       return mockCourse;
     } else if (error.code === 'invalid_api_key') {
       console.error('🔑 OpenAI Service: Invalid API key');
       console.log('🧪 Falling back to mock data due to invalid API key');
       const mockCourse = getMockCourse(topic, difficulty);
-      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API key is invalid. Please contact the administrator to update the API key. This is using pre-configured example content.`;
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API key is invalid. Please check your .env file and ensure the API key is correctly formatted. This is using pre-configured example content.`;
       return mockCourse;
     } else if (error.status === 429) {
       console.error('⏱️ OpenAI Service: Rate limit exceeded');
       console.log('🧪 Falling back to mock data due to rate limit');
       const mockCourse = getMockCourse(topic, difficulty);
-      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API rate limit exceeded. Please try again in a few minutes. This is using pre-configured example content.`;
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: OpenAI API rate limit exceeded. Please try again in a few minutes. The GPT-4o-mini model has a limit of 60 RPM. This is using pre-configured example content.`;
+      return mockCourse;
+    } else if (error.code === 'model_not_found') {
+      console.error('🔎 OpenAI Service: Model not found');
+      console.log('🧪 Falling back to mock data due to model not being available');
+      const mockCourse = getMockCourse(topic, difficulty);
+      mockCourse.description = `This is a demo course on ${topic}. NOTICE: The requested model (gpt-4o-mini) was not found. Please make sure your account has access to this model. This is using pre-configured example content.`;
       return mockCourse;
     }
     

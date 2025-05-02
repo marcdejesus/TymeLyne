@@ -61,19 +61,24 @@ const HomeScreen = ({ navigation }) => {
       // Format completed courses for display
       const formattedCompletedCourses = completed.map((course, index) => {
         const courseTitle = course.title || course.course_name || 'Untitled Course';
-        // Abbreviate title for grid display
-        let displayTitle = courseTitle;
-        if (displayTitle.length > 12) {
-          displayTitle = displayTitle.substring(0, 10) + '...';
-        }
         
         return {
           id: course._id || course.course_id,
-          title: displayTitle,
+          title: courseTitle,
           // Assign a default icon based on index
           icon: defaultCourseIcons[index % defaultCourseIcons.length],
           progress: 100, // 100% completed
-          courseData: { ...course, title: courseTitle, course_name: courseTitle }
+          // Store the original course data for details view
+          courseData: { 
+            ...course, 
+            title: courseTitle, 
+            course_name: courseTitle,
+            // Make sure sections are marked as completed
+            sections: course.sections ? course.sections.map(section => ({
+              ...section,
+              isCompleted: true
+            })) : []
+          }
         };
       });
       
@@ -323,87 +328,35 @@ const HomeScreen = ({ navigation }) => {
   // Render Completed Courses - replacing the Friends Courses section
   const renderCompletedCourses = () => {
     if (visibleLoading) {
-      return <SkeletonLoader variant="grid" count={4} />;
+      return <SkeletonLoader variant="course" count={2} />;
     }
     
-    // Get up to 4 completed courses
-    const availableCourses = completedCourses.slice(0, 4);
-    
-    // Determine which positions to fill based on how many courses we have
-    // The order of removal is: bottom right, bottom left, top right, top left
-    let displayCourses = [];
-    
-    if (availableCourses.length > 0) {
-      // We always want to show a 2x2 grid layout, but with some positions empty
-      // based on how many courses we have available
-      switch (availableCourses.length) {
-        case 4:
-          // All positions filled
-          displayCourses = [...availableCourses];
-          break;
-        case 3:
-          // Bottom right is empty
-          displayCourses = [
-            availableCourses[0], // top left
-            availableCourses[1], // top right
-            availableCourses[2], // bottom left
-            null                 // bottom right (empty)
-          ];
-          break;
-        case 2:
-          // Bottom row is empty
-          displayCourses = [
-            availableCourses[0], // top left
-            availableCourses[1], // top right
-            null,                // bottom left (empty)
-            null                 // bottom right (empty)
-          ];
-          break;
-        case 1:
-          // Only top left is filled
-          displayCourses = [
-            availableCourses[0], // top left
-            null,                // top right (empty)
-            null,                // bottom left (empty)
-            null                 // bottom right (empty)
-          ];
-          break;
-        default:
-          break;
-      }
-      
+    if (completedCourses.length === 0) {
       return (
-        <FlatList
-          data={displayCourses}
-          keyExtractor={(item, index) => item ? item.id.toString() : `empty-${index}`}
-          numColumns={2}
-          scrollEnabled={false}
-          renderItem={({ item, index }) => {
-            if (!item) {
-              // Return an invisible placeholder for empty slots
-              return <View key={`empty-${index}`} style={styles.emptyGridSlot} />;
-            }
-            
-            return (
-              <CourseCard
-                course={item}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { 
-                  courseId: item.id,
-                  courseData: item.courseData
-                })}
-              />
-            );
-          }}
-          contentContainerStyle={styles.gridContainer}
-        />
+        <Typography variant="body" style={styles.emptyCourseText}>
+          Complete a course to see it here!
+        </Typography>
       );
     }
-    
+
     return (
-      <Typography variant="body" style={styles.emptyCourseText}>
-        Complete a course to see it here!
-      </Typography>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselContainer}
+      >
+        {completedCourses.map((course) => (
+          <CourseCard 
+            key={course.id}
+            course={course}
+            style={styles.carouselCard}
+            onPress={() => handleNavigation('CourseSections', { 
+              courseId: course.id,
+              courseData: course.courseData
+            })}
+          />
+        ))}
+      </ScrollView>
     );
   };
 

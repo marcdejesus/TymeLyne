@@ -124,9 +124,6 @@ const styles = StyleSheet.create({
     maxHeight: 60,
     borderRadius: width * 0.075, // Make it a circle by setting borderRadius to half the width
     backgroundColor: colors.primaryLight, // Light background for the icon that matches the brand color
-    padding: spacing.xs, // Add some padding inside the circle
-    justifyContent: 'center',
-    alignItems: 'center',
     overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
   },
   contentContainer: {

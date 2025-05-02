@@ -211,6 +211,39 @@ const AuthProvider = ({ children }) => {
     }
   };
 
+  // Update user data - new function for profile updates
+  const updateUser = async (userData) => {
+    try {
+      console.log('🔄 Updating user data');
+      
+      // Check if we're receiving a new user object or just fields to update
+      let updatedUser = userData;
+      if (!userData.id && user) {
+        // We're receiving partial data, merge with existing user data
+        updatedUser = {
+          ...user,
+          ...userData
+        };
+      }
+      
+      // Update user state
+      setUser(updatedUser);
+      
+      // Update stored user data - make sure we're storing the full user object
+      await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
+      
+      console.log('✅ User data updated successfully', { 
+        username: updatedUser.username,
+        profilePicture: updatedUser.profile_picture ? 'set' : 'not set'
+      });
+      
+      return { success: true, user: updatedUser };
+    } catch (error) {
+      console.error('🔴 UPDATE USER ERROR:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -222,7 +255,8 @@ const AuthProvider = ({ children }) => {
         login,
         register,
         logout,
-        resendVerification
+        resendVerification,
+        setUser: updateUser // Expose the setUser function
       }}
     >
       {children}

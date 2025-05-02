@@ -37,6 +37,12 @@ import AllCoursesScreen from './src/screens/AllCoursesScreen';
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
 import UserProgressionProvider from './src/contexts/UserProgressionContext';
 
+// Enable mock API mode for development when backend isn't available
+if (__DEV__) {
+  global.MOCK_API = true;
+  console.log('🧪 Mock API mode enabled for development');
+}
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 

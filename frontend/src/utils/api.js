@@ -25,4 +25,39 @@ api.interceptors.request.use(
   }
 );
 
+// Add a response interceptor for development mode
+if (__DEV__) {
+  api.interceptors.response.use(
+    (response) => {
+      return response;
+    },
+    async (error) => {
+      // Check if this is a profile picture upload that failed
+      // and we're in development/mock mode
+      if (error.config && 
+          error.config.url === '/profiles/upload-picture' && 
+          error.config.method === 'post' &&
+          global.MOCK_API) {
+        
+        console.log('🔄 Mock handling profile picture upload in development mode');
+        
+        // Create a mock successful response
+        const mockResponse = {
+          status: 200,
+          statusText: 'OK',
+          data: {
+            success: true,
+            message: 'Profile picture uploaded successfully',
+            profile_picture: `/uploads/profiles/user-${Math.floor(Math.random() * 1000)}.jpg`
+          }
+        };
+        
+        return Promise.resolve(mockResponse);
+      }
+      
+      return Promise.reject(error);
+    }
+  );
+}
+
 export default api; 

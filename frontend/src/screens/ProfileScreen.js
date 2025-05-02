@@ -3,7 +3,6 @@ import {
   View, 
   Text, 
   StyleSheet, 
-  Image, 
   Dimensions,
   Platform,
   Animated,
@@ -16,17 +15,19 @@ import {
   SectionTitle,
   Typography
 } from '../components';
+import { ProfilePicture } from '../components/profile';
 import XpChart from '../components/XpChart';
 import ActivityFeed from '../components/ActivityFeed';
 import { AuthContext } from '../contexts/AuthContext';
 import { useUserProgression } from '../contexts/UserProgressionContext';
 import { colors } from '../constants/theme';
 import { getActivityFeed } from '../services/activityService';
+import { getProfile } from '../services/profileService';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, userToken, setUser } = useContext(AuthContext);
   const { 
     progressData, 
     loading: progressLoading, 
@@ -42,6 +43,9 @@ const ProfileScreen = ({ navigation }) => {
   const [activities, setActivities] = useState([]);
   const [activityLoading, setActivityLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  
+  // Add a state for profile picture updates
+  const [profilePictureUpdated, setProfilePictureUpdated] = useState(false);
   
   // Fetch activity feed
   const fetchActivities = useCallback(async () => {
@@ -61,15 +65,43 @@ const ProfileScreen = ({ navigation }) => {
     fetchActivities();
   }, [fetchActivities]);
   
-  // Handle pull-to-refresh
+  // Add a function to fetch fresh user data
+  const fetchUserData = useCallback(async () => {
+    if (!userToken) return;
+    
+    try {
+      const userData = await getProfile(null, userToken);
+      if (userData && userData.user) {
+        setUser(userData.user);
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error);
+    }
+  }, [userToken, setUser]);
+  
+  // Handle profile picture update
+  const handleProfilePictureUpdated = (newProfilePicture) => {
+    setProfilePictureUpdated(true);
+    // Refresh user data to ensure everything is up to date
+    fetchUserData();
+  };
+  
+  // Enhanced refresh function to reload all data
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchUserProgression(),
-      fetchActivities()
-    ]);
-    setRefreshing(false);
-  }, [fetchUserProgression, fetchActivities]);
+    try {
+      // Fetch user progression, activity data, and user profile in parallel
+      await Promise.all([
+        fetchUserProgression(),
+        fetchActivities(),
+        fetchUserData()
+      ]);
+    } catch (error) {
+      console.error('Error during refresh:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [fetchUserProgression, fetchActivities, fetchUserData]);
   
   // Handle level up animation
   useEffect(() => {
@@ -132,16 +164,18 @@ const ProfileScreen = ({ navigation }) => {
           onRefresh={onRefresh}
           colors={[colors.primary]}
           tintColor={colors.primary}
+          progressBackgroundColor={colors.background}
+          progressViewOffset={10}
         />
       }
     >
       {/* Profile Information */}
       <View style={styles.profileSection}>
         <View style={styles.profileImageContainer}>
-          <Image 
-            source={require('../../assets/default-avatar.png')} // Placeholder for profile picture
-            style={styles.profileImage} 
-            resizeMode="cover"
+          <ProfilePicture 
+            size={width * 0.2}
+            editable={true}
+            onImageUpdated={handleProfilePictureUpdated}
           />
           <Animated.Text 
             style={[
@@ -206,24 +240,6 @@ const styles = StyleSheet.create({
   profileImageContainer: {
     alignItems: 'center',
     marginRight: 16,
-  },
-  profileImage: {
-    width: width * 0.2,
-    height: width * 0.2,
-    borderRadius: width * 0.1,
-    backgroundColor: '#D8D0BA',
-    overflow: 'hidden',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
   },
   levelText: {
     marginTop: 20,

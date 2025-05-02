@@ -213,14 +213,33 @@ const HomeScreen = ({ navigation }) => {
       setError('Could not load your courses');
       setLoading(false);
       setVisibleLoading(false);
+      // Ensure refreshing state is turned off
       if (refreshing) setRefreshing(false);
+      
+      // Add user-friendly error if triggered by pull-to-refresh
+      if (refreshing) {
+        Alert.alert(
+          'Connection Error',
+          'Could not refresh your courses. Please check your internet connection and try again.',
+          [{ text: 'OK' }]
+        );
+      }
     }
   };
 
   // Handle pull-to-refresh
+  // This allows users to pull down from the top of the screen to refresh their course data
+  // Useful when courses are added, removed, or course progress has been updated
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    fetchUserCourses(false); // Don't show skeleton loaders on refresh
+    try {
+      // Fetch fresh course data without showing skeleton loaders
+      fetchUserCourses(false);
+    } catch (error) {
+      console.error('Error during refresh:', error);
+      // Ensure refreshing state is turned off if there's an error
+      setRefreshing(false);
+    }
   }, []);
 
   // Refresh courses when screen comes into focus, but only on first mount
@@ -508,6 +527,10 @@ const HomeScreen = ({ navigation }) => {
             onRefresh={onRefresh}
             colors={[colors.primary]}
             tintColor={colors.primary}
+            progressBackgroundColor={colors.background}
+            progressViewOffset={10}
+            title="Pull to refresh"
+            titleColor={colors.text.secondary}
           />
         }
       >

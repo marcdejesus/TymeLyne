@@ -3,77 +3,133 @@ import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-nati
 import { LineChart } from 'react-native-chart-kit';
 import { colors } from '../constants/theme';
 import { useUserProgression } from '../contexts/UserProgressionContext';
+import { getXpHistory } from '../services/activityService';
 
-// This is a placeholder component for the chart
-// We'll need to install react-native-chart-kit or another charting library
-// For now, we'll create a mock chart UI
+// This chart component displays user's XP data over time with different time period views
 
 const { width } = Dimensions.get('window');
 
 const XpChart = () => {
-  const [period, setPeriod] = useState('monthly');
+  const [period, setPeriod] = useState('daily'); // Default to daily view for more detailed data
   const [loading, setLoading] = useState(false);
   const { progressData } = useUserProgression();
   
-  // Default chart data
+  // Chart data state
   const [labels, setLabels] = useState(['']);
   const [dataPoints, setDataPoints] = useState([0]);
+  const [xpHistoryData, setXpHistoryData] = useState([]);
   
-  // Update chart data when period changes or progression data updates
-  useEffect(() => {
-    generateChartData();
-  }, [period, progressData]);
-  
-  // Generate chart data based on selected period
-  const generateChartData = () => {
-    setLoading(true);
+  // Format date function for different period types
+  const formatDate = (dateString, periodType) => {
+    const date = new Date(dateString);
     
-    // Get the total XP from progression data
-    const totalXp = progressData?.totalXp || 0;
-    
-    // Create dummy time periods based on selected filter
-    let chartLabels = [];
-    let chartData = [];
-    
-    const now = new Date();
-    
-    switch (period) {
+    switch (periodType) {
       case 'daily':
-        // Last 7 days
-        for (let i = 6; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - i);
-          chartLabels.push(`${date.getDate()}/${date.getMonth() + 1}`);
-          chartData.push(totalXp);
-        }
-        break;
-      
+        return `${date.getDate()}/${date.getMonth() + 1}`;
       case 'weekly':
-        // Last 4 weeks
-        for (let i = 3; i >= 0; i--) {
-          const date = new Date(now);
-          date.setDate(date.getDate() - (i * 7));
-          chartLabels.push(`W${Math.ceil((date.getDate() + date.getDay()) / 7)}`);
-          chartData.push(totalXp);
-        }
-        break;
-      
+        // Get week number for weekly display
+        return `W${Math.ceil((date.getDate() + date.getDay()) / 7)}`;
       case 'monthly':
+        // Get short month name
+        return date.toLocaleString('default', { month: 'short' });
       default:
-        // Last 6 months
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date(now);
+        return '';
+    }
+  };
+  
+  // Fetch XP history data from the API
+  const fetchXpHistory = async (periodType) => {
+    try {
+      setLoading(true);
+      
+      // Set appropriate limit based on period type
+      let limit = 7;  // default for daily (7 days)
+      if (periodType === 'weekly') limit = 4;  // 4 weeks
+      if (periodType === 'monthly') limit = 6;  // 6 months
+      
+      // Call the API service to get XP history data
+      const data = await getXpHistory({ 
+        period: periodType,
+        limit: limit
+      });
+      
+      console.log(`📊 XP HISTORY (${periodType}): Received ${data?.length || 0} records:`, 
+        JSON.stringify(data));
+      
+      setXpHistoryData(data);
+      
+      // Process data for chart if we have data points
+      if (data && data.length > 0) {
+        // Sort data by date (oldest to newest for chart display)
+        const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
+        console.log(`📊 XP CHART: Sorted data for ${periodType}:`, 
+          sortedData.map(item => ({ date: formatDate(item.date, periodType), xp: item.xp })));
+        
+        // Extract labels and data points
+        const chartLabels = sortedData.map(item => formatDate(item.date, periodType));
+        const chartData = sortedData.map(item => item.xp);
+        
+        console.log(`📊 XP CHART: Setting chart data for ${periodType}:`, 
+          { labels: chartLabels, data: chartData });
+        
+        setLabels(chartLabels);
+        setDataPoints(chartData);
+      } else {
+        // If no data, show empty chart with date labels
+        console.log(`📊 XP CHART: No data available for ${periodType}, showing empty chart`);
+        setDefaultEmptyChart(periodType);
+      }
+    } catch (error) {
+      console.error('Error fetching XP history:', error);
+      // Set default empty chart on error
+      setDefaultEmptyChart(periodType);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  // Set default empty chart with appropriate time labels when no data exists
+  const setDefaultEmptyChart = (periodType) => {
+    const now = new Date();
+    const chartLabels = [];
+    const emptyData = [];
+    
+    // Set same limits as fetch function
+    let limit = 7;  // default for daily
+    if (periodType === 'weekly') limit = 4;
+    if (periodType === 'monthly') limit = 6;
+    
+    // Create array of appropriate dates for the period
+    for (let i = limit - 1; i >= 0; i--) {
+      const date = new Date(now);
+      
+      switch (periodType) {
+        case 'daily':
+          date.setDate(date.getDate() - i);
+          break;
+        case 'weekly':
+          date.setDate(date.getDate() - (i * 7));
+          break;
+        case 'monthly':
           date.setMonth(date.getMonth() - i);
-          chartLabels.push(date.toLocaleString('default', { month: 'short' }));
-          chartData.push(totalXp);
-        }
-        break;
+          break;
+      }
+      
+      chartLabels.push(formatDate(date, periodType));
+      emptyData.push(0); // Zero XP for empty data
     }
     
+    console.log(`📊 XP CHART: Setting default empty chart for ${periodType}:`,
+      { labels: chartLabels, data: emptyData });
+    
     setLabels(chartLabels);
-    setDataPoints(chartData);
-    setLoading(false);
+    setDataPoints(emptyData);
   };
+  
+  // Update chart when period changes
+  useEffect(() => {
+    fetchXpHistory(period);
+  }, [period]);
   
   // Chart configuration
   const chartConfig = {
@@ -97,12 +153,26 @@ const XpChart = () => {
   
   // Chart data object
   const chartData = {
-    labels: labels,
+    labels: labels.length ? labels : [''],
     datasets: [{
       data: dataPoints.length ? dataPoints : [0],
       color: () => 'rgba(83, 177, 177, 1)',
       strokeWidth: 2
     }]
+  };
+  
+  // Calculate most recent total XP from history data
+  const calculateTotalXp = () => {
+    if (xpHistoryData && xpHistoryData.length > 0) {
+      // Use the most recent XP value from history data
+      // Sort by date descending and get first item's XP
+      const sorted = [...xpHistoryData].sort((a, b) => 
+        new Date(b.date) - new Date(a.date)
+      );
+      return sorted[0].xp;
+    }
+    // Fallback to progression data
+    return progressData?.totalXp || 0;
   };
   
   // Render period selector buttons
@@ -176,7 +246,7 @@ const XpChart = () => {
       
       <View style={styles.totalXpContainer}>
         <Text style={styles.totalXpLabel}>Total XP:</Text>
-        <Text style={styles.totalXpValue}>{progressData?.totalXp || 0}</Text>
+        <Text style={styles.totalXpValue}>{calculateTotalXp()}</Text>
       </View>
     </View>
   );
@@ -249,13 +319,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   totalXpLabel: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '500',
     color: colors.text.secondary,
-    marginRight: 8,
+    marginRight: 6,
   },
   totalXpValue: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     color: '#53B1B1',
   },

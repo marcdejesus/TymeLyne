@@ -98,16 +98,26 @@ exports.getXpHistory = async (req, res) => {
     const period = req.query.period || 'monthly';
     const limit = parseInt(req.query.limit) || 12;
 
+    console.log(`🔍 API: Fetching XP history for user ${userId} with period=${period}, limit=${limit}`);
+
     // Validate period
     if (!['daily', 'weekly', 'monthly'].includes(period)) {
+      console.warn(`❌ API: Invalid period requested: ${period}`);
       return res.status(400).json({ message: 'Invalid period. Must be daily, weekly, or monthly' });
     }
 
     const xpHistory = await activityService.getXpHistory(userId, period, limit);
     
+    console.log(`✅ API: Returning ${xpHistory.length} XP history records for user ${userId}`);
+    
+    // If no records found, return an empty array with a specific message
+    if (xpHistory.length === 0) {
+      console.log(`ℹ️ API: No XP history records found for user ${userId} with period ${period}`);
+    }
+    
     res.json(xpHistory);
   } catch (error) {
-    console.error('Error getting XP history:', error);
+    console.error('❌ Error getting XP history:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

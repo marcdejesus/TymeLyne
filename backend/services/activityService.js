@@ -287,8 +287,11 @@ const updateXpHistory = async (userId, xpEarned, activityType, source) => {
     const userProfile = await Profile.findOne({ user_id: userId });
     
     if (!userProfile) {
+      console.error(`❌ XP HISTORY: User profile not found for ID: ${userId}`);
       throw new Error('User profile not found');
     }
+    
+    console.log(`📊 XP HISTORY: Found user profile with totalXP=${userProfile.user_total_exp}, level=${userProfile.level}`);
     
     // Get the current date
     const now = new Date();
@@ -303,6 +306,12 @@ const updateXpHistory = async (userId, xpEarned, activityType, source) => {
     startOfWeek.setDate(now.getDate() - day);
     startOfWeek.setHours(0, 0, 0, 0);
     
+    console.log(`📊 XP HISTORY: Creating/updating records for periods:`, {
+      daily: today.toISOString(),
+      weekly: startOfWeek.toISOString(),
+      monthly: startOfMonth.toISOString()
+    });
+    
     // Create or update daily record
     await updateXpHistoryPeriod(userId, userProfile, xpEarned, activityType, source, 'daily', today);
     
@@ -312,6 +321,7 @@ const updateXpHistory = async (userId, xpEarned, activityType, source) => {
     // Create or update monthly record
     await updateXpHistoryPeriod(userId, userProfile, xpEarned, activityType, source, 'monthly', startOfMonth);
     
+    console.log(`✅ XP HISTORY: Successfully updated all records for user ${userId}`);
   } catch (error) {
     console.error('❌ Error updating XP history:', error);
     throw error;
@@ -339,7 +349,7 @@ const updateXpHistoryPeriod = async (userId, userProfile, xpEarned, activityType
     });
     
     if (xpHistory) {
-      // Update existing record
+      // Update existing record with correct field names from Profile model
       xpHistory.xp = userProfile.user_total_exp;
       xpHistory.level = userProfile.level;
       
@@ -353,7 +363,7 @@ const updateXpHistoryPeriod = async (userId, userProfile, xpEarned, activityType
         });
       }
     } else {
-      // Create a new record
+      // Create a new record with correct field names from Profile model
       xpHistory = new XpHistory({
         user_id: userId,
         xp: userProfile.user_total_exp,

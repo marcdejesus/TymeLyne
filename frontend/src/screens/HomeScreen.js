@@ -68,19 +68,24 @@ const HomeScreen = ({ navigation }) => {
       // Format completed courses for display
       const formattedCompletedCourses = completed.map((course, index) => {
         const courseTitle = course.title || course.course_name || 'Untitled Course';
-        // Abbreviate title for grid display
-        let displayTitle = courseTitle;
-        if (displayTitle.length > 12) {
-          displayTitle = displayTitle.substring(0, 10) + '...';
-        }
         
         return {
           id: course._id || course.course_id,
-          title: displayTitle,
+          title: courseTitle,
           // Assign a default icon based on index
           icon: defaultCourseIcons[index % defaultCourseIcons.length],
           progress: 100, // 100% completed
-          courseData: { ...course, title: courseTitle, course_name: courseTitle }
+          // Store the original course data for details view
+          courseData: { 
+            ...course, 
+            title: courseTitle, 
+            course_name: courseTitle,
+            // Make sure sections are marked as completed
+            sections: course.sections ? course.sections.map(section => ({
+              ...section,
+              isCompleted: true
+            })) : []
+          }
         };
       });
       
@@ -387,7 +392,7 @@ const HomeScreen = ({ navigation }) => {
   // Render Completed Courses - replacing the Friends Courses section
   const renderCompletedCourses = () => {
     if (visibleLoading) {
-      return <SkeletonLoader variant="grid" count={4} />;
+      return <SkeletonLoader variant="course" count={2} />;
     }
     
     // Get up to 4 completed courses

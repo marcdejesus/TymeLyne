@@ -64,7 +64,6 @@ const CourseCard = ({
         <Typography 
           variant="subheading" 
           weight="semiBold" 
-          numberOfLines={2}
           style={styles.title}
         >
           {course.title}

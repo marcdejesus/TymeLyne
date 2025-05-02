@@ -17,88 +17,43 @@ import {
   Typography
 } from '../components';
 import { AuthContext } from '../contexts/AuthContext';
-import { getUserProgressionData } from '../services/userProgressionService';
+import { useUserProgression } from '../contexts/UserProgressionContext';
 
 const { width } = Dimensions.get('window');
 
 const ProfileScreen = ({ navigation }) => {
   const { user, logout } = useContext(AuthContext);
-  const [progressData, setProgressData] = useState({
-    level: 1,
-    totalXp: 0,
-    xpToNextLevel: 500,
-    levelProgress: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [previousLevel, setPreviousLevel] = useState(null);
+  const { 
+    progressData, 
+    loading: progressLoading, 
+    error: progressError,
+    isLevelUp,
+    resetLevelUp
+  } = useUserProgression();
+  
   const levelTextScale = useRef(new Animated.Value(1)).current;
   
-  // Fetch user progression data from backend
+  // Handle level up animation
   useEffect(() => {
-    const fetchUserProgression = async () => {
-      try {
-        setLoading(true);
-        const data = await getUserProgressionData();
-        console.log('User progression data received:', data);
-        
-        // Store previous level before updating
-        if (previousLevel === null) {
-          setPreviousLevel(data.level);
-        } else if (data.level > previousLevel) {
-          // Level up animation
-          Animated.sequence([
-            Animated.timing(levelTextScale, {
-              toValue: 1.3,
-              duration: 300,
-              useNativeDriver: true,
-            }),
-            Animated.timing(levelTextScale, {
-              toValue: 1,
-              duration: 300,
-              useNativeDriver: true,
-            })
-          ]).start();
-          
-          setPreviousLevel(data.level);
-        }
-        
-        // Ensure data has required fields
-        setProgressData({
-          level: data.level || 1,
-          totalXp: data.totalXp || 0,
-          currentLevelXp: data.currentLevelXp || 0,
-          totalXpForNextLevel: data.totalXpForNextLevel || 500,
-          levelProgress: data.levelProgress || 0,
-          // Support both field naming patterns
-          xpToNextLevel: data.xpToNextLevel || data.totalXpForNextLevel || 500
-        });
-      } catch (error) {
-        console.error('Error fetching user progression data:', error);
-        // Don't overwrite existing data on refresh error
-        if (!progressData.level) {
-          setProgressData({
-            level: 1,
-            totalXp: 0,
-            currentLevelXp: 0,
-            totalXpForNextLevel: 500,
-            levelProgress: 0
-          });
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    // Initial fetch
-    fetchUserProgression();
-    
-    // Set up interval to refresh data every minute (reduced from 30s to minimize API calls)
-    const refreshInterval = setInterval(fetchUserProgression, 60000);
-    
-    // Clean up the interval on component unmount
-    return () => clearInterval(refreshInterval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (isLevelUp) {
+      // Level up animation
+      Animated.sequence([
+        Animated.timing(levelTextScale, {
+          toValue: 1.3,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.timing(levelTextScale, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        })
+      ]).start(() => {
+        // Reset the level up flag after animation
+        resetLevelUp();
+      });
+    }
+  }, [isLevelUp, levelTextScale, resetLevelUp]);
   
   // Use real data from user and progressData
   const followers = user?.follower_count || 0;

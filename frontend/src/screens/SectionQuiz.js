@@ -14,6 +14,7 @@ import Button from '../components/Button';
 import Card from '../components/Card';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 import { updateSectionCompletion, getCourseById } from '../services/courseService';
+import { useUserProgression } from '../contexts/UserProgressionContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ const QuizOption = memo(({ index, option, selectedOption, onSelect }) => (
 
 const SectionQuiz = ({ navigation, route }) => {
   const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 500 } = route.params;
+  const { updateProgression } = useUserProgression();
   
   // Quiz state
   const [quizStarted, setQuizStarted] = useState(false);
@@ -222,10 +224,13 @@ const SectionQuiz = ({ navigation, route }) => {
           .then(result => {
             console.log('Section marked as completed:', result);
             
-            // Store the updated progression data for use when returning to course screen
+            // Update the progression data in context
             if (result && result.progressData) {
               // Save this in route params to pass back later
               route.params.updatedProgressData = result.progressData;
+              
+              // Update the global progression context
+              updateProgression(result.progressData);
             }
             
             // If we received an updated section, store it too
@@ -240,7 +245,7 @@ const SectionQuiz = ({ navigation, route }) => {
         console.error('Error updating section completion:', error);
       }
     }
-  }, [questions, currentQuestionIndex, selectedOption, courseId, sectionId, route.params]);
+  }, [questions, currentQuestionIndex, selectedOption, courseId, sectionId, route.params, updateProgression]);
 
   const handleRetry = useCallback(() => {
     setQuizFailed(false);

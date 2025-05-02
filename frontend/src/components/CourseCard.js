@@ -32,15 +32,17 @@ const CourseCard = ({
         onPress={onPress}
         noPadding={false}
       >
-        <Image source={course.icon} style={styles.gridIcon} />
+        <View style={styles.gridIconContainer}>
+          <Image source={course.icon} style={styles.gridIcon} />
+        </View>
         <Typography 
-          variant="subheading" 
-          weight="semiBold" 
+          variant="body2" 
+          weight="medium" 
           center 
-          numberOfLines={3}
+          numberOfLines={1}
           style={styles.gridTitle}
         >
-          {course.title}
+          {course.title.length > 8 ? course.title.substring(0, 8) + '...' : course.title}
         </Typography>
       </Card>
     );
@@ -163,30 +165,38 @@ const styles = StyleSheet.create({
   
   // Grid card styles
   gridCard: {
-    width: '46%',
-    margin: '2%',
+    width: '48%',
+    margin: '1%',
     alignItems: 'center',
     justifyContent: 'center',
-    aspectRatio: 1,
     padding: spacing.m,
-    borderRadius: borderRadius.l, // Ensure grid cards use the same rounded corners
+    paddingVertical: spacing.m * 1.2,
+    borderRadius: borderRadius.l,
+    height: 120,
+  },
+  gridIconContainer: {
+    width: width * 0.18,
+    height: width * 0.18,
+    maxWidth: 70,
+    maxHeight: 70,
+    borderRadius: width * 0.09,
+    backgroundColor: colors.background.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.m,
+    overflow: 'hidden',
   },
   gridIcon: {
-    width: width * 0.14,
-    height: width * 0.14,
-    maxWidth: 55,
-    maxHeight: 55,
-    borderRadius: width * 0.07, // Make it a circle by setting borderRadius to half the width
-    backgroundColor: colors.primaryLight, // Light background for the icon that matches the brand color
-    padding: spacing.xs, // Add some padding inside the circle
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
-    marginBottom: spacing.m, // Increase spacing between icon and title
+    width: width * 0.12,
+    height: width * 0.12,
+    maxWidth: 48,
+    maxHeight: 48,
+    resizeMode: 'contain',
   },
   gridTitle: {
     textAlign: 'center',
-    marginTop: spacing.xs,
+    marginTop: 4,
+    fontSize: 14,
   },
 });
 

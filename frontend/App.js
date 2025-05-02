@@ -34,6 +34,7 @@ import LeaderboardsScreen from './src/screens/LeaderboardsScreen';
 
 // Auth Context
 import AuthProvider, { AuthContext } from './src/contexts/AuthContext';
+import UserProgressionProvider from './src/contexts/UserProgressionContext';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -164,8 +165,10 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <AuthProvider>
-        <StatusBar style="dark-content" backgroundColor={colors.background} />
-        <AppContent />
+        <UserProgressionProvider>
+          <StatusBar style="dark-content" backgroundColor={colors.background} />
+          <AppContent />
+        </UserProgressionProvider>
       </AuthProvider>
     </SafeAreaProvider>
   );

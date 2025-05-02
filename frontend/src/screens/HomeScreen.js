@@ -24,17 +24,11 @@ const defaultCourseIcons = [
 // Import tutorial data
 import { tymelyneTutorialData } from '../data/tutorialData';
 
-// Mock friend courses - replace with API call
-const friendCourses = [
-  { id: '3', title: 'User Interface Fundamentals', icon: require('../../assets/course-icons/design.png') },
-  { id: '4', title: 'Responsive Web Design', icon: require('../../assets/course-icons/computer.png') },
-  { id: '5', title: 'Mobile App Development', icon: require('../../assets/course-icons/computer.png') },
-  { id: '6', title: 'Data Visualization Basics', icon: require('../../assets/course-icons/finance.png') },
-];
-
+// Updated to show completed courses instead of friend courses
 const HomeScreen = ({ navigation }) => {
   const { logout, user } = useContext(AuthContext);
   const [userCourses, setUserCourses] = useState([]);
+  const [completedCourses, setCompletedCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   // Separate visual loading state to show skeletons
@@ -58,8 +52,44 @@ const HomeScreen = ({ navigation }) => {
       // Debug log to see actual course data
       console.log('Fetched courses from API:', courses);
       
-      // Map courses to include icons and format for CourseCard
-      const formattedCourses = courses.map((course, index) => {
+      // Filter out completed courses (all sections completed)
+      const completed = courses.filter(course => {
+        if (!course.sections || course.sections.length === 0) return false;
+        return course.sections.every(section => section.isCompleted);
+      });
+      
+      // Format completed courses for display
+      const formattedCompletedCourses = completed.map((course, index) => {
+        const courseTitle = course.title || course.course_name || 'Untitled Course';
+        // Abbreviate title for grid display
+        let displayTitle = courseTitle;
+        if (displayTitle.length > 12) {
+          displayTitle = displayTitle.substring(0, 10) + '...';
+        }
+        
+        return {
+          id: course._id || course.course_id,
+          title: displayTitle,
+          // Assign a default icon based on index
+          icon: defaultCourseIcons[index % defaultCourseIcons.length],
+          progress: 100, // 100% completed
+          courseData: { ...course, title: courseTitle, course_name: courseTitle }
+        };
+      });
+      
+      // Sort by most recently active or created
+      setCompletedCourses(formattedCompletedCourses);
+      
+      // Filter out in-progress courses
+      const inProgress = courses.filter(course => {
+        if (!course.sections || course.sections.length === 0) return true;
+        const hasCompleted = course.sections.some(section => section.isCompleted);
+        const allCompleted = course.sections.every(section => section.isCompleted);
+        return hasCompleted && !allCompleted;
+      });
+      
+      // Map in-progress courses to include icons and format for CourseCard
+      const formattedCourses = inProgress.map((course, index) => {
         // Get the correct title from the course data - handle both title and course_name
         const courseTitle = course.title || course.course_name || 'Untitled Course';
         
@@ -290,26 +320,81 @@ const HomeScreen = ({ navigation }) => {
     );
   };
   
-  // Render Friend Courses
-  const renderFriendCourses = () => {
+  // Render Completed Courses - replacing the Friends Courses section
+  const renderCompletedCourses = () => {
     if (visibleLoading) {
       return <SkeletonLoader variant="grid" count={4} />;
     }
     
-    if (friendCourses && friendCourses.length > 0) {
+    // Get up to 4 completed courses
+    const availableCourses = completedCourses.slice(0, 4);
+    
+    // Determine which positions to fill based on how many courses we have
+    // The order of removal is: bottom right, bottom left, top right, top left
+    let displayCourses = [];
+    
+    if (availableCourses.length > 0) {
+      // We always want to show a 2x2 grid layout, but with some positions empty
+      // based on how many courses we have available
+      switch (availableCourses.length) {
+        case 4:
+          // All positions filled
+          displayCourses = [...availableCourses];
+          break;
+        case 3:
+          // Bottom right is empty
+          displayCourses = [
+            availableCourses[0], // top left
+            availableCourses[1], // top right
+            availableCourses[2], // bottom left
+            null                 // bottom right (empty)
+          ];
+          break;
+        case 2:
+          // Bottom row is empty
+          displayCourses = [
+            availableCourses[0], // top left
+            availableCourses[1], // top right
+            null,                // bottom left (empty)
+            null                 // bottom right (empty)
+          ];
+          break;
+        case 1:
+          // Only top left is filled
+          displayCourses = [
+            availableCourses[0], // top left
+            null,                // top right (empty)
+            null,                // bottom left (empty)
+            null                 // bottom right (empty)
+          ];
+          break;
+        default:
+          break;
+      }
+      
       return (
         <FlatList
-          data={friendCourses}
-          keyExtractor={(item) => item.id}
+          data={displayCourses}
+          keyExtractor={(item, index) => item ? item.id.toString() : `empty-${index}`}
           numColumns={2}
           scrollEnabled={false}
-          renderItem={({ item }) => (
-            <CourseCard
-              course={item}
-              variant="grid"
-              onPress={() => handleNavigation('CourseSections', { courseId: item.id })}
-            />
-          )}
+          renderItem={({ item, index }) => {
+            if (!item) {
+              // Return an invisible placeholder for empty slots
+              return <View key={`empty-${index}`} style={styles.emptyGridSlot} />;
+            }
+            
+            return (
+              <CourseCard
+                course={item}
+                variant="grid"
+                onPress={() => handleNavigation('CourseSections', { 
+                  courseId: item.id,
+                  courseData: item.courseData
+                })}
+              />
+            );
+          }}
           contentContainerStyle={styles.gridContainer}
         />
       );
@@ -317,7 +402,7 @@ const HomeScreen = ({ navigation }) => {
     
     return (
       <Typography variant="body" style={styles.emptyCourseText}>
-        No courses from friends to display.
+        Complete a course to see it here!
       </Typography>
     );
   };
@@ -358,9 +443,9 @@ const HomeScreen = ({ navigation }) => {
         {renderSectionTitle("Add a Course", null, null, styles.addCourseSectionTitle)}
         {renderAddCourseCards()}
 
-        {/* Friends' Courses Section */}
-        {renderSectionTitle("Friends' Courses", "See More", () => handleNavigation('Development'), styles.friendsSectionTitle)}
-        {renderFriendCourses()}
+        {/* Completed Courses Section - replacing Friends' Courses */}
+        {renderSectionTitle("Completed Courses", "See More", () => handleNavigation('Development'), styles.friendsSectionTitle)}
+        {renderCompletedCourses()}
       </ScrollView>
     </Screen>
   );
@@ -412,7 +497,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   gridContainer: {
-    paddingBottom: spacing.m, // Reduced from spacing.xl
+    paddingBottom: spacing.m,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
   },
   emptyCourseText: {
     textAlign: 'center',
@@ -440,6 +528,26 @@ const styles = StyleSheet.create({
   },
   friendsSectionTitle: {
     marginTop: spacing.m,
+  },
+  completedCoursesContainer: {
+    width: '100%',
+    padding: spacing.xs,
+  },
+  completedCoursesRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: spacing.s,
+  },
+  completedCourseSlot: {
+    width: '48%',
+  },
+  emptyCourseSlot: {
+    opacity: 0, // Make empty slots invisible
+  },
+  emptyGridSlot: {
+    width: '48%',
+    margin: '1%',
+    height: 0, // Don't take up vertical space
   },
 });
 

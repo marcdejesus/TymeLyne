@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import SafeAreaContainer from './SafeAreaContainer';
 import Header from './Header';
 import ContentContainer from './ContentContainer';
@@ -24,7 +24,7 @@ import { colors } from '../constants/theme';
  * @param {string} keyboardShouldPersistTaps - Keyboard persistence setting for scroll view
  * @param {object} scrollViewRef - Reference to the scroll view
  */
-const Screen = ({
+const Screen = memo(({
   children,
   title,
   onBackPress,
@@ -44,13 +44,19 @@ const Screen = ({
   keyboardShouldPersistTaps,
   scrollViewRef
 }) => {
+  // Memoize header check
+  const showHeader = Boolean(title || onBackPress || onMenuPress || onRightPress);
+  
+  // Memoize navigation check
+  const showNavigation = Boolean(showBottomNav && onHomePress && onAchievementsPress && onProfilePress);
+  
   return (
     <SafeAreaContainer 
       backgroundColor={backgroundColor}
       statusBarLight={statusBarLight}
     >
       {/* Header */}
-      {(title || onBackPress || onMenuPress || onRightPress) && (
+      {showHeader && (
         <Header 
           title={title}
           onBackPress={onBackPress}
@@ -75,7 +81,7 @@ const Screen = ({
       {/* Bottom Navigation - only show if explicitly enabled
           This is kept for backward compatibility with screens
           that haven't been updated to use Tab.Navigator */}
-      {showBottomNav && onHomePress && onAchievementsPress && onProfilePress && (
+      {showNavigation && (
         <BottomNavigation 
           activeScreen={activeScreen}
           onHomePress={onHomePress}
@@ -85,6 +91,8 @@ const Screen = ({
       )}
     </SafeAreaContainer>
   );
-};
+});
+
+Screen.displayName = 'Screen';
 
 export default Screen; 

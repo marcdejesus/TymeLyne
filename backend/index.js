@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 const cors = require('cors');
 const connectDB = require('./config/db');
 const os = require('os');
+const jwt = require('jsonwebtoken');
 
 // Load environment variables
 dotenv.config();
@@ -89,8 +90,110 @@ app.use((req, res, next) => {
 
 // Routes
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/profiles', require('./routes/profiles'));
+app.use(['/api/profiles', '/api/profile'], require('./routes/profiles'));
 app.use('/api/courses', require('./routes/courses'));
+
+// Direct routes for progression endpoints (for better compatibility)
+app.get(['/api/profile/progression', '/api/profiles/progression'], async (req, res) => {
+  console.log('🔍 Direct API progression endpoint accessed');
+  
+  try {
+    // Extract any token from the request
+    let token = req.header('x-auth-token');
+    
+    // If not in header, try the Authorization header (with Bearer scheme)
+    if (!token && req.headers.authorization) {
+      const authHeader = req.headers.authorization;
+      if (authHeader.startsWith('Bearer ')) {
+        token = authHeader.substring(7);
+      }
+    }
+    
+    if (!token) {
+      console.log('⛔ API PROGRESSION: No token provided');
+      return res.status(401).json({ message: 'No token, authorization denied' });
+    }
+    
+    // Verify and decode token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Get the user progression service
+    const userProgressionService = require('./services/userProgressionService');
+    
+    // Get the user's progression data
+    const progressionData = await userProgressionService.getUserProgressionData(decoded.id);
+    
+    // Return the progression data
+    res.json(progressionData);
+  } catch (error) {
+    console.error('❌ Error in API progression endpoint:', error);
+    
+    // Check for specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token has expired' });
+    } else if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
+
+// Direct route for user progression without /api prefix (for compatibility)
+app.get('/progression', async (req, res) => {
+  // Forward to the profiles/progression endpoint
+  console.log('🔍 Root progression endpoint accessed');
+  
+  // Extract any token from the request
+  let token = req.header('x-auth-token');
+  
+  // If not in header, try the Authorization header (with Bearer scheme)
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+  
+  console.log('🔑 TOKEN INFO:', { 
+    hasToken: !!token, 
+    tokenLength: token ? token.length : 0,
+    headers: Object.keys(req.headers),
+    hasAuthHeader: !!req.headers.authorization
+  });
+  
+  if (!token) {
+    console.log('⛔ PROGRESSION: No token provided');
+    return res.status(401).json({ message: 'No token, authorization denied' });
+  }
+  
+  try {
+    // Verify and decode token
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    console.log('✅ PROGRESSION: Token verified, user ID:', decoded.id);
+    
+    // Get the user progression service
+    const userProgressionService = require('./services/userProgressionService');
+    
+    // Get the user's progression data
+    const progressionData = await userProgressionService.getUserProgressionData(decoded.id);
+    console.log('📊 PROGRESSION: Data retrieved successfully');
+    
+    // Return the progression data
+    res.json(progressionData);
+  } catch (error) {
+    console.error('❌ Error in direct progression endpoint:', error);
+    
+    // Check for specific JWT errors
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ message: 'Token has expired' });
+    } else if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ message: 'Invalid token' });
+    }
+    
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+});
 
 // Test route
 app.get('/', (req, res) => {

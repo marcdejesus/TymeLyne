@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, memo } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { colors } from '../constants/theme';
 
@@ -13,7 +13,7 @@ import { colors } from '../constants/theme';
  * @param {boolean} keyboardShouldPersistTaps - How keyboard should behave when tapping outside of keyboard
  * @param {object} props - Additional props to pass to ScrollView/View
  */
-const ContentContainer = forwardRef(({
+const ContentContainer = memo(forwardRef(({
   children,
   scrollable = true,
   style,
@@ -22,14 +22,25 @@ const ContentContainer = forwardRef(({
   keyboardShouldPersistTaps = 'always',
   ...props
 }, ref) => {
+  // Create containerStyle only when style changes
+  const containerStyle = React.useMemo(() => {
+    return [styles.container, style];
+  }, [style]);
+  
+  // Create contentStyle only when contentContainerStyle changes
+  const contentStyle = React.useMemo(() => {
+    return [styles.contentContainer, contentContainerStyle];
+  }, [contentContainerStyle]);
+  
   if (scrollable) {
     return (
       <ScrollView
         ref={ref}
-        style={[styles.scrollContainer, style]}
-        contentContainerStyle={[styles.contentContainer, contentContainerStyle]}
+        style={containerStyle}
+        contentContainerStyle={contentStyle}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+        removeClippedSubviews={true}
         {...props}
       >
         {children}
@@ -38,11 +49,11 @@ const ContentContainer = forwardRef(({
   }
 
   return (
-    <View style={[styles.container, style]} {...props}>
+    <View style={containerStyle} {...props}>
       {children}
     </View>
   );
-});
+}));
 
 const styles = StyleSheet.create({
   container: {
@@ -57,5 +68,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   }
 });
+
+ContentContainer.displayName = 'ContentContainer';
 
 export default ContentContainer; 

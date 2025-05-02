@@ -26,6 +26,14 @@ export const getCourseById = async (id) => {
     return response.data;
   } catch (error) {
     console.error(`Error fetching course ${id}:`, error);
+    
+    // Handle auth errors specifically
+    if (error.response?.status === 401) {
+      throw new Error('Authentication required to access this course');
+    } else if (error.response?.status === 403) {
+      throw new Error('Not authorized to access this course');
+    }
+    
     throw new Error(error.response?.data?.message || 'Failed to load course');
   }
 };

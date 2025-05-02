@@ -39,7 +39,7 @@ const ProfileScreen = ({ navigation }) => {
       try {
         setLoading(true);
         const data = await getUserProgressionData();
-        console.log('User progression data:', data);
+        console.log('User progression data received:', data);
         
         // Store previous level before updating
         if (previousLevel === null) {
@@ -63,35 +63,37 @@ const ProfileScreen = ({ navigation }) => {
         }
         
         // Ensure data has required fields
-        const processedData = {
+        setProgressData({
           level: data.level || 1,
           totalXp: data.totalXp || 0,
           currentLevelXp: data.currentLevelXp || 0,
           totalXpForNextLevel: data.totalXpForNextLevel || 500,
-          levelProgress: data.levelProgress || 0
-        };
-        
-        console.log('Processed progression data:', processedData);
-        setProgressData(processedData);
+          levelProgress: data.levelProgress || 0,
+          // Support both field naming patterns
+          xpToNextLevel: data.xpToNextLevel || data.totalXpForNextLevel || 500
+        });
       } catch (error) {
         console.error('Error fetching user progression data:', error);
-        // Set fallback data
-        setProgressData({
-          level: 1,
-          totalXp: 0,
-          currentLevelXp: 0,
-          totalXpForNextLevel: 500,
-          levelProgress: 0
-        });
+        // Don't overwrite existing data on refresh error
+        if (!progressData.level) {
+          setProgressData({
+            level: 1,
+            totalXp: 0,
+            currentLevelXp: 0,
+            totalXpForNextLevel: 500,
+            levelProgress: 0
+          });
+        }
       } finally {
         setLoading(false);
       }
     };
     
+    // Initial fetch
     fetchUserProgression();
     
-    // Set up interval to refresh data every 30 seconds
-    const refreshInterval = setInterval(fetchUserProgression, 30000);
+    // Set up interval to refresh data every minute (reduced from 30s to minimize API calls)
+    const refreshInterval = setInterval(fetchUserProgression, 60000);
     
     // Clean up the interval on component unmount
     return () => clearInterval(refreshInterval);
@@ -201,8 +203,8 @@ const ProfileScreen = ({ navigation }) => {
               variant="caption" 
               style={styles.progressText}
             >
-              {progressData && progressData.totalXpForNextLevel 
-                ? `${progressData.currentLevelXp || 0}/${progressData.totalXpForNextLevel} XP`
+              {progressData && (progressData.totalXpForNextLevel || progressData.xpToNextLevel)
+                ? `${progressData.currentLevelXp || 0}/${progressData.totalXpForNextLevel || progressData.xpToNextLevel} XP`
                 : '0/500 XP'}
             </Typography>
           </View>

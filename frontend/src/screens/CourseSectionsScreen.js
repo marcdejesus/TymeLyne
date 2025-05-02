@@ -8,6 +8,7 @@ import SectionTitle from '../components/SectionTitle';
 import Button from '../components/Button';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 import { tymelyneTutorialData } from '../data/tutorialData';
+import { getCourseById } from '../services/courseService';
 
 const { width } = Dimensions.get('window');
 
@@ -64,17 +65,22 @@ const CourseSectionsScreen = ({ navigation, route }) => {
   };
 
   useEffect(() => {
-    // Load course data
-    const fetchCourseData = () => {
-      // Get courseId and courseData from route params
-      const courseId = route.params?.courseId;
-      const passedCourseData = route.params?.courseData;
-      
+    const fetchCourseData = async () => {
       setLoading(true);
       
-      // For tutorial course
-      if (courseId === '1') {
-        setCourseData(tymelyneTutorialData);
+      // First check if we have updated progression data from quiz completion
+      if (route.params?.updatedProgressData) {
+        // Store the updated progression data
+        console.log('Using updated progression data from quiz:', route.params.updatedProgressData);
+      }
+      
+      // Use courseData from params if available (highest priority)
+      const passedCourseData = route.params?.courseData;
+      
+      // If this is a mock course with a specific courseType
+      if (route.params?.courseType === 'mock') {
+        console.log('Using mock course data for demo purposes');
+        setCourseData(mockCourseData);
         setLoading(false);
         return;
       }
@@ -92,15 +98,48 @@ const CourseSectionsScreen = ({ navigation, route }) => {
         return;
       }
       
+      // If we have a courseId but no data, try to fetch from API
+      if (route.params?.courseId) {
+        try {
+          const courseResponse = await getCourseById(route.params.courseId);
+          if (courseResponse) {
+            console.log(`Fetched course data for ${route.params.courseId} from API:`, {
+              title: courseResponse.title,
+              sections: courseResponse.sections.length
+            });
+            setCourseData(courseResponse);
+            
+            // Save this in route params to have it available after navigation
+            if (navigation.setParams) {
+              navigation.setParams({ courseData: courseResponse });
+            }
+            
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error(`Failed to fetch course ${route.params.courseId} from API:`, error);
+          
+          // If we have courseData somewhere in the route hierarchy, use it
+          if (route.params?.course) {
+            console.log('Using course data from route.params.course');
+            setCourseData(route.params.course);
+            setLoading(false);
+            return;
+          }
+          
+          // Continue to fallback
+        }
+      }
+      
       // Otherwise, use the mock data for now
-      // In a real app, this would be an API call using the courseId
-      console.log('No course data passed, using mock data for course ID:', courseId);
+      console.log('No course data available, using mock data for course ID:', route.params?.courseId);
       setCourseData(mockCourseData);
       setLoading(false);
     };
 
     fetchCourseData();
-  }, [route.params?.courseId, route.params?.courseData]);
+  }, [route.params?.courseId, route.params?.courseData, route.params?.refreshTimestamp, navigation]);
 
   const handleBackPress = () => {
     navigation.goBack();

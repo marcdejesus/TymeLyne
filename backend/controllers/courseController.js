@@ -308,8 +308,19 @@ exports.updateSectionCompletion = async (req, res) => {
     // Get the user profile to access current level before update
     const userProfile = await Profile.findOne({ user_id: req.user.id });
     if (!userProfile) {
+      console.log(`❌ User profile not found for ID: ${req.user.id}`);
       return res.status(404).json({ message: 'User profile not found' });
     }
+    
+    console.log(`✅ Found user profile for completion:`, {
+      id: userProfile._id,
+      userId: userProfile.user_id,
+      username: userProfile.username,
+      currentXP: userProfile.user_total_exp,
+      level: userProfile.level,
+      modelFields: Object.keys(userProfile._doc)
+    });
+    
     const previousLevel = userProfile.level;
     
     // Update the section's completion status
@@ -319,23 +330,62 @@ exports.updateSectionCompletion = async (req, res) => {
     // Award XP if the section is being marked as completed
     let progressData = null;
     if (becomingCompleted) {
-      // Award XP for section completion
-      progressData = await userProgressionService.awardXp(req.user.id, 'section_completion', { previousLevel });
+      console.log(`Section is becoming completed, awarding XP to user: ${req.user.id}`);
+      console.log(`User profile before XP award:`, {
+        userId: userProfile.user_id,
+        currentXP: userProfile.user_total_exp,
+        currentLevel: userProfile.level
+      });
       
-      // If the section has a quiz, also award XP for quiz completion
-      if (section.hasQuiz) {
-        progressData = await userProgressionService.awardXp(req.user.id, 'quiz_completion', { previousLevel: progressData.level });
+      // Award XP for section completion only once, regardless of quiz presence
+      try {
+        // Award XP for section completion (250 XP)
+        progressData = await userProgressionService.awardXp(req.user.id, 'section_completion', { previousLevel });
+        console.log(`✅ Section completion XP awarded: ${progressData.xpAwarded} XP`, {
+          xpAwarded: progressData.xpAwarded,
+          newTotalXp: progressData.totalXp,
+          newLevel: progressData.level,
+          userId: req.user.id
+        });
+      } catch (xpError) {
+        console.error(`❌ Error awarding section completion XP:`, xpError);
       }
       
       // Check if the entire course is now completed
       const isFullCourseCompleted = userProgressionService.isCourseCompleted(course);
+      console.log(`Course completion check:`, {
+        isFullCourseCompleted,
+        totalSections: course.sections.length,
+        completedSections: course.sections.filter(s => s.isCompleted).length
+      });
+      
       if (isFullCourseCompleted) {
-        // Award XP for completing the entire course
-        progressData = await userProgressionService.awardXp(req.user.id, 'course_completion', { 
-          course, 
-          previousLevel: progressData?.level || previousLevel 
-        });
+        try {
+          console.log(`Course is fully completed, awarding course completion XP`);
+          // Award XP for completing the entire course
+          progressData = await userProgressionService.awardXp(req.user.id, 'course_completion', { 
+            course, 
+            previousLevel: progressData?.level || previousLevel 
+          });
+          console.log(`✅ Course completion XP awarded: ${progressData.xpAwarded} XP`, {
+            xpAwarded: progressData.xpAwarded,
+            newTotalXp: progressData.totalXp,
+            newLevel: progressData.level,
+            userId: req.user.id,
+            courseSections: course.sections.length
+          });
+        } catch (xpError) {
+          console.error(`❌ Error awarding course completion XP:`, xpError);
+        }
       }
+      
+      // Double check profile was updated
+      const updatedProfile = await Profile.findOne({ user_id: req.user.id });
+      console.log(`User profile after XP awards:`, {
+        userId: updatedProfile.user_id,
+        currentXP: updatedProfile.user_total_exp,
+        currentLevel: updatedProfile.level
+      });
     }
     
     console.log(`Section completion updated successfully: ${section.title} isCompleted=${isCompleted}`);

@@ -6,10 +6,51 @@ import api from '../utils/api';
  */
 export const getUserProgressionData = async () => {
   try {
-    const response = await api.get('/profile/progression');
-    return response.data;
+    // Try the direct progression endpoint first (most compatible)
+    try {
+      const response = await api.get('/progression');
+      console.log('📊 Progression data received from /progression');
+      return response.data;
+    } catch (directError) {
+      // Only log detailed error in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Trying API progression endpoints after direct endpoint failed');
+      }
+      
+      // Try multiple API endpoints silently
+      try {
+        // Try /api/profiles/progression first
+        const profilesResponse = await api.get('/profiles/progression');
+        console.log('📊 Progression data received from /profiles/progression');
+        return profilesResponse.data;
+      } catch (profilesError) {
+        // Try /api/profile/progression as a fallback
+        const profileResponse = await api.get('/profile/progression');
+        console.log('📊 Progression data received from /profile/progression');
+        return profileResponse.data;
+      }
+    }
   } catch (error) {
-    console.error('Error fetching user progression data:', error);
+    // Only log detailed error in development to reduce console noise
+    if (process.env.NODE_ENV === 'development') {
+      console.error('Error fetching user progression data:', error.message);
+    }
+    
+    // Return fallback data if server is unreachable
+    if (error.message.includes("Network Error") || 
+        error.response?.status === 404 || 
+        error.response?.status === 401) {
+      // Use a less noisy message
+      console.log('Using fallback progression data');
+      return {
+        level: 1,
+        totalXp: 0,
+        currentLevelXp: 0,
+        totalXpForNextLevel: 500,
+        levelProgress: 0
+      };
+    }
+    
     throw new Error(error.response?.data?.message || 'Failed to fetch user progression data');
   }
 };

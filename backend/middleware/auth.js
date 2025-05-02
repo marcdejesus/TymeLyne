@@ -2,12 +2,24 @@ const jwt = require('jsonwebtoken');
 
 const protect = (req, res, next) => {
   // Get token from header
-  const token = req.header('x-auth-token');
-  console.log('🔍 AUTH MIDDLEWARE: Token received', { 
+  let token = req.header('x-auth-token');
+  
+  // If not in header, try the Authorization header (with Bearer scheme)
+  if (!token && req.headers.authorization) {
+    const authHeader = req.headers.authorization;
+    if (authHeader.startsWith('Bearer ')) {
+      token = authHeader.substring(7);
+    }
+  }
+  
+  console.log('🔍 AUTH MIDDLEWARE: Token and request info', { 
     hasToken: !!token, 
     tokenLength: token ? token.length : 0,
     requestPath: req.path,
-    method: req.method
+    method: req.method,
+    headers: Object.keys(req.headers),
+    hasAuthHeader: !!req.headers.authorization,
+    url: req.originalUrl || req.url
   });
 
   // Check if no token

@@ -1,5 +1,64 @@
 const Profile = require('../models/profile');
 const Course = require('../models/course');
+const userProgressionService = require('../services/userProgressionService');
+
+/**
+ * Get current user profile
+ * @route GET /api/profile/me
+ * @access Private
+ */
+exports.getCurrentProfile = async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ user_id: req.user.id });
+    
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found' });
+    }
+    
+    res.json(profile);
+  } catch (error) {
+    console.error('Error fetching profile:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Change user password
+ * @route PUT /api/profile/change-password
+ * @access Private
+ */
+exports.changePassword = async (req, res) => {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: 'Current password and new password are required' });
+    }
+    
+    // This would normally verify the current password and hash the new one
+    // But is a placeholder for now
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error changing password:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Upload profile picture
+ * @route POST /api/profile/upload-picture
+ * @access Private
+ */
+exports.uploadProfilePicture = async (req, res) => {
+  try {
+    // This would normally handle file upload
+    // But is a placeholder for now
+    res.json({ message: 'Profile picture uploaded successfully' });
+  } catch (error) {
+    console.error('Error uploading profile picture:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 /**
  * Get user profile
@@ -149,6 +208,22 @@ exports.removeCurrentCourse = async (req, res) => {
     });
   } catch (error) {
     console.error('Error removing course from profile:', error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+/**
+ * Get user progression data (XP, level)
+ * @route GET /api/profiles/progression
+ * @access Private
+ */
+exports.getUserProgressionData = async (req, res) => {
+  try {
+    console.log('👤 CONTROLLER: Fetching progression data for user', req.user.id);
+    const progressionData = await userProgressionService.getUserProgressionData(req.user.id);
+    res.json(progressionData);
+  } catch (error) {
+    console.error('❌ Error fetching user progression data:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 }; 

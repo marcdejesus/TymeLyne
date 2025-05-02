@@ -6,7 +6,8 @@ import {
   ScrollView,
   Dimensions,
   Platform,
-  ActivityIndicator
+  ActivityIndicator,
+  Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
@@ -14,7 +15,7 @@ import Card from '../components/Card';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
-import { getCourseById } from '../services/courseService';
+import { getCourseById, updateSectionCompletion } from '../services/courseService';
 
 const { width } = Dimensions.get('window');
 
@@ -40,6 +41,37 @@ const SectionContent = ({ navigation, route }) => {
     const loadData = async () => {
       try {
         console.log('Section Content: Loading data with params:', { courseId, sectionId });
+        
+        // Check if we're returning from quiz with updated data in params
+        if (route.params?.updatedSection) {
+          console.log('Section Content: Using updated section data from quiz:', route.params.updatedSection);
+          setSection({
+            ...route.params.section,
+            ...route.params.updatedSection,
+            isCompleted: true
+          });
+          
+          // If course is passed and we have the section that completed, update it
+          if (route.params.courseData) {
+            const updatedCourse = {...route.params.courseData};
+            // Find and update the specific section
+            const sectionIndex = updatedCourse.sections.findIndex(s => 
+              (s._id && s._id === sectionId) || (s.id && s.id === sectionId)
+            );
+            
+            if (sectionIndex !== -1) {
+              updatedCourse.sections[sectionIndex] = {
+                ...updatedCourse.sections[sectionIndex],
+                isCompleted: true
+              };
+            }
+            
+            setCourse(updatedCourse);
+          }
+          
+          setLoading(false);
+          return;
+        }
         
         // If section data is passed directly
         if (route.params?.section) {
@@ -119,9 +151,34 @@ const SectionContent = ({ navigation, route }) => {
       navigation.navigate('SectionQuiz', {
         courseId: courseId,
         sectionId: sectionId,
+        section: section,
         sectionTitle: section.title,
-        quiz: section.quiz || null
+        quiz: section.quiz || null,
+        courseData: course
       });
+    } else if (section) {
+      // If there's no quiz, we can mark the section as completed directly
+      try {
+        updateSectionCompletion(courseId, sectionId, true)
+          .then(result => {
+            console.log('Section marked as completed (no quiz):', result);
+            
+            // Update local state
+            setSection({...section, isCompleted: true});
+            
+            // Show success message
+            Alert.alert(
+              "Section Completed",
+              `You've completed this section${result.progressData ? ` and earned XP!` : ''}`,
+              [{ text: "OK" }]
+            );
+          })
+          .catch(error => {
+            console.error('Error updating section completion status:', error);
+          });
+      } catch (error) {
+        console.error('Error updating section completion:', error);
+      }
     }
   };
 

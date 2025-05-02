@@ -14,7 +14,7 @@
 const getXpForLevel = (level) => {
   if (level <= 1) return 0;
   const baseXp = 500;
-  return Math.round(baseXp * (1 + (level - 2) * 0.1));
+  return Math.round(baseXp * (1 + (level - 2) * 0.2));
 };
 
 /**
@@ -40,6 +40,12 @@ const getTotalXpForLevel = (targetLevel) => {
  * @returns {Object} Object containing the current level and XP progress to next level
  */
 const calculateLevelFromXp = (totalXp) => {
+  // Handle edge cases
+  if (totalXp === undefined || totalXp === null) {
+    console.warn('calculateLevelFromXp called with undefined/null totalXp');
+    totalXp = 0;
+  }
+  
   if (totalXp < 500) {
     return {
       level: 1,
@@ -77,14 +83,25 @@ const calculateLevelFromXp = (totalXp) => {
  * @returns {Number} The XP reward for completing the entire course
  */
 const calculateCourseCompletionXp = (course) => {
-  if (!course || !course.sections || !course.sections.length) return 0;
-  return 500 * (100 + course.sections.length);
+  if (!course || !course.sections) {
+    console.warn('calculateCourseCompletionXp called with invalid course', { 
+      hasCourse: !!course, 
+      hasSections: course && !!course.sections 
+    });
+    return 500; // Default to base amount
+  }
+  
+  const sectionsCount = course.sections.length || 0;
+  const xpAmount = 500 + (100 * sectionsCount);
+  
+  console.log(`🧮 COURSE XP CALC: ${xpAmount} XP for course with ${sectionsCount} sections`);
+  return xpAmount;
 };
 
 /**
  * Award XP for section/quiz completion
  * 
- * @param {Number} action The action type: 1 = section completion, 2 = quiz completion
+ * @param {String} action The action type: 'quiz_completion', 'section_completion', 'course_completion'
  * @returns {Number} The XP amount to award
  */
 const getActionXp = (action) => {
@@ -92,11 +109,13 @@ const getActionXp = (action) => {
     case 'quiz_completion':
       return 250;
     case 'section_completion':
-      return 100;
+      // Since quiz completion and section completion are the same thing currently
+      return 250;
     case 'course_completion':
       // This is calculated separately based on number of sections
       return 0;
     default:
+      console.warn(`🚫 Unknown action type for XP: ${action}`);
       return 0;
   }
 };

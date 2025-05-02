@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
   View,
   StyleSheet,
@@ -13,9 +13,37 @@ import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
-import { updateSectionCompletion } from '../services/courseService';
+import { updateSectionCompletion, getCourseById } from '../services/courseService';
 
 const { width, height } = Dimensions.get('window');
+
+// Memoized option component for better performance
+const QuizOption = memo(({ index, option, selectedOption, onSelect }) => (
+  <TouchableOpacity 
+    style={[
+      styles.optionContainer,
+      selectedOption === index && styles.selectedOption
+    ]}
+    onPress={() => onSelect(index)}
+    activeOpacity={0.7}
+  >
+    <View style={[
+      styles.optionCircle,
+      selectedOption === index && styles.selectedCircle
+    ]}>
+      {selectedOption === index && (
+        <View style={styles.optionInnerCircle} />
+      )}
+    </View>
+    <Typography 
+      variant="body2" 
+      style={styles.optionText}
+      color={selectedOption === index ? "primary" : "primary"}
+    >
+      {option}
+    </Typography>
+  </TouchableOpacity>
+));
 
 const SectionQuiz = ({ navigation, route }) => {
   const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 500 } = route.params;
@@ -29,6 +57,7 @@ const SectionQuiz = ({ navigation, route }) => {
   const [quizFailed, setQuizFailed] = useState(false);
   const [questions, setQuestions] = useState([]);
   const timerRef = useRef(null);
+  const timerIntervalRef = useRef(null);
   
   // Initialize quiz questions from the passed quiz data or use mock data if not available
   useEffect(() => {
@@ -103,11 +132,16 @@ const SectionQuiz = ({ navigation, route }) => {
 
   useEffect(() => {
     if (quizStarted && !quizCompleted && !quizFailed) {
-      // Update timer only every 5 seconds for better performance, while still tracking seconds internally
-      timerRef.current = setInterval(() => {
+      // Use ref to track the timer
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+      
+      // Update timer each second
+      timerIntervalRef.current = setInterval(() => {
         setTimeRemaining(prev => {
           if (prev <= 1) {
-            clearInterval(timerRef.current);
+            clearInterval(timerIntervalRef.current);
             setQuizFailed(true);
             return 0;
           }
@@ -117,19 +151,19 @@ const SectionQuiz = ({ navigation, route }) => {
     }
     
     return () => {
-      if (timerRef.current) {
-        clearInterval(timerRef.current);
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
       }
     };
   }, [quizStarted, quizCompleted, quizFailed]);
 
-  const formatTime = (seconds) => {
+  const formatTime = useCallback((seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-  };
+  }, []);
 
-  const handleBackPress = () => {
+  const handleBackPress = useCallback(() => {
     if (quizStarted && !quizCompleted && !quizFailed) {
       Alert.alert(
         "Quit Quiz?",
@@ -149,17 +183,17 @@ const SectionQuiz = ({ navigation, route }) => {
     } else {
       navigation.goBack();
     }
-  };
+  }, [quizStarted, quizCompleted, quizFailed, navigation]);
 
-  const handleStartQuiz = () => {
+  const handleStartQuiz = useCallback(() => {
     setQuizStarted(true);
-  };
+  }, []);
 
-  const handleSelectOption = (index) => {
+  const handleSelectOption = useCallback((index) => {
     setSelectedOption(index);
-  };
+  }, []);
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = useCallback(() => {
     if (questions.length === 0 || currentQuestionIndex >= questions.length) {
       console.warn('No questions available or index out of bounds');
       return;
@@ -177,7 +211,9 @@ const SectionQuiz = ({ navigation, route }) => {
       setSelectedOption(null);
     } else {
       // Quiz completed
-      clearInterval(timerRef.current);
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
       setQuizCompleted(true);
       
       // Mark the section as completed
@@ -185,6 +221,17 @@ const SectionQuiz = ({ navigation, route }) => {
         updateSectionCompletion(courseId, sectionId, true)
           .then(result => {
             console.log('Section marked as completed:', result);
+            
+            // Store the updated progression data for use when returning to course screen
+            if (result && result.progressData) {
+              // Save this in route params to pass back later
+              route.params.updatedProgressData = result.progressData;
+            }
+            
+            // If we received an updated section, store it too
+            if (result && result.section) {
+              route.params.updatedSection = result.section;
+            }
           })
           .catch(error => {
             console.error('Error updating section completion status:', error);
@@ -193,19 +240,58 @@ const SectionQuiz = ({ navigation, route }) => {
         console.error('Error updating section completion:', error);
       }
     }
-  };
+  }, [questions, currentQuestionIndex, selectedOption, courseId, sectionId, route.params]);
 
-  const handleRetry = () => {
+  const handleRetry = useCallback(() => {
     setQuizFailed(false);
     setQuizStarted(false);
     setCurrentQuestionIndex(0);
     setSelectedOption(null);
     setTimeRemaining(300);
-  };
+  }, []);
 
-  const handleGoHome = () => {
-    navigation.navigate('CourseSections', { courseId });
-  };
+  const handleGoHome = useCallback(() => {
+    // If we have an updated section, fetch the full course again
+    // to ensure we have the latest data with all sections
+    try {
+      getCourseById(courseId)
+        .then(updatedCourseData => {
+          console.log('Updated course data after completion:', {
+            courseId: updatedCourseData._id || updatedCourseData.course_id,
+            totalSections: updatedCourseData.sections?.length,
+            completedSections: updatedCourseData.sections?.filter(s => s.isCompleted).length
+          });
+          
+          // Navigate back with the fresh course data
+          navigation.navigate('CourseSections', { 
+            courseId, 
+            courseData: updatedCourseData,
+            refreshTimestamp: Date.now() // Force refresh by changing a param
+          });
+        })
+        .catch(error => {
+          console.error('Failed to fetch updated course data:', error);
+          
+          // If we have updated progression data from completion, use it
+          const navigationParams = { courseId };
+          
+          if (route.params.updatedProgressData) {
+            navigationParams.updatedProgressData = route.params.updatedProgressData;
+          }
+          
+          if (route.params.course) {
+            // Use the original course data if available
+            navigationParams.courseData = route.params.course;
+          }
+          
+          // Navigate back with whatever data we have
+          navigation.navigate('CourseSections', navigationParams);
+        });
+    } catch (error) {
+      console.error('Error in handleGoHome:', error);
+      navigation.navigate('CourseSections', { courseId });
+    }
+  }, [navigation, courseId, route.params]);
 
   const renderQuizIntro = () => (
     <View style={styles.introContainer}>
@@ -279,31 +365,13 @@ const SectionQuiz = ({ navigation, route }) => {
           </Typography>
           
           {currentQuestion.options.map((option, index) => (
-            <TouchableOpacity 
+            <QuizOption 
               key={index} 
-              style={[
-                styles.optionContainer,
-                selectedOption === index && styles.selectedOption
-              ]}
-              onPress={() => handleSelectOption(index)}
-              activeOpacity={0.7}
-            >
-              <View style={[
-                styles.optionCircle,
-                selectedOption === index && styles.selectedCircle
-              ]}>
-                {selectedOption === index && (
-                  <View style={styles.optionInnerCircle} />
-                )}
-              </View>
-              <Typography 
-                variant="body2" 
-                style={styles.optionText}
-                color={selectedOption === index ? "primary" : "primary"}
-              >
-                {option}
-              </Typography>
-            </TouchableOpacity>
+              index={index}
+              option={option}
+              selectedOption={selectedOption}
+              onSelect={handleSelectOption}
+            />
           ))}
         </Card>
         

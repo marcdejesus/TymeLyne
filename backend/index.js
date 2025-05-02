@@ -92,6 +92,7 @@ app.use((req, res, next) => {
 app.use('/api/auth', require('./routes/auth'));
 app.use(['/api/profiles', '/api/profile'], require('./routes/profiles'));
 app.use('/api/courses', require('./routes/courses'));
+app.use('/api/leaderboards', require('./routes/leaderboards'));
 
 // Direct routes for progression endpoints (for better compatibility)
 app.get(['/api/profile/progression', '/api/profiles/progression'], async (req, res) => {

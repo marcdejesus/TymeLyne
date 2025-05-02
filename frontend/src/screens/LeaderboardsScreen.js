@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,11 +6,14 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
-  Dimensions
+  Dimensions,
+  ActivityIndicator,
+  RefreshControl
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Screen from '../components/Screen';
 import { colors } from '../constants/theme';
+import { getGlobalLeaderboard, getFriendsLeaderboard } from '../services/leaderboardService';
 
 const { width } = Dimensions.get('window');
 
@@ -67,26 +70,50 @@ const LeaderboardItem = ({ item, rank }) => {
 
 const LeaderboardsScreen = ({ navigation }) => {
   const [activeTab, setActiveTab] = useState('global');
+  const [leaderboardData, setLeaderboardData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
   
-  // Mock data - would be fetched from backend in real app
-  const mockGlobalUsers = Array(100).fill().map((_, i) => ({
-    id: `global-${i}`,
-    username: `@user${i + 1}`,
-    xp: Math.floor(Math.random() * 10000) + 1000,
-    trend: Math.floor(Math.random() * 40) - 20,
-    avatar: null,
-    isCurrentUser: i === 14
-  })).sort((a, b) => b.xp - a.xp);
+  // Fetch leaderboard data based on active tab
+  const fetchLeaderboardData = useCallback(async (showLoading = true) => {
+    if (showLoading) {
+      setLoading(true);
+    }
+    setError(null);
+    
+    try {
+      console.log(`Fetching ${activeTab} leaderboard data...`);
+      let data;
+      
+      if (activeTab === 'global') {
+        data = await getGlobalLeaderboard();
+      } else {
+        data = await getFriendsLeaderboard();
+      }
+      
+      console.log(`Received ${data.length} ${activeTab} leaderboard entries`);
+      setLeaderboardData(data);
+    } catch (err) {
+      console.error(`Error fetching ${activeTab} leaderboard:`, err);
+      setError(`Could not load ${activeTab} leaderboard data`);
+      setLeaderboardData([]);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [activeTab]);
   
-  const mockFriends = Array(25).fill().map((_, i) => ({
-    id: `friend-${i}`,
-    username: `@friend${i + 1}`,
-    xp: Math.floor(Math.random() * 8000) + 500,
-    trend: Math.floor(Math.random() * 40) - 10,
-    lastActive: i < 5 ? 'today' : i < 10 ? 'yesterday' : `${i - 9} days ago`,
-    avatar: null,
-    isCurrentUser: i === 3
-  })).sort((a, b) => b.xp - a.xp);
+  // Load data when the component mounts or tab changes
+  useEffect(() => {
+    fetchLeaderboardData();
+  }, [activeTab, fetchLeaderboardData]);
+  
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchLeaderboardData(false);
+  }, [fetchLeaderboardData]);
   
   const handleBackPress = () => {
     // No need to navigate to Home when back is pressed, as we're in a tab navigator
@@ -99,11 +126,15 @@ const LeaderboardsScreen = ({ navigation }) => {
   };
   
   const toggleTab = (tab) => {
-    setActiveTab(tab);
+    if (tab !== activeTab) {
+      setActiveTab(tab);
+      setLeaderboardData([]);
+      setLoading(true);
+    }
   };
   
   const renderHeader = () => {
-    const periodText = activeTab === 'global' ? 'Weekly XP' : 'Monthly XP';
+    const periodText = activeTab === 'global' ? 'Total XP' : 'Monthly XP';
     
     return (
       <View style={styles.leaderboardHeader}>
@@ -114,23 +145,50 @@ const LeaderboardsScreen = ({ navigation }) => {
     );
   };
   
-  const renderEmptyState = () => (
-    <View style={styles.emptyContainer}>
-      <Ionicons name="trophy-outline" size={64} color={colors.textTertiary} />
-      <Text style={styles.emptyTitle}>No Data Available</Text>
-      <Text style={styles.emptyText}>
-        {activeTab === 'global' 
-          ? 'Global leaderboard data is being refreshed.' 
-          : 'Add friends to see their progress on the leaderboard!'}
-      </Text>
-    </View>
-  );
+  const renderEmptyState = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={styles.emptyTitle}>Loading</Text>
+          <Text style={styles.emptyText}>Fetching leaderboard data...</Text>
+        </View>
+      );
+    }
+    
+    if (error) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Ionicons name="alert-circle-outline" size={64} color={colors.error || 'red'} />
+          <Text style={styles.emptyTitle}>Error Loading Data</Text>
+          <Text style={styles.emptyText}>{error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton}
+            onPress={() => fetchLeaderboardData()}
+          >
+            <Text style={styles.retryButtonText}>Try Again</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="trophy-outline" size={64} color={colors.textTertiary || 'gray'} />
+        <Text style={styles.emptyTitle}>No Data Available</Text>
+        <Text style={styles.emptyText}>
+          {activeTab === 'global' 
+            ? 'Global leaderboard data is being refreshed.' 
+            : 'Add friends to see their progress on the leaderboard!'}
+        </Text>
+      </View>
+    );
+  };
   
   return (
     <Screen
       title="Leaderboards"
       backgroundColor={colors.background}
-      // Remove bottom navigation props since they're now handled by Tab.Navigator
       showBottomNav={false}
     >
       {/* Tab Selector */}
@@ -160,22 +218,35 @@ const LeaderboardsScreen = ({ navigation }) => {
       <View style={styles.periodContainer}>
         <Ionicons name="time-outline" size={16} color={colors.textSecondary} />
         <Text style={styles.periodText}>
-          {activeTab === 'global' ? 'Weekly leaderboard • Resets in 3 days' : 'Monthly leaderboard • May 2023'}
+          {activeTab === 'global' 
+            ? 'All-time leaderboard' 
+            : 'Friends leaderboard'}
         </Text>
       </View>
       
       {/* Leaderboard List */}
       <FlatList
-        data={activeTab === 'global' ? mockGlobalUsers : mockFriends}
+        data={leaderboardData}
         keyExtractor={(item) => item.id}
-        renderItem={({ item, index }) => (
-          <LeaderboardItem item={item} rank={index + 1} />
+        renderItem={({ item }) => (
+          <LeaderboardItem item={item} rank={item.rank} />
         )}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyState}
         style={styles.leaderboardList}
-        contentContainerStyle={styles.leaderboardContent}
+        contentContainerStyle={[
+          styles.leaderboardContent,
+          (loading || leaderboardData.length === 0) && styles.emptyContentContainer
+        ]}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
       />
       
       {/* Add Friend Button (Only in friends tab) */}
@@ -358,6 +429,21 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 4,
   },
+  emptyContentContainer: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  retryButton: {
+    marginTop: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    backgroundColor: colors.primary,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: colors.textInverted || 'white',
+    fontWeight: '600',
+  }
 });
 
 export default LeaderboardsScreen; 

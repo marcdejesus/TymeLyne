@@ -15,6 +15,7 @@ import { colors } from '../constants/theme';
  * @param {function} onMenuPress - Function for menu button press
  * @param {function} onRightPress - Function for right button press
  * @param {string} rightIcon - Icon name for right button
+ * @param {string} menuIcon - Icon name for menu button
  * @param {boolean} scrollable - Whether content should be scrollable
  * @param {boolean} showBottomNav - Whether to show bottom navigation (deprecated, use Tab.Navigator instead)
  * @param {string} backgroundColor - Background color for the screen
@@ -31,6 +32,7 @@ const Screen = memo(({
   onMenuPress,
   onRightPress,
   rightIcon,
+  menuIcon,
   activeScreen,
   onHomePress,
   onAchievementsPress,
@@ -63,6 +65,7 @@ const Screen = memo(({
           onMenuPress={onMenuPress}
           onRightPress={onRightPress}
           rightIcon={rightIcon}
+          menuIcon={menuIcon}
           backgroundColor={backgroundColor}
         />
       )}

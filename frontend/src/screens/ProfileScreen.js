@@ -111,17 +111,18 @@ const ProfileScreen = ({ navigation }) => {
     navigation.navigate(screenName);
   };
 
-  const handleMenuPress = () => {
-    // Since we removed drawer navigation, show a logout option here
-    logout();
+  const handleSettingsPress = () => {
+    // Navigate to settings screen
+    navigation.navigate('Settings');
   };
 
   return (
     <Screen
       title="Tymelyne"
-      onMenuPress={handleMenuPress}
-      onRightPress={() => handleNavigation('Settings')}
-      rightIcon="settings"
+      onRightPress={logout}
+      rightIcon="log-out-outline"
+      onMenuPress={handleSettingsPress}
+      menuIcon="cog-outline"
       showBottomNav={false}
       backgroundColor={colors.background}
       scrollable={true} // Enable scrolling for the entire screen

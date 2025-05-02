@@ -22,6 +22,7 @@ const isIphoneWithNotch = Platform.OS === 'ios' && height > 800;
  * @param {function} onMenuPress - Function to call when menu button is pressed (if null, no menu button is shown)
  * @param {function} onRightPress - Function to call when right button is pressed (if null, no right button is shown)
  * @param {string} rightIcon - Icon name for the right button (default is "chevron-forward")
+ * @param {string} menuIcon - Icon name for the menu button (default is "menu-outline")
  * @param {string} backgroundColor - Background color for the header
  * @param {boolean} useLightIcons - Whether to use light colored icons (for dark backgrounds)
  * @param {object} style - Additional styles for the header container
@@ -32,6 +33,7 @@ const Header = ({
   onMenuPress,
   onRightPress,
   rightIcon = "chevron-forward",
+  menuIcon = "menu-outline",
   backgroundColor = colors.background,
   useLightIcons = false,
   style
@@ -59,7 +61,7 @@ const Header = ({
           onPress={onMenuPress}
           activeOpacity={0.7}
         >
-          <Ionicons name="menu-outline" size={24} color={iconColor} />
+          <Ionicons name={menuIcon} size={24} color={iconColor} />
         </TouchableOpacity>
       ) : (
         <View style={styles.emptyButton} />

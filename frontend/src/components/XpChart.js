@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { colors } from '../constants/theme';
-import { getXpHistory } from '../services/activityService';
+import { useUserProgression } from '../contexts/UserProgressionContext';
 
 // This is a placeholder component for the chart
 // We'll need to install react-native-chart-kit or another charting library
@@ -12,75 +12,67 @@ const { width } = Dimensions.get('window');
 
 const XpChart = () => {
   const [period, setPeriod] = useState('monthly');
-  const [xpData, setXpData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [labels, setLabels] = useState([]);
-  const [dataPoints, setDataPoints] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { progressData } = useUserProgression();
   
-  // Fetch XP history data when component mounts
+  // Default chart data
+  const [labels, setLabels] = useState(['']);
+  const [dataPoints, setDataPoints] = useState([0]);
+  
+  // Update chart data when period changes or progression data updates
   useEffect(() => {
-    fetchXpData();
-  }, [period]);
+    generateChartData();
+  }, [period, progressData]);
   
-  // Fetch XP data from API based on selected period
-  const fetchXpData = async () => {
-    try {
-      setLoading(true);
-      
-      // Determine how many data points to fetch based on period
-      const limit = period === 'daily' ? 14 : period === 'weekly' ? 8 : 6;
-      
-      // Fetch XP history data
-      const data = await getXpHistory({ period, limit });
-      
-      setXpData(data);
-      
-      // Process data for chart
-      processChartData(data);
-      
-      setLoading(false);
-    } catch (error) {
-      console.error('Error fetching XP data:', error);
-      setLoading(false);
-    }
-  };
-  
-  // Process XP data for the chart
-  const processChartData = (data) => {
-    if (!data || data.length === 0) {
-      // Set default empty data
-      setLabels(['']);
-      setDataPoints([0]);
-      return;
-    }
+  // Generate chart data based on selected period
+  const generateChartData = () => {
+    setLoading(true);
     
-    // Extract labels and data points
-    const chartLabels = [];
-    const chartData = [];
+    // Get the total XP from progression data
+    const totalXp = progressData?.totalXp || 0;
     
-    data.forEach(item => {
-      // Format date based on period
-      const date = new Date(item.date);
-      let label = '';
+    // Create dummy time periods based on selected filter
+    let chartLabels = [];
+    let chartData = [];
+    
+    const now = new Date();
+    
+    switch (period) {
+      case 'daily':
+        // Last 7 days
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - i);
+          chartLabels.push(`${date.getDate()}/${date.getMonth() + 1}`);
+          chartData.push(totalXp);
+        }
+        break;
       
-      switch (period) {
-        case 'daily':
-          label = `${date.getDate()}/${date.getMonth() + 1}`;
-          break;
-        case 'weekly':
-          label = `W${Math.ceil((date.getDate() + date.getDay()) / 7)}`;
-          break;
-        case 'monthly':
-          label = date.toLocaleString('default', { month: 'short' });
-          break;
-      }
+      case 'weekly':
+        // Last 4 weeks
+        for (let i = 3; i >= 0; i--) {
+          const date = new Date(now);
+          date.setDate(date.getDate() - (i * 7));
+          chartLabels.push(`W${Math.ceil((date.getDate() + date.getDay()) / 7)}`);
+          chartData.push(totalXp);
+        }
+        break;
       
-      chartLabels.push(label);
-      chartData.push(item.xp);
-    });
+      case 'monthly':
+      default:
+        // Last 6 months
+        for (let i = 5; i >= 0; i--) {
+          const date = new Date(now);
+          date.setMonth(date.getMonth() - i);
+          chartLabels.push(date.toLocaleString('default', { month: 'short' }));
+          chartData.push(totalXp);
+        }
+        break;
+    }
     
     setLabels(chartLabels);
     setDataPoints(chartData);
+    setLoading(false);
   };
   
   // Chart configuration
@@ -181,6 +173,11 @@ const XpChart = () => {
           withHorizontalLines={false}
         />
       )}
+      
+      <View style={styles.totalXpContainer}>
+        <Text style={styles.totalXpLabel}>Total XP:</Text>
+        <Text style={styles.totalXpValue}>{progressData?.totalXp || 0}</Text>
+      </View>
     </View>
   );
 };
@@ -241,6 +238,26 @@ const styles = StyleSheet.create({
   chart: {
     marginVertical: 8,
     borderRadius: 16,
+  },
+  totalXpContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 8,
+    padding: 8,
+    backgroundColor: 'rgba(83, 177, 177, 0.1)',
+    borderRadius: 8,
+  },
+  totalXpLabel: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: colors.text.secondary,
+    marginRight: 8,
+  },
+  totalXpValue: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#53B1B1',
   },
 });
 

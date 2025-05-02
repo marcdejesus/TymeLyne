@@ -30,8 +30,6 @@ const getGlobalLeaderboard = async (limit = 100) => {
       level: profile.level || 1,
       rank: index + 1,
       avatar: profile.profile_picture || null,
-      // Calculate trend (placeholder for now - would be based on historical data)
-      trend: Math.floor(Math.random() * 40) - 20,
       // Add last active based on created_at for now
       lastActive: getTimeAgo(profile.created_at)
     }));
@@ -101,8 +99,6 @@ const getFriendsLeaderboard = async (userId, limit = 100) => {
       rank: index + 1,
       avatar: profile.profile_picture || null,
       isCurrentUser: !!profile.isCurrentUser,
-      // Calculate trend (placeholder for now)
-      trend: Math.floor(Math.random() * 40) - 20,
       // Add last active based on created_at for now
       lastActive: getTimeAgo(profile.created_at)
     }));

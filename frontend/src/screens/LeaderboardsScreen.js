@@ -49,20 +49,6 @@ const LeaderboardItem = ({ item, rank }) => {
         <Text style={[styles.xpText, isCurrentUser && styles.currentUserText]}>
           {item.xp} XP
         </Text>
-        
-        {item.trend > 0 && (
-          <View style={styles.trendContainer}>
-            <Ionicons name="trending-up" size={16} color={colors.success} />
-            <Text style={styles.trendText}>{item.trend}%</Text>
-          </View>
-        )}
-        
-        {item.trend < 0 && (
-          <View style={styles.trendContainer}>
-            <Ionicons name="trending-down" size={16} color={colors.error} />
-            <Text style={styles.trendText}>{Math.abs(item.trend)}%</Text>
-          </View>
-        )}
       </View>
     </View>
   );
@@ -190,6 +176,7 @@ const LeaderboardsScreen = ({ navigation }) => {
       title="Tymelyne"
       backgroundColor={colors.background}
       showBottomNav={false}
+      scrollable={false}
     >
       {/* Tab Selector */}
       <View style={styles.tabContainer}>
@@ -381,16 +368,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: colors.text,
-  },
-  trendContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  trendText: {
-    fontSize: 12,
-    marginLeft: 2,
-    color: colors.textSecondary,
   },
   currentUserText: {
     color: colors.primary,

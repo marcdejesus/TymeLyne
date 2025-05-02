@@ -7,11 +7,11 @@ import SectionTitle from '../components/SectionTitle';
 import CourseCard from '../components/CourseCard';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { AuthContext } from '../contexts/AuthContext';
-import { colors, spacing } from '../constants/theme';
+import { colors, spacing, borderRadius } from '../constants/theme';
 import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
-import { getMyCourses } from '../services/courseService';
+import { getMyCourses, removeFromCurrentCourses } from '../services/courseService';
 
 // For fallback icons when course has no specific icon
 const defaultCourseIcons = [
@@ -38,6 +38,65 @@ const HomeScreen = ({ navigation }) => {
   // Track if initial data has been loaded
   const initialLoadComplete = useRef(false);
 
+  // Function to handle course deletion
+  const handleCourseDelete = async (courseId, courseTitle, callback) => {
+    try {
+      Alert.alert(
+        'Delete Course',
+        `Are you sure you want to remove "${courseTitle}" from your courses?`,
+        [
+          {
+            text: 'Delete Course',
+            onPress: async () => {
+              try {
+                // Call API to remove the course
+                await removeFromCurrentCourses(courseId);
+                console.log(`Course removed: ${courseId}`);
+                // Call the callback function to refresh the courses list
+                if (callback) callback();
+              } catch (error) {
+                console.error('Failed to delete course:', error);
+                Alert.alert('Error', 'Failed to delete the course. Please try again.');
+              }
+            },
+            style: 'destructive',
+          },
+          {
+            text: 'Nevermind',
+            style: 'cancel',
+          },
+        ],
+        { cancelable: true }
+      );
+    } catch (error) {
+      console.error('Error in course deletion:', error);
+    }
+  };
+
+  // Function to handle options
+  const handleCourseOptions = (course) => {
+    Alert.alert(
+      'Course Options',
+      course.title,
+      [
+        {
+          text: 'Delete Course',
+          onPress: () => handleCourseDelete(course.id, course.title, () => {
+            // Reset and refresh the courses when a course is deleted
+            initialLoadComplete.current = false;
+            fetchUserCourses();
+          }),
+          style: 'destructive', // Red color
+        },
+        {
+          text: 'Nevermind',
+          style: 'cancel', // Default blue color
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
   // Function to fetch user's courses
   const fetchUserCourses = async (showLoadingUI = true) => {
     try {
@@ -57,6 +116,8 @@ const HomeScreen = ({ navigation }) => {
         if (!course.sections || course.sections.length === 0) return false;
         return course.sections.every(section => section.isCompleted);
       });
+      
+      console.log('Completed courses count:', completed.length);
       
       // Format completed courses for display
       const formattedCompletedCourses = completed.map((course, index) => {
@@ -85,20 +146,28 @@ const HomeScreen = ({ navigation }) => {
       // Sort by most recently active or created
       setCompletedCourses(formattedCompletedCourses);
       
-      // Filter out in-progress courses
-      const inProgress = courses.filter(course => {
+      // Consider ANY course that isn't 100% complete as an active course
+      // This includes courses with no progress, partially completed, or with no sections
+      const activeCourses = courses.filter(course => {
+        // If there are no sections, it's still considered active
         if (!course.sections || course.sections.length === 0) return true;
-        const hasCompleted = course.sections.some(section => section.isCompleted);
-        const allCompleted = course.sections.every(section => section.isCompleted);
-        return hasCompleted && !allCompleted;
+        
+        // A course is active if at least one section is not completed
+        return !course.sections.every(section => section.isCompleted);
       });
       
+      console.log('Active courses count:', activeCourses.length);
+      console.log('Active courses:', JSON.stringify(activeCourses.map(c => c.title || c.course_name), null, 2));
+      
       // Map in-progress courses to include icons and format for CourseCard
-      const formattedCourses = inProgress.map((course, index) => {
+      const formattedCourses = activeCourses.map((course, index) => {
         // Get the correct title from the course data - handle both title and course_name
         const courseTitle = course.title || course.course_name || 'Untitled Course';
         
         console.log(`Formatting course: ${courseTitle}`);
+        
+        // Calculate progress for sorting purposes
+        const progress = calculateProgress(course);
         
         return {
           id: course._id || course.course_id,
@@ -106,7 +175,7 @@ const HomeScreen = ({ navigation }) => {
           // Assign a default icon based on index
           icon: defaultCourseIcons[index % defaultCourseIcons.length],
           // Calculate progress based on completed sections
-          progress: calculateProgress(course),
+          progress,
           // Store the original course data for details view
           courseData: {
             ...course,
@@ -117,7 +186,20 @@ const HomeScreen = ({ navigation }) => {
         };
       });
       
-      setUserCourses(formattedCourses);
+      // Sort courses by progress percentage (descending) and alphabetically for ties
+      const sortedCourses = formattedCourses.sort((a, b) => {
+        // Sort by progress first (highest first)
+        if (b.progress !== a.progress) {
+          return b.progress - a.progress;
+        }
+        // If progress is tied, sort alphabetically
+        return a.title.localeCompare(b.title);
+      });
+      
+      console.log('Sorted active courses count:', sortedCourses.length);
+      console.log('Top 3 courses:', sortedCourses.slice(0, 3).map(c => c.title));
+      
+      setUserCourses(sortedCourses);
       initialLoadComplete.current = true;
       
       // Slightly delay hiding the loading state to ensure smooth transition
@@ -222,8 +304,10 @@ const HomeScreen = ({ navigation }) => {
 
   // Render the Active Courses section
   const renderActiveCourses = () => {
+    console.log('Rendering active courses, count:', userCourses.length);
+    
     if (visibleLoading) {
-      return <SkeletonLoader variant="course" count={2} />;
+      return <SkeletonLoader variant="course" count={3} />;
     }
 
     if (error) {
@@ -242,33 +326,65 @@ const HomeScreen = ({ navigation }) => {
       );
     }
 
-    if (userCourses.length === 0) {
-      return (
-        <Typography variant="body" style={styles.emptyCourseText}>
-          You don't have any active courses yet.
-        </Typography>
-      );
+    // Always show 3 slots
+    const displayCourses = [];
+    const activeCourseCount = userCourses.length;
+    
+    // Take only the top 3 most progressed courses
+    const topCourses = userCourses.slice(0, 3);
+    console.log('Top courses to display:', topCourses.length);
+    
+    // Add actual courses first
+    for (let i = 0; i < 3; i++) {
+      if (i < topCourses.length) {
+        // We have an actual course
+        displayCourses.push({
+          type: 'course',
+          course: topCourses[i]
+        });
+      } else {
+        // Add a placeholder for missing courses
+        displayCourses.push({
+          type: 'placeholder'
+        });
+      }
     }
+    
+    console.log('Display courses (including placeholders):', displayCourses.length);
 
     return (
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.carouselContainer}
-      >
-        {userCourses.map(course => (
-          <CourseCard
-            key={course.id}
-            course={course}
-            style={styles.carouselCard}
-            onPress={() => handleNavigation('CourseSections', { 
-              courseId: course.id,
-              courseData: course.courseData
-            })}
-            onOptionsPress={() => Alert.alert('Options', 'Course options')}
-          />
-        ))}
-      </ScrollView>
+      <View style={styles.verticalCoursesContainer}>
+        {displayCourses.map((item, index) => {
+          if (item.type === 'placeholder') {
+            // Return a placeholder/empty card
+            console.log(`Rendering placeholder at index ${index}`);
+            return (
+              <View key={`placeholder-${index}`} style={styles.placeholderCard}>
+                {activeCourseCount === 0 && index === 0 && (
+                  <Typography variant="body" style={styles.emptyCourseText}>
+                    You don't have any active courses yet.
+                  </Typography>
+                )}
+              </View>
+            );
+          }
+          
+          // Return a real course card
+          console.log(`Rendering course at index ${index}: ${item.course.title}`);
+          return (
+            <CourseCard
+              key={item.course.id}
+              course={item.course}
+              style={styles.verticalCourseCard}
+              onPress={() => handleNavigation('CourseSections', { 
+                courseId: item.course.id,
+                courseData: item.course.courseData
+              })}
+              onOptionsPress={() => handleCourseOptions(item.course)}
+            />
+          );
+        })}
+      </View>
     );
   };
   
@@ -298,7 +414,7 @@ const HomeScreen = ({ navigation }) => {
           <Ionicons name="people-outline" size={32} color={colors.primary} />
           <View style={styles.addCourseTextContainer}>
             <Typography variant="subheading" weight="semiBold">
-              Community
+              Explore
             </Typography>
             <Typography variant="body2" color={colors.text.secondary}>
               Find popular courses
@@ -317,7 +433,7 @@ const HomeScreen = ({ navigation }) => {
               Create New
             </Typography>
             <Typography variant="body2" color={colors.text.secondary}>
-              Start from scratch
+              Generate A Course
             </Typography>
           </View>
         </Card>
@@ -354,15 +470,26 @@ const HomeScreen = ({ navigation }) => {
               courseId: course.id,
               courseData: course.courseData
             })}
+            onOptionsPress={() => handleCourseOptions(course)}
           />
         ))}
       </ScrollView>
     );
   };
 
+  // Handler for viewing all active courses
+  const handleViewAllActiveCourses = () => {
+    navigation.navigate('AllCourses', { initialTab: 'active' });
+  };
+
+  // Handler for viewing all completed courses
+  const handleViewAllCompletedCourses = () => {
+    navigation.navigate('AllCourses', { initialTab: 'completed' });
+  };
+
   return (
     <Screen
-      title="Home"
+      title="Tymelyne"
       showHeader={true}
       headerRight={{
         icon: 'menu-outline',
@@ -386,7 +513,7 @@ const HomeScreen = ({ navigation }) => {
       >
         {/* Active Courses Section */}
         <View style={styles.firstSectionTitleContainer}>
-          {renderSectionTitle("Active Courses", "View All", () => handleNavigation('Development'))}
+          {renderSectionTitle("Active Courses", "View All", handleViewAllActiveCourses)}
         </View>
         <View style={styles.coursesContainer}>
           {renderActiveCourses()}
@@ -397,7 +524,7 @@ const HomeScreen = ({ navigation }) => {
         {renderAddCourseCards()}
 
         {/* Completed Courses Section - replacing Friends' Courses */}
-        {renderSectionTitle("Completed Courses", "See More", () => handleNavigation('Development'), styles.friendsSectionTitle)}
+        {renderSectionTitle("Completed Courses", "See More", handleViewAllCompletedCourses, styles.friendsSectionTitle)}
         {renderCompletedCourses()}
       </ScrollView>
     </Screen>
@@ -421,8 +548,17 @@ const styles = StyleSheet.create({
     marginTop: 0, // No extra margin for the first section title
   },
   coursesContainer: {
-    marginBottom: spacing.xs, // Further reduced from spacing.m to spacing.xs
-    minHeight: 120, // Fixed height to prevent layout shifts
+    marginBottom: spacing.m,
+    minHeight: 330, // Adjusted height for 3 cards (100px each) plus margins
+  },
+  verticalCoursesContainer: {
+    width: '100%',
+    paddingTop: spacing.xs,
+  },
+  verticalCourseCard: {
+    width: '100%',
+    marginBottom: spacing.s, // Reduced margin between cards
+    height: 90, // Update to match CourseCard height
   },
   carouselContainer: {
     paddingBottom: spacing.s,
@@ -501,6 +637,17 @@ const styles = StyleSheet.create({
     width: '48%',
     margin: '1%',
     height: 0, // Don't take up vertical space
+  },
+  placeholderCard: {
+    width: '100%',
+    height: 90, // Update to match CourseCard height
+    marginBottom: spacing.s,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: __DEV__ ? 1 : 0, // Only show border in development mode
+    borderColor: __DEV__ ? colors.border : 'transparent',
+    borderStyle: 'dashed',
+    borderRadius: borderRadius.m,
   },
 });
 

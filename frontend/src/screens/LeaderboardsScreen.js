@@ -173,7 +173,7 @@ const LeaderboardsScreen = ({ navigation }) => {
   
   return (
     <Screen
-      title="Leaderboards"
+      title="Tymelyne"
       backgroundColor={colors.background}
       showBottomNav={false}
       scrollable={false}

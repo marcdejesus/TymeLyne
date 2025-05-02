@@ -64,6 +64,8 @@ const CourseCard = ({
         <Typography 
           variant="subheading" 
           weight="semiBold" 
+          numberOfLines={1}
+          ellipsizeMode="tail"
           style={styles.title}
         >
           {course.title}
@@ -111,6 +113,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.m,
     borderRadius: borderRadius.m,
     padding: spacing.m,
+    height: 90,
   },
   iconContainer: {
     marginRight: spacing.m,
@@ -119,31 +122,33 @@ const styles = StyleSheet.create({
   icon: {
     width: width * 0.15,
     height: width * 0.15,
-    maxWidth: 60,
-    maxHeight: 60,
-    borderRadius: width * 0.075, // Make it a circle by setting borderRadius to half the width
-    backgroundColor: colors.primaryLight, // Light background for the icon that matches the brand color
-    overflow: 'hidden', // Ensure the image doesn't bleed outside the circle
+    maxWidth: 50,
+    maxHeight: 50,
+    borderRadius: width * 0.075,
+    backgroundColor: colors.primaryLight,
+    overflow: 'hidden',
   },
   contentContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: 'space-between',
     paddingRight: spacing.s,
   },
   title: {
-    marginBottom: spacing.xs,
+    marginBottom: 0,
+    fontSize: 16,
   },
   progressContainer: {
     marginTop: spacing.xs,
-    width: '95%', // More space for progress bar
+    width: '95%',
   },
   progressText: {
-    marginBottom: spacing.xs,
+    marginBottom: 2,
+    fontSize: 12,
   },
   progressBar: {
-    height: 6,
+    height: 4,
     backgroundColor: colors.border,
-    borderRadius: 3,
+    borderRadius: 2,
     overflow: 'hidden',
   },
   progress: {

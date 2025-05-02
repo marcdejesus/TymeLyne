@@ -112,8 +112,8 @@ const ProfileScreen = ({ navigation }) => {
   };
 
   const handleSettingsPress = () => {
-    // Navigate to settings screen
-    navigation.navigate('Settings');
+    // Navigate to development screen
+    navigation.navigate('Development');
   };
 
   return (

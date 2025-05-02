@@ -30,6 +30,7 @@ const LeaderboardItem = ({ item, rank }) => {
       <Image 
         source={item.avatar || require('../../assets/default-avatar.png')} 
         style={styles.avatar}
+        resizeMode="cover"
       />
       
       <View style={styles.userInfo}>
@@ -287,6 +288,7 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     marginRight: 12,
+    overflow: 'hidden',
   },
   userInfo: {
     flex: 1,

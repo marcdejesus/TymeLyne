@@ -169,6 +169,7 @@ const ProfileScreen = ({ navigation }) => {
           <Image 
             source={require('../../assets/default-avatar.png')} // Placeholder for profile picture
             style={styles.profileImage} 
+            resizeMode="cover"
           />
           <Animated.Text 
             style={[
@@ -221,7 +222,11 @@ const ProfileScreen = ({ navigation }) => {
               style={styles.courseCard}
               onPress={() => handleNavigation('CourseDetails')}
             >
-              <Image source={course.icon} style={styles.courseIcon} />
+              <Image 
+                source={course.icon} 
+                style={styles.courseIcon} 
+                resizeMode="cover"
+              />
               <Text style={styles.courseTitle}>{course.title}</Text>
             </Card>
           ))
@@ -251,6 +256,7 @@ const styles = StyleSheet.create({
     borderRadius: width * 0.1,
     backgroundColor: '#D8D0BA',
     marginRight: 16,
+    overflow: 'hidden',
     ...Platform.select({
       ios: {
         shadowColor: '#000',
@@ -321,9 +327,6 @@ const styles = StyleSheet.create({
     maxHeight: 40,
     borderRadius: width * 0.05,
     backgroundColor: theme.colors.background.card,
-    padding: theme.spacing.xs,
-    justifyContent: 'center',
-    alignItems: 'center',
     overflow: 'hidden',
     marginBottom: 12,
   },

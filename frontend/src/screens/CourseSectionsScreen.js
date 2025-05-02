@@ -212,7 +212,7 @@ const CourseSectionsScreen = ({ navigation, route }) => {
                   require('../../assets/course-icons/computer.png')
                 } 
                 style={styles.courseLogo}
-                resizeMode="contain"
+                resizeMode="cover"
               />
             </View>
             
@@ -371,8 +371,9 @@ const styles = StyleSheet.create({
   courseLogo: {
     width: 50,
     height: 50,
-    borderRadius: 8,
+    borderRadius: 25,
     backgroundColor: colors.cardDark,
+    overflow: 'hidden',
   },
   metadataScrollContent: {
     flexGrow: 1,

@@ -27,6 +27,7 @@ const MessageListItem = ({ message, onPress }) => {
       <Image 
         source={require('../../assets/default-avatar.png')} 
         style={styles.avatar}
+        resizeMode="cover"
       />
       <View style={styles.contentContainer}>
         <View style={styles.header}>
@@ -54,6 +55,7 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 12,
+    overflow: 'hidden',
   },
   contentContainer: {
     flex: 1,

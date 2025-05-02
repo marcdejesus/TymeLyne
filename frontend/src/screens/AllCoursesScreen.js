@@ -6,7 +6,11 @@ import CourseCard from '../components/CourseCard';
 import Typography from '../components/Typography';
 import SkeletonLoader from '../components/SkeletonLoader';
 import { colors, spacing, borderRadius } from '../constants/theme';
-import { getMyCourses, removeFromCurrentCourses } from '../services/courseService';
+import { 
+  getMyCourses, 
+  removeFromCurrentCourses,
+  removeFromCurrentCoursesByTitle 
+} from '../services/courseService';
 
 /**
  * Screen for displaying all courses with a toggle between active and completed
@@ -79,8 +83,23 @@ const AllCoursesScreen = ({ navigation, route }) => {
     return coursesList.map((course, index) => {
       const courseTitle = course.title || course.course_name || 'Untitled Course';
       
+      // Extract all possible IDs for debugging
+      const courseId = course._id || course.course_id;
+      const courseIdStr = String(courseId);
+      
+      // Log course object for troubleshooting
+      console.log(`Course ${index} ID information:`, {
+        title: courseTitle,
+        _id: course._id,
+        course_id: course.course_id,
+        id: courseId,
+        idType: typeof courseId
+      });
+      
       return {
-        id: course._id || course.course_id,
+        id: courseId,
+        idStr: courseIdStr,
+        rawCourse: course, // Keep raw course for troubleshooting
         title: courseTitle,
         icon: defaultIcons[index % defaultIcons.length],
         progress: isCompleted ? 100 : calculateProgress(course),
@@ -100,6 +119,18 @@ const AllCoursesScreen = ({ navigation, route }) => {
   // Handle course deletion
   const handleCourseDelete = async (courseId, courseTitle, callback) => {
     try {
+      // Get the raw course object for troubleshooting
+      const courseToDelete = courses.find(c => String(c.id) === String(courseId));
+      
+      console.log('Attempting to delete course:', {
+        courseId,
+        courseTitle,
+        courseObject: courseToDelete
+      });
+      
+      // Format the courseId to ensure consistency
+      const formattedCourseId = String(courseId);
+      
       Alert.alert(
         'Delete Course',
         `Are you sure you want to remove "${courseTitle}" from your courses?`,
@@ -108,14 +139,91 @@ const AllCoursesScreen = ({ navigation, route }) => {
             text: 'Delete Course',
             onPress: async () => {
               try {
-                // Call API to remove the course
-                await removeFromCurrentCourses(courseId);
-                console.log(`Course removed: ${courseId}`);
+                // Set loading state to true before calling API
+                setLoading(true);
+                
+                // Try with different ID formats if the raw course object is available
+                if (courseToDelete && courseToDelete.rawCourse) {
+                  const rawCourse = courseToDelete.rawCourse;
+                  // Find the first available ID to try (trying multiple formats)
+                  const possibleIds = [
+                    courseId,                         // Original ID
+                    rawCourse._id,                    // MongoDB _id
+                    rawCourse.course_id,              // Course ID number
+                    String(courseId),                 // String of original
+                    rawCourse._id ? String(rawCourse._id) : null,   // String of MongoDB _id
+                    rawCourse.course_id ? String(rawCourse.course_id) : null // String of course_id
+                  ].filter(id => id !== null && id !== undefined);
+                  
+                  console.log('Possible course IDs to try:', possibleIds);
+                  
+                  // Try each ID format until one works
+                  let success = false;
+                  let lastError = null;
+                  
+                  for (const idToTry of possibleIds) {
+                    try {
+                      console.log(`Trying to delete with ID: ${idToTry} (${typeof idToTry})`);
+                      await removeFromCurrentCourses(idToTry);
+                      success = true;
+                      console.log(`Course removed successfully with ID: ${idToTry}`);
+                      break;
+                    } catch (err) {
+                      console.log(`Failed to delete with ID ${idToTry}:`, err.message);
+                      lastError = err;
+                    }
+                  }
+                  
+                  // If ID-based deletion fails, try title-based approach as last resort
+                  if (!success) {
+                    try {
+                      console.log(`Trying to delete by title: "${courseTitle}"`);
+                      await removeFromCurrentCoursesByTitle(courseTitle);
+                      success = true;
+                      console.log(`Course removed successfully by title`);
+                    } catch (err) {
+                      console.log(`Failed to delete by title:`, err.message);
+                      lastError = err;
+                    }
+                  }
+                  
+                  if (!success && lastError) {
+                    throw lastError;
+                  }
+                } else {
+                  // Fallback to just using the formatted ID
+                  try {
+                    await removeFromCurrentCourses(formattedCourseId);
+                  } catch (error) {
+                    // If ID-based deletion fails, try by title as last resort
+                    console.log(`Trying title-based deletion as fallback for: "${courseTitle}"`);
+                    await removeFromCurrentCoursesByTitle(courseTitle);
+                  }
+                }
+                
+                // Reset loading state
+                setLoading(false);
+                
                 // Call the callback function to refresh the courses list
                 if (callback) callback();
+                
+                // Show success message
+                Alert.alert('Success', `Course "${courseTitle}" has been removed from your courses.`);
               } catch (error) {
+                // Reset loading state
+                setLoading(false);
+                
                 console.error('Failed to delete course:', error);
-                Alert.alert('Error', 'Failed to delete the course. Please try again.');
+                
+                // Determine the error message to show
+                let errorMessage = 'Failed to delete the course. Please try again.';
+                if (error.message === 'Course not found in your current courses') {
+                  errorMessage = 'This course is not in your current courses.';
+                  // Refresh to ensure UI is in sync with backend
+                  if (callback) callback();
+                }
+                
+                Alert.alert('Error', errorMessage);
               }
             },
             style: 'destructive',

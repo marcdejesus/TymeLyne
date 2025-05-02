@@ -154,15 +154,17 @@ const ProfileScreen = ({ navigation }) => {
         </View>
         
         <View style={styles.profileInfo}>
-          <Text style={styles.username}>{username}</Text>
-          <View style={styles.statsRow}>
-            <View style={styles.stat}>
-              <Text style={styles.statLabel}>Followers</Text>
-              <Text style={styles.statValue}>{followers}</Text>
-            </View>
-            <View style={styles.stat}>
-              <Text style={styles.statLabel}>Friends</Text>
-              <Text style={styles.statValue}>{friends}</Text>
+          <View style={styles.userInfoContainer}>
+            <Text style={styles.username}>{username}</Text>
+            <View style={styles.statsRow}>
+              <View style={styles.stat}>
+                <Text style={styles.statLabel}>Followers</Text>
+                <Text style={styles.statValue}>{followers}</Text>
+              </View>
+              <View style={styles.stat}>
+                <Text style={styles.statLabel}>Friends</Text>
+                <Text style={styles.statValue}>{friends}</Text>
+              </View>
             </View>
           </View>
           
@@ -198,18 +200,18 @@ const styles = StyleSheet.create({
   profileSection: {
     flexDirection: 'row',
     padding: width * 0.04,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     marginTop: 10,
   },
   profileImageContainer: {
     alignItems: 'center',
+    marginRight: 16,
   },
   profileImage: {
     width: width * 0.2,
     height: width * 0.2,
     borderRadius: width * 0.1,
     backgroundColor: '#D8D0BA',
-    marginRight: 16,
     overflow: 'hidden',
     ...Platform.select({
       ios: {
@@ -224,17 +226,23 @@ const styles = StyleSheet.create({
     }),
   },
   levelText: {
-    marginTop: 5,
+    marginTop: 20,
     fontSize: 12,
     color: colors.text.secondary,
   },
   profileInfo: {
     flex: 1,
+    justifyContent: 'space-between',
+  },
+  userInfoContainer: {
+    paddingTop: 10,
+    marginBottom: 10,
   },
   username: {
     fontSize: 20,
     fontWeight: 'bold',
     color: colors.text,
+    marginBottom: 8,
   },
   statsRow: {
     flexDirection: 'row',
@@ -253,7 +261,7 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   progressContainer: {
-    marginTop: 50,
+    marginTop: 20,
     width: '100%',
   },
   progressText: {

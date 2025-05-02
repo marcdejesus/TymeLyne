@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
@@ -16,6 +16,7 @@ import {
   Montserrat_700Bold
 } from '@expo-google-fonts/montserrat';
 import { Ionicons } from '@expo/vector-icons';
+import { resetAuthState } from './src/utils/resetAuth';
 
 // Screens
 import LoginScreen from './src/screens/LoginScreen';
@@ -160,6 +161,17 @@ export default function App() {
     Montserrat_600SemiBold,
     Montserrat_700Bold
   });
+
+  // Clear any existing auth tokens on app startup to fix the issue with mismatched user IDs
+  // You can remove this after you've fixed the issue and logged in again
+  useEffect(() => {
+    const clearAuthState = async () => {
+      console.log('🚨 Clearing auth state due to user ID mismatch...');
+      await resetAuthState();
+    };
+    
+    clearAuthState();
+  }, []);
 
   // Show loading screen while fonts are loading
   if (!fontsLoaded) {

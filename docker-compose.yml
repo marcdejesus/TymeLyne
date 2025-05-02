@@ -5,11 +5,21 @@ services:
       - "5001:5001"
     depends_on:
       - mongo
+    networks:
+      - tymelyne-network
     env_file:
       - ./backend/.env
     volumes:
       - ./backend:/usr/src/app
       - /usr/src/app/node_modules
+    restart: unless-stopped
+    # Add healthcheck
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5001/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
   mongo-express:
     image: mongo-express
@@ -21,13 +31,23 @@ services:
       ME_CONFIG_BASICAUTH_PASSWORD: password
     depends_on:
       - mongo
+    networks:
+      - tymelyne-network
+    restart: unless-stopped
 
   mongo:
     image: mongo:latest
     ports:
       - "27017:27017"
+    networks:
+      - tymelyne-network
     volumes:
       - mongo-data:/data/db
+    restart: unless-stopped
 
 volumes:
-  mongo-data: 
+  mongo-data:
+
+networks:
+  tymelyne-network:
+    driver: bridge 

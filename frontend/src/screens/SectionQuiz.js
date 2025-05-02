@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import {
   View,
   StyleSheet,
@@ -6,7 +6,8 @@ import {
   Image,
   Dimensions,
   Alert,
-  Platform
+  Platform,
+  Text
 } from 'react-native';
 import Screen from '../components/Screen';
 import Typography from '../components/Typography';
@@ -15,6 +16,7 @@ import Card from '../components/Card';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 import { updateSectionCompletion, getCourseById } from '../services/courseService';
 import { useUserProgression } from '../contexts/UserProgressionContext';
+import { useFocusEffect } from '@react-navigation/native';
 
 const { width, height } = Dimensions.get('window');
 
@@ -47,41 +49,49 @@ const QuizOption = memo(({ index, option, selectedOption, onSelect }) => (
 ));
 
 const SectionQuiz = ({ navigation, route }) => {
-  const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 250 } = route.params;
+  console.log('SectionQuiz - Component mounted');
+  
+  // Store initial route params in a ref to prevent issues with route.params changes
+  const initialParams = useRef(route.params).current;
+  const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 250 } = initialParams;
   const { updateProgression } = useUserProgression();
   
-  // Quiz state
+  // Add unmount logger
+  useEffect(() => {
+    return () => {
+      console.log('SectionQuiz - Component unmounted');
+    };
+  }, []);
+  
+  // Quiz state - use refs for values that shouldn't trigger re-renders
   const [quizStarted, setQuizStarted] = useState(false);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState(null);
-  const [timeRemaining, setTimeRemaining] = useState(300); // 5 minutes in seconds
   const [quizCompleted, setQuizCompleted] = useState(false);
   const [quizFailed, setQuizFailed] = useState(false);
   const [questions, setQuestions] = useState([]);
-  const timerRef = useRef(null);
-  const timerIntervalRef = useRef(null);
+  
+  // Helper function to get correct answer index from any question format
+  const getCorrectAnswerIndex = useCallback((question) => {
+    // Check all possible correct answer property names
+    if (question.correctOption !== undefined) return question.correctOption;
+    if (question.correctAnswer !== undefined) return question.correctAnswer;
+    if (question.correct_option !== undefined) return question.correct_option;
+    if (question.correct_answer !== undefined) return question.correct_answer;
+    
+    // If no correct answer property is found, log error and return null
+    console.error('No correct answer property found in question:', question);
+    return null;
+  }, []);
   
   // Initialize quiz questions from the passed quiz data or use mock data if not available
   useEffect(() => {
     console.log('Quiz data received:', quiz);
     
     if (quiz) {
-      // Check what ID field is being used
-      console.log('Quiz ID fields check:', { 
-        hasQuizId: !!quiz.quiz_id, 
-        hasUnderscoreId: !!quiz._id,
-        quizId: quiz.quiz_id,
-        underscoreId: quiz._id
-      });
-      
       if (quiz.questions && quiz.questions.length > 0) {
         console.log('Using real quiz data with', quiz.questions.length, 'questions');
-        console.log('First question ID fields:', {
-          hasId: !!quiz.questions[0].id,
-          hasUnderscoreId: !!quiz.questions[0]._id,
-          id: quiz.questions[0].id,
-          underscoreId: quiz.questions[0]._id
-        });
+        console.log('First question structure:', JSON.stringify(quiz.questions[0], null, 2));
         setQuestions(quiz.questions);
       } else {
         console.warn('Quiz object exists but no questions found');
@@ -93,7 +103,7 @@ const SectionQuiz = ({ navigation, route }) => {
     }
   }, [quiz]);
   
-  const loadMockData = () => {
+  const loadMockData = useCallback(() => {
     // Mock quiz questions as fallback
     setQuestions([
       {
@@ -105,7 +115,8 @@ const SectionQuiz = ({ navigation, route }) => {
           'Creating physical advertising materials',
           'Reducing marketing budgets'
         ],
-        correctOption: 1
+        correctOption: 1,
+        correctAnswer: 1
       },
       {
         _id: '2',
@@ -116,7 +127,8 @@ const SectionQuiz = ({ navigation, route }) => {
           'Billboard advertising',
           'Search engine optimization'
         ],
-        correctOption: 2
+        correctOption: 2,
+        correctAnswer: 2
       },
       {
         _id: '3',
@@ -127,42 +139,10 @@ const SectionQuiz = ({ navigation, route }) => {
           'Sales Enhancement Operations',
           'System Enhancement Oversight'
         ],
-        correctOption: 1
+        correctOption: 1,
+        correctAnswer: 1
       }
     ]);
-  };
-
-  useEffect(() => {
-    if (quizStarted && !quizCompleted && !quizFailed) {
-      // Use ref to track the timer
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-      
-      // Update timer each second
-      timerIntervalRef.current = setInterval(() => {
-        setTimeRemaining(prev => {
-          if (prev <= 1) {
-            clearInterval(timerIntervalRef.current);
-            setQuizFailed(true);
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    }
-    
-    return () => {
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
-    };
-  }, [quizStarted, quizCompleted, quizFailed]);
-
-  const formatTime = useCallback((seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
   }, []);
 
   const handleBackPress = useCallback(() => {
@@ -188,6 +168,7 @@ const SectionQuiz = ({ navigation, route }) => {
   }, [quizStarted, quizCompleted, quizFailed, navigation]);
 
   const handleStartQuiz = useCallback(() => {
+    // Reset and start the quiz
     setQuizStarted(true);
   }, []);
 
@@ -201,21 +182,35 @@ const SectionQuiz = ({ navigation, route }) => {
       return;
     }
     
-    const isCorrect = selectedOption === questions[currentQuestionIndex].correctOption;
+    const currentQuestion = questions[currentQuestionIndex];
+    console.log('Checking answer for question:', currentQuestion);
+    console.log('Selected option index:', selectedOption);
+    
+    // Check for both correctOption and correctAnswer properties
+    const correctAnswerIndex = getCorrectAnswerIndex(currentQuestion);
+    
+    console.log('Correct answer index:', correctAnswerIndex);
+    
+    if (correctAnswerIndex === null) {
+      console.error('Could not find correct answer in question data');
+      return;
+    }
+    
+    const isCorrect = selectedOption === correctAnswerIndex;
+    console.log('Answer is correct:', isCorrect);
     
     if (!isCorrect) {
-      // Penalize for wrong answer by reducing time
-      setTimeRemaining(prev => Math.max(prev - 30, 0));
+      // If any answer is incorrect, fail the quiz
+      setQuizFailed(true);
+      return;
     }
     
     if (currentQuestionIndex < questions.length - 1) {
+      // Move to next question if answer was correct
       setCurrentQuestionIndex(prev => prev + 1);
       setSelectedOption(null);
     } else {
-      // Quiz completed
-      if (timerIntervalRef.current) {
-        clearInterval(timerIntervalRef.current);
-      }
+      // All questions answered correctly, complete the quiz
       setQuizCompleted(true);
       
       // Mark the section as completed
@@ -227,7 +222,7 @@ const SectionQuiz = ({ navigation, route }) => {
             // Update the progression data in context
             if (result && result.progressData) {
               // Save this in route params to pass back later
-              route.params.updatedProgressData = result.progressData;
+              initialParams.updatedProgressData = result.progressData;
               
               // Update the global progression context
               updateProgression(result.progressData);
@@ -235,7 +230,7 @@ const SectionQuiz = ({ navigation, route }) => {
             
             // If we received an updated section, store it too
             if (result && result.section) {
-              route.params.updatedSection = result.section;
+              initialParams.updatedSection = result.section;
             }
           })
           .catch(error => {
@@ -245,27 +240,22 @@ const SectionQuiz = ({ navigation, route }) => {
         console.error('Error updating section completion:', error);
       }
     }
-  }, [questions, currentQuestionIndex, selectedOption, courseId, sectionId, route.params, updateProgression]);
+  }, [questions, currentQuestionIndex, selectedOption, courseId, sectionId, initialParams, updateProgression, getCorrectAnswerIndex]);
 
   const handleRetry = useCallback(() => {
+    // Reset quiz state
     setQuizFailed(false);
     setQuizStarted(false);
     setCurrentQuestionIndex(0);
     setSelectedOption(null);
-    setTimeRemaining(300);
   }, []);
 
   const handleGoHome = useCallback(() => {
-    // If we have an updated section, fetch the full course again
-    // to ensure we have the latest data with all sections
+    // Navigate back to course sections
     try {
       getCourseById(courseId)
         .then(updatedCourseData => {
-          console.log('Updated course data after completion:', {
-            courseId: updatedCourseData._id || updatedCourseData.course_id,
-            totalSections: updatedCourseData.sections?.length,
-            completedSections: updatedCourseData.sections?.filter(s => s.isCompleted).length
-          });
+          console.log('Updated course data after completion');
           
           // Navigate back with the fresh course data
           navigation.navigate('CourseSections', { 
@@ -280,13 +270,13 @@ const SectionQuiz = ({ navigation, route }) => {
           // If we have updated progression data from completion, use it
           const navigationParams = { courseId };
           
-          if (route.params.updatedProgressData) {
-            navigationParams.updatedProgressData = route.params.updatedProgressData;
+          if (initialParams.updatedProgressData) {
+            navigationParams.updatedProgressData = initialParams.updatedProgressData;
           }
           
-          if (route.params.course) {
+          if (initialParams.course) {
             // Use the original course data if available
-            navigationParams.courseData = route.params.course;
+            navigationParams.courseData = initialParams.course;
           }
           
           // Navigate back with whatever data we have
@@ -296,9 +286,10 @@ const SectionQuiz = ({ navigation, route }) => {
       console.error('Error in handleGoHome:', error);
       navigation.navigate('CourseSections', { courseId });
     }
-  }, [navigation, courseId, route.params]);
+  }, [navigation, courseId, initialParams]);
 
-  const renderQuizIntro = () => (
+  // Memoize render functions to prevent unnecessary re-renders
+  const renderQuizIntro = useCallback(() => (
     <View style={styles.introContainer}>
       <Image 
         source={require('../../assets/logo.png')} 
@@ -306,10 +297,13 @@ const SectionQuiz = ({ navigation, route }) => {
         resizeMode="contain"
       />
       <Typography variant="heading" weight="bold" style={styles.quizTimeText}>
-        Quiz Tyme!
+        Quiz Challenge!
       </Typography>
       <Typography variant="body" style={styles.quizDescription} center>
         {sectionTitle ? `Test your knowledge of ${sectionTitle}` : 'Test your knowledge with this quiz'}
+      </Typography>
+      <Typography variant="body2" style={styles.quizRules} center>
+        Answer all questions correctly to earn XP. Any incorrect answer will fail the quiz.
       </Typography>
       <Button
         variant="primary"
@@ -319,9 +313,9 @@ const SectionQuiz = ({ navigation, route }) => {
         Start Quiz
       </Button>
     </View>
-  );
+  ), [handleStartQuiz, sectionTitle]);
 
-  const renderQuestion = () => {
+  const renderQuestion = useCallback(() => {
     if (questions.length === 0 || currentQuestionIndex >= questions.length) {
       return (
         <View style={styles.errorContainer}>
@@ -343,24 +337,6 @@ const SectionQuiz = ({ navigation, route }) => {
     
     return (
       <View style={styles.questionContainer}>
-        <Card variant="elevated" style={styles.timerCard}>
-          <View style={styles.timerContainer}>
-            <View style={styles.timerInnerContainer}>
-              <Typography variant="caption" weight="semiBold" style={styles.timeRemainingText}>
-                {formatTime(timeRemaining)} REMAINING
-              </Typography>
-              <View style={styles.progressBarContainer}>
-                <View 
-                  style={[
-                    styles.progressBar, 
-                    { width: `${Math.max((timeRemaining / 300) * 100, 0)}%` }
-                  ]} 
-                />
-              </View>
-            </View>
-          </View>
-        </Card>
-        
         <Card variant="elevated" style={styles.questionCard}>
           <Typography variant="caption" weight="medium" color="secondary">
             QUESTION {currentQuestionIndex + 1} OF {questions.length}
@@ -390,9 +366,9 @@ const SectionQuiz = ({ navigation, route }) => {
         </Button>
       </View>
     );
-  };
+  }, [currentQuestionIndex, questions, selectedOption, handleGoHome, handleNextQuestion, handleSelectOption]);
 
-  const renderFailedScreen = () => (
+  const renderFailedScreen = useCallback(() => (
     <View style={styles.resultContainer}>
       <Image 
         source={require('../../assets/explosion-icon.png')} 
@@ -403,7 +379,10 @@ const SectionQuiz = ({ navigation, route }) => {
         Oops!
       </Typography>
       <Typography variant="title" style={styles.resultSubtitle}>
-        Level Failed
+        Incorrect Answer
+      </Typography>
+      <Typography variant="body2" style={styles.resultMessage} center>
+        You need to answer all questions correctly to complete the quiz.
       </Typography>
       
       <Button
@@ -411,7 +390,7 @@ const SectionQuiz = ({ navigation, route }) => {
         onPress={handleRetry}
         style={styles.actionButton}
       >
-        Retry
+        Try Again
       </Button>
       
       <Button
@@ -422,9 +401,9 @@ const SectionQuiz = ({ navigation, route }) => {
         Go Home
       </Button>
     </View>
-  );
+  ), [handleRetry, handleGoHome]);
 
-  const renderCompletedScreen = () => (
+  const renderCompletedScreen = useCallback(() => (
     <View style={styles.resultContainer}>
       <Image 
         source={require('../../assets/checkmark-icon.png')} 
@@ -446,10 +425,10 @@ const SectionQuiz = ({ navigation, route }) => {
         Continue
       </Button>
     </View>
-  );
+  ), [experiencePoints, handleGoHome]);
 
-  // Render content based on quiz state
-  const renderContent = () => {
+  // Memoize the content rendering function to minimize re-renders
+  const renderContent = useCallback(() => {
     if (quizFailed) {
       return renderFailedScreen();
     }
@@ -463,11 +442,20 @@ const SectionQuiz = ({ navigation, route }) => {
     }
     
     return renderQuestion();
-  };
+  }, [quizFailed, quizCompleted, quizStarted, renderFailedScreen, renderCompletedScreen, renderQuizIntro, renderQuestion]);
 
-  return (
+  // Memoize the title to prevent title updates from causing re-renders
+  const screenTitle = useMemo(() => {
+    if (quizStarted && questions.length > 0) {
+      return `Question ${currentQuestionIndex + 1}/${questions.length}`;
+    }
+    return "Quiz Challenge";
+  }, [quizStarted, questions.length, currentQuestionIndex]);
+
+  // Use memo for the entire screen render to minimize re-renders
+  return useMemo(() => (
     <Screen
-      title={quizStarted && questions.length > 0 ? `Question ${currentQuestionIndex + 1}/${questions.length}` : "Quiz"}
+      title={screenTitle}
       onBackPress={handleBackPress}
       backgroundColor={colors.background}
       showBottomNav={false}
@@ -475,7 +463,7 @@ const SectionQuiz = ({ navigation, route }) => {
     >
       {renderContent()}
     </Screen>
-  );
+  ), [screenTitle, handleBackPress, renderContent]);
 };
 
 const styles = StyleSheet.create({
@@ -494,8 +482,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.s,
   },
   quizDescription: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.m,
     opacity: 0.8,
+  },
+  quizRules: {
+    marginBottom: spacing.xl,
+    color: colors.text.secondary,
+    fontStyle: 'italic',
   },
   actionButton: {
     minWidth: '80%',
@@ -505,31 +498,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: spacing.m,
     paddingTop: spacing.m,
-  },
-  timerCard: {
-    marginBottom: spacing.m,
-  },
-  timerContainer: {
-    alignItems: 'center',
-  },
-  timerInnerContainer: {
-    width: '100%',
-    alignItems: 'center',
-  },
-  timeRemainingText: {
-    marginBottom: spacing.xs,
-  },
-  progressBarContainer: {
-    width: '100%',
-    height: 8,
-    backgroundColor: colors.border,
-    borderRadius: borderRadius.s,
-    overflow: 'hidden',
-  },
-  progressBar: {
-    height: '100%',
-    backgroundColor: colors.primary,
-    borderRadius: borderRadius.s,
   },
   questionCard: {
     marginBottom: spacing.m,
@@ -589,6 +557,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xs,
   },
   resultSubtitle: {
+    marginBottom: spacing.xl,
+  },
+  resultMessage: {
     marginBottom: spacing.xl,
   },
   xpText: {

@@ -55,7 +55,6 @@ const generateMockGlobalLeaderboard = () => {
     xp: Math.floor(Math.random() * 10000) + 1000,
     level: Math.floor(Math.random() * 30) + 1,
     rank: i + 1,
-    trend: Math.floor(Math.random() * 40) - 20,
     avatar: null,
     isCurrentUser: i === 14
   })).sort((a, b) => b.xp - a.xp);
@@ -72,7 +71,6 @@ const generateMockFriendsLeaderboard = () => {
     xp: Math.floor(Math.random() * 8000) + 500,
     level: Math.floor(Math.random() * 20) + 1,
     rank: i + 1,
-    trend: Math.floor(Math.random() * 40) - 10,
     lastActive: i < 5 ? 'today' : i < 10 ? 'yesterday' : `${i - 9} days ago`,
     avatar: null,
     isCurrentUser: i === 3

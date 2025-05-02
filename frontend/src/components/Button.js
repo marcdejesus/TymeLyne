@@ -13,6 +13,7 @@ import { colors, shadows, spacing, borderRadius } from '../constants/theme';
  * @param {string} variant - Button variant: 'primary', 'secondary', 'outline', 'text'
  * @param {function} onPress - Function to call when button is pressed
  * @param {ReactNode} children - Button content (text or components)
+ * @param {string} title - Button text (used if children not provided)
  * @param {string} size - Button size: 'small', 'medium', 'large'
  * @param {boolean} disabled - Whether the button is disabled
  * @param {boolean} loading - Whether to show a loading indicator
@@ -26,6 +27,7 @@ const Button = ({
   variant = 'primary',
   onPress,
   children,
+  title,
   size = 'medium',
   disabled = false,
   loading = false,
@@ -79,6 +81,9 @@ const Button = ({
     }
   };
 
+  // Use title if children not provided
+  const buttonText = children || title;
+
   return (
     <TouchableOpacity
       style={getButtonStyle()}
@@ -93,17 +98,17 @@ const Button = ({
           color={getTextColor()} 
         />
       ) : (
-        typeof children === 'string' ? (
+        typeof buttonText === 'string' ? (
           <Typography 
             variant="button" 
             weight="medium" 
             style={getTextStyle()}
             color={getTextColor()}
           >
-            {children}
+            {buttonText}
           </Typography>
         ) : (
-          children
+          buttonText
         )
       )}
     </TouchableOpacity>

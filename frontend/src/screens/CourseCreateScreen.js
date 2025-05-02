@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert, StatusBar, Platform } from 'react-native';
+import React, { useState, useRef } from 'react';
+import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert, StatusBar, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Screen from '../components/Screen';
@@ -18,13 +18,14 @@ const isIphoneWithNotch = Platform.OS === 'ios' && Dimensions.get('window').heig
 
 const CourseCreateScreen = ({ navigation }) => {
   const { user } = useAuth();
+  const scrollViewRef = useRef(null);
   
   // Form state
   const [courseTitle, setCourseTitle] = useState('');
   const [selectedGoal, setSelectedGoal] = useState(null);
   const [skillLevel, setSkillLevel] = useState(null);
   const [hasTriedBefore, setHasTriedBefore] = useState(null);
-  const [timePerDay, setTimePerDay] = useState(null);
+  const [timePerWeek, setTimePerWeek] = useState(null);
   const [aiSupport, setAiSupport] = useState(null);
   const [deadline, setDeadline] = useState('');
   const [includeRealWorldTasks, setIncludeRealWorldTasks] = useState(null);
@@ -50,10 +51,10 @@ const CourseCreateScreen = ({ navigation }) => {
   ];
   
   const timeOptions = [
-    'Less than 10 minutes',
-    '10-20 minutes',
-    '20-30 minutes',
-    '30+ minutes'
+    'Less than 30 minutes',
+    '1 hour',
+    '3 hours',
+    '7+ hours'
   ];
   
   const aiSupportOptions = [
@@ -94,7 +95,7 @@ const CourseCreateScreen = ({ navigation }) => {
     }
 
     // Validate required fields
-    if (!selectedGoal || !skillLevel || !timePerDay) {
+    if (!selectedGoal || !skillLevel || !timePerWeek) {
       Alert.alert('Missing Information', 'Please fill out all required fields (Goal, Skill Level, and Time Commitment)');
       return;
     }
@@ -109,7 +110,7 @@ const CourseCreateScreen = ({ navigation }) => {
         goal: selectedGoal,
         skillLevel: skillLevel,
         hasTriedBefore: hasTriedBefore,
-        timePerDay: timePerDay,
+        timePerWeek: timePerWeek,
         aiSupport: aiSupport,
         deadline: deadline,
         includeRealWorldTasks: includeRealWorldTasks,
@@ -117,6 +118,11 @@ const CourseCreateScreen = ({ navigation }) => {
         difficulty: mapSkillLevelToDifficulty(skillLevel)
       };
       
+      // Scroll to the bottom to show loading indicator
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+
       const result = await createCourse(userPreferences);
       
       setLoading(false);
@@ -144,20 +150,6 @@ const CourseCreateScreen = ({ navigation }) => {
                 courseId: result.course.course_id || result.course._id,
                 courseData: formattedCourse
               })
-            },
-            {
-              text: 'OK',
-              onPress: () => {
-                // Reset form
-                setCourseTitle('');
-                setSelectedGoal(null);
-                setSkillLevel(null);
-                setHasTriedBefore(null);
-                setTimePerDay(null);
-                setAiSupport(null);
-                setDeadline('');
-                setIncludeRealWorldTasks(null);
-              }
             }
           ]
         );
@@ -218,174 +210,179 @@ const CourseCreateScreen = ({ navigation }) => {
       </View>
 
       {/* Scrollable content */}
-      <ScrollView 
-        style={styles.scrollView} 
-        contentContainerStyle={styles.scrollContent}
-        keyboardShouldPersistTaps="always"
-        showsVerticalScrollIndicator={false}
-      >
-        <Card style={styles.cardContainer}>
-          <Typography variant="h2" style={styles.heading}>
-            AI Course Generator
-          </Typography>
+      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+        <ScrollView 
+          ref={scrollViewRef}
+          style={styles.scrollView} 
+          contentContainerStyle={styles.scrollContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <Card style={styles.cardContainer}>
+            <Typography variant="h2" style={styles.heading}>
+              AI Course Generator
+            </Typography>
             
-          <Typography variant="body1" style={styles.description}>
-            Answer a few questions to help our AI create a personalized learning experience for you.
-          </Typography>
-        
-          <SectionHeader title="Definition" />
+            <Typography variant="body1" style={styles.description}>
+              Answer a few questions to help our AI create a personalized learning experience for you.
+            </Typography>
           
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={1} text="What would you like to get better at?" />
-            <Input
-              placeholder="Enter skill or topic"
-              value={courseTitle}
-              onChangeText={text => setCourseTitle(text)}
-            />
-          </View>
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={2} text="Which best describes your goal?" />
-            {goalOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={selectedGoal === option}
-                onPress={() => handleSelectOption(option, setSelectedGoal, selectedGoal)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <SectionHeader title="Skill Level" />
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={3} text="How experienced are you in this topic?" />
-            {skillLevelOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={skillLevel === option}
-                onPress={() => handleSelectOption(option, setSkillLevel, skillLevel)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={4} text="Have you tried learning this topic before?" />
-            {yesNoOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={hasTriedBefore === option}
-                onPress={() => handleSelectOption(option, setHasTriedBefore, hasTriedBefore)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <SectionHeader title="Learning Style" />
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={5} text="How much time can you dedicate per day?" />
-            {timeOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={timePerDay === option}
-                onPress={() => handleSelectOption(option, setTimePerDay, timePerDay)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <SectionHeader title="Motivation" />
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={6} text="How do you want the AI to support you?" />
-            {aiSupportOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={aiSupport === option}
-                onPress={() => handleSelectOption(option, setAiSupport, aiSupport)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <SectionHeader title="Customization" />
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={7} text="Is there a deadline you're working toward? (Optional)" />
-            <View style={styles.dateInputContainer}>
+            <SectionHeader title="Definition" />
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={1} text="What would you like to get better at?" />
               <Input
-                placeholder="MM/DD/YYYY"
-                value={deadline}
-                onChangeText={setDeadline}
-                rightIcon={<Ionicons name="calendar-outline" size={20} color={colors.text.tertiary} />}
-                style={styles.dateInput}
+                placeholder="Enter skill or topic"
+                value={courseTitle}
+                onChangeText={text => setCourseTitle(text)}
               />
             </View>
-          </View>
-          
-          <View style={styles.questionContainer}>
-            <QuestionLabel number={8} text="Would you like the course to include real-world tasks or project-based learning?" />
-            {yesNoOptions.map((option, index) => (
-              <RadioButton
-                key={index}
-                selected={includeRealWorldTasks === option}
-                onPress={() => handleSelectOption(option, setIncludeRealWorldTasks, includeRealWorldTasks)}
-                label={option}
-              />
-            ))}
-          </View>
-          
-          <View style={styles.questionContainer}>
-            <Typography variant="label" style={styles.pickerLabel}>
-              Number of Sections: {sectionsCount}
-            </Typography>
-            <Slider
-              style={styles.slider}
-              minimumValue={1}
-              maximumValue={15}
-              step={1}
-              value={sectionsCount}
-              onValueChange={(value) => setSectionsCount(Math.round(value))}
-              minimumTrackTintColor={colors.primary}
-              maximumTrackTintColor={colors.border}
-              thumbTintColor={colors.primary}
-            />
-            <View style={styles.sliderLabels}>
-              <Typography variant="caption">1</Typography>
-              <Typography variant="caption">15</Typography>
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={2} text="Which best describes your goal?" />
+              {goalOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={selectedGoal === option}
+                  onPress={() => handleSelectOption(option, setSelectedGoal, selectedGoal)}
+                  label={option}
+                />
+              ))}
             </View>
-          </View>
-          
-          {error && (
-            <Typography variant="body2" style={styles.errorText}>
-              {error}
-            </Typography>
-          )}
-          
-          <View style={styles.actionContainer}>
-            <Typography variant="body" color={colors.text.primary}>
-              AI-Powered Learning
-            </Typography>
-            <Button
-              title={loading ? "Generating..." : "Generate Course"}
-              onPress={handleCreateCourse}
-              style={styles.button}
-              disabled={loading || !courseTitle.trim() || !selectedGoal || !skillLevel || !timePerDay}
-            />
-          </View>
-          
-          {loading && (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.primary} />
-              <Typography variant="body2" style={styles.loadingText}>
-                Creating your personalized course... This may take a minute.
+            
+            <SectionHeader title="Skill Level" />
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={3} text="How experienced are you in this topic?" />
+              {skillLevelOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={skillLevel === option}
+                  onPress={() => handleSelectOption(option, setSkillLevel, skillLevel)}
+                  label={option}
+                />
+              ))}
+            </View>
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={4} text="Have you tried learning this topic before?" />
+              {yesNoOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={hasTriedBefore === option}
+                  onPress={() => handleSelectOption(option, setHasTriedBefore, hasTriedBefore)}
+                  label={option}
+                />
+              ))}
+            </View>
+            
+            <SectionHeader title="Learning Style" />
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={5} text="How much time can you dedicate per week?" />
+              {timeOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={timePerWeek === option}
+                  onPress={() => handleSelectOption(option, setTimePerWeek, timePerWeek)}
+                  label={option}
+                />
+              ))}
+            </View>
+            
+            <SectionHeader title="Motivation" />
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={6} text="How do you want the AI to support you?" />
+              {aiSupportOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={aiSupport === option}
+                  onPress={() => handleSelectOption(option, setAiSupport, aiSupport)}
+                  label={option}
+                />
+              ))}
+            </View>
+            
+            <SectionHeader title="Customization" />
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={7} text="Is there a deadline you're working toward? (Optional)" />
+              <View style={styles.dateInputContainer}>
+                <Input
+                  placeholder="MM/DD/YYYY"
+                  value={deadline}
+                  onChangeText={setDeadline}
+                  rightIcon={<Ionicons name="calendar-outline" size={20} color={colors.text.tertiary} />}
+                  style={styles.dateInput}
+                />
+              </View>
+            </View>
+            
+            <View style={styles.questionContainer}>
+              <QuestionLabel number={8} text="Would you like the course to include real-world tasks or project-based learning?" />
+              {yesNoOptions.map((option, index) => (
+                <RadioButton
+                  key={index}
+                  selected={includeRealWorldTasks === option}
+                  onPress={() => handleSelectOption(option, setIncludeRealWorldTasks, includeRealWorldTasks)}
+                  label={option}
+                />
+              ))}
+            </View>
+            
+            <View style={styles.questionContainer}>
+              <Typography variant="label" style={styles.pickerLabel}>
+                Number of Sections: {sectionsCount}
               </Typography>
+              <Slider
+                style={styles.slider}
+                minimumValue={1}
+                maximumValue={5}
+                step={1}
+                value={sectionsCount}
+                onValueChange={(value) => setSectionsCount(Math.round(value))}
+                minimumTrackTintColor={colors.primary}
+                maximumTrackTintColor={colors.border}
+                thumbTintColor={colors.primary}
+              />
+              <View style={styles.sliderLabels}>
+                <Typography variant="caption">1</Typography>
+                <Typography variant="caption">5</Typography>
+              </View>
             </View>
-          )}
-        </Card>
-      </ScrollView>
+            
+            {error && (
+              <Typography variant="body2" style={styles.errorText}>
+                {error}
+              </Typography>
+            )}
+            
+            <View style={styles.actionContainer}>
+              <Typography variant="body" color={colors.text.primary}>
+                AI-Powered Learning
+              </Typography>
+              <Button
+                title={loading ? "Generating..." : "Generate Course"}
+                onPress={handleCreateCourse}
+                style={styles.button}
+                disabled={loading || !courseTitle.trim() || !selectedGoal || !skillLevel || !timePerWeek}
+              >
+                {loading ? "Generating..." : "Generate Course"}
+              </Button>
+            </View>
+            
+            {loading && (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color={colors.primary} />
+                <Typography variant="body2" style={styles.loadingText}>
+                  Creating your personalized course... This may take a minute.
+                </Typography>
+              </View>
+            )}
+          </Card>
+        </ScrollView>
+      </TouchableWithoutFeedback>
     </SafeAreaView>
   );
 };

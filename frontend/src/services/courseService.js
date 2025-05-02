@@ -144,10 +144,38 @@ export const addToCurrentCourses = async (courseId) => {
  */
 export const removeFromCurrentCourses = async (courseId) => {
   try {
-    const response = await api.delete(`/profiles/courses/${courseId}`);
+    // Ensure we have a valid courseId
+    if (!courseId) {
+      throw new Error('Course ID is required');
+    }
+    
+    // Convert to string to ensure consistent format
+    const formattedCourseId = String(courseId);
+    
+    // Log detailed course ID info for debugging
+    console.log('Attempting to remove course with ID:', {
+      originalId: courseId,
+      formattedId: formattedCourseId,
+      idType: typeof courseId
+    });
+    
+    // Call the API to remove the course
+    const response = await api.delete(`/profiles/courses/${formattedCourseId}`);
+    console.log('Successfully removed course:', response.data);
     return response.data;
   } catch (error) {
     console.error('Error removing course from current courses:', error);
+    
+    // Log detailed error information
+    if (error.response) {
+      console.error('Error response data:', error.response.data);
+      console.error('Error response status:', error.response.status);
+    }
+    
+    // Check for specific error code
+    if (error.response?.status === 400) {
+      throw new Error('Course not found in your current courses');
+    }
     throw new Error(error.response?.data?.message || 'Failed to remove course');
   }
 };
@@ -200,6 +228,65 @@ export const completeSection = async (courseId, sectionId) => {
   }
 };
 
+/**
+ * Find the internal ID of a course in a user's current courses
+ * @param {string|number} courseTitle Title of the course to look up
+ * @returns {Promise} Promise object with the course internal ID
+ */
+export const findCourseInternalId = async (courseTitle) => {
+  try {
+    if (!courseTitle) {
+      throw new Error('Course title is required');
+    }
+    
+    // Get user's current courses
+    const allCourses = await getMyCourses();
+    
+    // Find the course by title
+    const course = allCourses.find(c => 
+      (c.title && c.title.toLowerCase() === courseTitle.toLowerCase()) ||
+      (c.course_name && c.course_name.toLowerCase() === courseTitle.toLowerCase())
+    );
+    
+    if (!course) {
+      throw new Error('Course not found with that title');
+    }
+    
+    // Get all possible IDs
+    const idInfo = {
+      _id: course._id,
+      course_id: course.course_id,
+      title: course.title || course.course_name,
+      internalId: course._id || course.course_id
+    };
+    
+    console.log('Found course internal ID:', idInfo);
+    
+    return idInfo;
+  } catch (error) {
+    console.error('Error finding course internal ID:', error);
+    throw error;
+  }
+};
+
+/**
+ * Remove a course from user's current courses by title lookup first
+ * @param {string} courseTitle The title of the course to remove
+ * @returns {Promise} Promise object with status and message
+ */
+export const removeFromCurrentCoursesByTitle = async (courseTitle) => {
+  try {
+    // Look up the course ID first
+    const courseInfo = await findCourseInternalId(courseTitle);
+    
+    // Use the internal ID to remove the course
+    return await removeFromCurrentCourses(courseInfo.internalId);
+  } catch (error) {
+    console.error('Error removing course by title:', error);
+    throw error;
+  }
+};
+
 export default {
   getCourses,
   getCourseById,
@@ -211,5 +298,7 @@ export default {
   addToCurrentCourses,
   removeFromCurrentCourses,
   completeCourse,
-  completeSection
+  completeSection,
+  findCourseInternalId,
+  removeFromCurrentCoursesByTitle
 }; 

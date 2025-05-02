@@ -1,0 +1,210 @@
+import api from '../utils/api';
+
+/**
+ * Get user activity feed
+ * @param {Object} options - Query options
+ * @param {Number} options.limit - Maximum number of activities to return
+ * @param {Number} options.skip - Number of activities to skip (for pagination)
+ * @returns {Promise} Promise object with activity feed data
+ */
+export const getActivityFeed = async (options = {}) => {
+  try {
+    const { limit = 20, skip = 0 } = options;
+    console.log(`📱 Fetching activity feed with limit ${limit}, skip ${skip}`);
+    
+    const response = await api.get(`/activity/feed?limit=${limit}&skip=${skip}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching activity feed:', error);
+    
+    // Return mock data during development
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Using mock activity feed data due to API error');
+      return generateMockActivityFeed();
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Get XP history data for a user
+ * @param {Object} options - Query options
+ * @param {String} options.period - Period type ('daily', 'weekly', 'monthly')
+ * @param {Number} options.limit - Maximum number of data points to return
+ * @returns {Promise} Promise object with XP history data
+ */
+export const getXpHistory = async (options = {}) => {
+  try {
+    const { period = 'monthly', limit = 12 } = options;
+    console.log(`📱 Fetching XP history with period ${period}, limit ${limit}`);
+    
+    const response = await api.get(`/activity/xp-history?period=${period}&limit=${limit}`);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching XP history:', error);
+    
+    // Return mock data during development
+    if (process.env.NODE_ENV !== 'production') {
+      console.warn('Using mock XP history data due to API error');
+      return generateMockXpHistory(options.period, options.limit);
+    }
+    
+    throw error;
+  }
+};
+
+/**
+ * Toggle like on an activity
+ * @param {String} activityId - ID of the activity to like/unlike
+ * @returns {Promise} Promise object with updated activity data
+ */
+export const toggleActivityLike = async (activityId) => {
+  try {
+    console.log(`📱 Toggling like for activity ${activityId}`);
+    
+    const response = await api.post(`/activity/${activityId}/like`);
+    return response.data;
+  } catch (error) {
+    console.error('Error toggling activity like:', error);
+    throw error;
+  }
+};
+
+/**
+ * Add comment to an activity
+ * @param {String} activityId - ID of the activity to comment on
+ * @param {String} text - Comment text
+ * @returns {Promise} Promise object with updated activity data
+ */
+export const addActivityComment = async (activityId, text) => {
+  try {
+    console.log(`📱 Adding comment to activity ${activityId}`);
+    
+    const response = await api.post(`/activity/${activityId}/comment`, { text });
+    return response.data;
+  } catch (error) {
+    console.error('Error adding activity comment:', error);
+    throw error;
+  }
+};
+
+/**
+ * Generate mock activity feed data for development
+ * @returns {Array} Array of mock activity items
+ */
+const generateMockActivityFeed = () => {
+  return [
+    {
+      _id: 'mock-activity-1',
+      type: 'course_completion',
+      title: 'JavaScript Fundamentals',
+      description: 'Completed the JavaScript Fundamentals course',
+      xp_earned: 500,
+      created_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+      likes: [
+        { user_id: 'user1', username: '@john' },
+        { user_id: 'user2', username: '@sarah' }
+      ],
+      comments: [
+        { 
+          user_id: 'user2', 
+          username: '@sarah', 
+          text: 'Great job! JavaScript is so useful!',
+          created_at: new Date(Date.now() - 1800000).toISOString() // 30 minutes ago
+        }
+      ]
+    },
+    {
+      _id: 'mock-activity-2',
+      type: 'section_completion',
+      title: 'Variables and Data Types',
+      description: 'Completed Variables and Data Types in JavaScript Fundamentals',
+      xp_earned: 100,
+      created_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+      likes: [],
+      comments: []
+    },
+    {
+      _id: 'mock-activity-3',
+      type: 'level_up',
+      title: 'Level 3',
+      description: 'Reached Level 3',
+      xp_earned: 0,
+      created_at: new Date(Date.now() - 86400000).toISOString(), // 1 day ago
+      likes: [
+        { user_id: 'user1', username: '@john' },
+        { user_id: 'user3', username: '@mike' },
+        { user_id: 'user4', username: '@jessica' },
+        { user_id: 'user5', username: '@alex' },
+        { user_id: 'user6', username: '@emma' }
+      ],
+      comments: [
+        { 
+          user_id: 'user3', 
+          username: '@mike', 
+          text: 'Congrats on reaching level 3!',
+          created_at: new Date(Date.now() - 84600000).toISOString()
+        },
+        { 
+          user_id: 'user4', 
+          username: '@jessica', 
+          text: 'Way to go!',
+          created_at: new Date(Date.now() - 82800000).toISOString()
+        }
+      ]
+    }
+  ];
+};
+
+/**
+ * Generate mock XP history data for development
+ * @param {String} period - Period type ('daily', 'weekly', 'monthly')
+ * @param {Number} limit - Number of data points to generate
+ * @returns {Array} Array of mock XP history data points
+ */
+const generateMockXpHistory = (period = 'monthly', limit = 12) => {
+  const now = new Date();
+  const data = [];
+  
+  // Base XP that increases over time
+  let baseXp = 500;
+  
+  for (let i = 0; i < limit; i++) {
+    const date = new Date(now);
+    
+    // Set the date based on the period
+    switch (period) {
+      case 'daily':
+        date.setDate(date.getDate() - i);
+        break;
+      case 'weekly':
+        date.setDate(date.getDate() - (i * 7));
+        break;
+      case 'monthly':
+        date.setMonth(date.getMonth() - i);
+        break;
+    }
+    
+    // Calculate XP with some randomness to create a realistic curve
+    const randomFactor = 0.8 + Math.random() * 0.4; // Between 0.8 and 1.2
+    const xp = Math.round(baseXp * randomFactor);
+    
+    // Create the data point
+    data.push({
+      _id: `mock-xp-${period}-${i}`,
+      user_id: 'current-user',
+      xp,
+      level: Math.floor(Math.log(xp / 100) / Math.log(1.5)) + 1,
+      date: date.toISOString(),
+      period,
+      sources: []
+    });
+    
+    // Increase base XP for next period
+    baseXp += Math.round(50 + Math.random() * 50);
+  }
+  
+  // Return data in reverse chronological order (newest first)
+  return data.reverse();
+}; 

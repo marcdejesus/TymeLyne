@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
-import { getUserProgressionData } from '../services/userProgressionService';
+import { getUserProgressionData, recordLevelUp } from '../services/userProgressionService';
 
 // Create the progression context
 export const UserProgressionContext = createContext();
@@ -40,7 +40,13 @@ export const UserProgressionProvider = ({ children }) => {
       if (previousLevel === null) {
         setPreviousLevel(data.level || 1);
       } else if (data.level > previousLevel) {
+        // Level up detected
         setIsLevelUp(true);
+        
+        // Record level up in activity feed
+        handleLevelUp(data.level);
+        
+        // Update previous level
         setPreviousLevel(data.level);
       }
       
@@ -79,6 +85,19 @@ export const UserProgressionProvider = ({ children }) => {
     }
   };
 
+  // Handle level up by recording it in the activity feed
+  const handleLevelUp = async (newLevel) => {
+    if (newLevel > 1) {
+      try {
+        console.log(`🎉 Level Up! Recording level ${newLevel} achievement in activity feed`);
+        await recordLevelUp(newLevel);
+      } catch (error) {
+        console.error('Error recording level up activity:', error);
+        // Continue even if recording fails - this is a non-critical operation
+      }
+    }
+  };
+
   // Initial data load
   useEffect(() => {
     fetchUserProgression();
@@ -99,6 +118,11 @@ export const UserProgressionProvider = ({ children }) => {
     // Check for level up
     if (newProgressData.level > (progressData.level || 1)) {
       setIsLevelUp(true);
+      
+      // Record level up in activity feed
+      handleLevelUp(newProgressData.level);
+      
+      // Update previous level
       setPreviousLevel(progressData.level);
     }
     

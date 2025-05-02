@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect, useRef } from 'react';
+import React, { useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { 
   View, 
   Text, 
@@ -6,18 +6,22 @@ import {
   Image, 
   Dimensions,
   Platform,
-  Animated
+  Animated,
+  RefreshControl
 } from 'react-native';
 import { 
   Screen, 
   Card, 
   ProgressBar, 
   SectionTitle,
-  theme, 
   Typography
 } from '../components';
+import XpChart from '../components/XpChart';
+import ActivityFeed from '../components/ActivityFeed';
 import { AuthContext } from '../contexts/AuthContext';
 import { useUserProgression } from '../contexts/UserProgressionContext';
+import { colors } from '../constants/theme';
+import { getActivityFeed } from '../services/activityService';
 
 const { width } = Dimensions.get('window');
 
@@ -28,10 +32,44 @@ const ProfileScreen = ({ navigation }) => {
     loading: progressLoading, 
     error: progressError,
     isLevelUp,
-    resetLevelUp
+    resetLevelUp,
+    fetchUserProgression
   } = useUserProgression();
   
   const levelTextScale = useRef(new Animated.Value(1)).current;
+  
+  // Activity feed state
+  const [activities, setActivities] = useState([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // Fetch activity feed
+  const fetchActivities = useCallback(async () => {
+    try {
+      setActivityLoading(true);
+      const data = await getActivityFeed({ limit: 10 });
+      setActivities(data);
+    } catch (error) {
+      console.error('Error fetching activities:', error);
+    } finally {
+      setActivityLoading(false);
+    }
+  }, []);
+  
+  // Fetch data on component mount
+  useEffect(() => {
+    fetchActivities();
+  }, [fetchActivities]);
+  
+  // Handle pull-to-refresh
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await Promise.all([
+      fetchUserProgression(),
+      fetchActivities()
+    ]);
+    setRefreshing(false);
+  }, [fetchUserProgression, fetchActivities]);
   
   // Handle level up animation
   useEffect(() => {
@@ -68,36 +106,6 @@ const ProfileScreen = ({ navigation }) => {
     { id: 4, title: 'Python', icon: require('../../assets/course-icons/computer.png') },
   ];
 
-  // Future backend integration for profile actions:
-  //
-  // Function to update profile:
-  // const updateProfile = async (profileData) => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     const response = await axios.put('http://yourapi.com/api/users/profile', profileData, {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //     // Update local user data
-  //     setUser(response.data);
-  //     await SecureStore.setItemAsync('user', JSON.stringify(response.data));
-  //   } catch (error) {
-  //     console.error('Error updating profile:', error);
-  //   }
-  // };
-  //
-  // Function to get followers:
-  // const getFollowers = async () => {
-  //   try {
-  //     const token = await SecureStore.getItemAsync('userToken');
-  //     const response = await axios.get('http://yourapi.com/api/users/followers', {
-  //       headers: { Authorization: `Bearer ${token}` }
-  //     });
-  //     setFollowers(response.data);
-  //   } catch (error) {
-  //     console.error('Error fetching followers:', error);
-  //   }
-  // };
-
   const handleNavigation = (screenName) => {
     // Update navigation references to work with new navigation structure
     navigation.navigate(screenName);
@@ -110,13 +118,21 @@ const ProfileScreen = ({ navigation }) => {
 
   return (
     <Screen
-      title="Profile"
+      title="Tymelyne"
       onMenuPress={handleMenuPress}
       onRightPress={() => handleNavigation('Settings')}
       rightIcon="settings"
-      // Remove bottom navigation props since they're now handled by Tab.Navigator
       showBottomNav={false}
-      backgroundColor={theme.colors.background.main}
+      backgroundColor={colors.background}
+      scrollable={true} // Enable scrolling for the entire screen
+      refreshControl={
+        <RefreshControl 
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[colors.primary]}
+          tintColor={colors.primary}
+        />
+      }
     >
       {/* Profile Information */}
       <View style={styles.profileSection}>
@@ -167,30 +183,12 @@ const ProfileScreen = ({ navigation }) => {
         </View>
       </View>
       
-      {/* Top Courses Section */}
-      <SectionTitle title="Top Courses" />
-      <View style={styles.coursesGrid}>
-        {topCourses && topCourses.length > 0 ? (
-          topCourses.map(course => (
-            <Card 
-              key={course.id} 
-              style={styles.courseCard}
-              onPress={() => handleNavigation('CourseDetails')}
-            >
-              <Image 
-                source={course.icon} 
-                style={styles.courseIcon} 
-                resizeMode="cover"
-              />
-              <Text style={styles.courseTitle}>{course.title}</Text>
-            </Card>
-          ))
-        ) : (
-          <Card style={styles.emptyStateCard}>
-            <Text style={styles.emptyStateText}>No courses yet</Text>
-          </Card>
-        )}
-      </View>
+      {/* XP Chart Section */}
+      <XpChart />
+      
+      
+      {/* Activity Feed Section */}
+      <ActivityFeed activities={activities} loading={activityLoading} />
     </Screen>
   );
 };
@@ -226,16 +224,16 @@ const styles = StyleSheet.create({
   },
   levelText: {
     marginTop: 5,
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
+    fontSize: 12,
+    color: colors.text.secondary,
   },
   profileInfo: {
     flex: 1,
   },
   username: {
-    fontSize: theme.typography.fontSize.large,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: colors.text,
   },
   statsRow: {
     flexDirection: 'row',
@@ -245,61 +243,56 @@ const styles = StyleSheet.create({
     marginRight: 20,
   },
   statLabel: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
+    fontSize: 12,
+    color: colors.text.secondary,
   },
   statValue: {
-    fontSize: theme.typography.fontSize.medium,
-    fontWeight: theme.typography.fontWeight.bold,
-    color: theme.colors.text.primary,
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: colors.text,
   },
   progressContainer: {
-    marginTop: 10,
+    marginTop: 50,
+    width: '100%',
   },
   progressText: {
-    fontSize: theme.typography.fontSize.small,
-    color: theme.colors.text.secondary,
-    marginTop: 4,
     textAlign: 'right',
+    marginTop: 4,
+    color: colors.text.secondary,
   },
   coursesGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    paddingHorizontal: theme.spacing.xs,
+    paddingHorizontal: 16,
+    marginTop: 8,
   },
   courseCard: {
-    width: '46%',
-    margin: '2%',
+    width: '48%',
+    marginBottom: 16,
     alignItems: 'center',
-    justifyContent: 'center',
-    padding: theme.spacing.m,
+    padding: 16,
   },
   courseIcon: {
-    width: width * 0.1,
-    height: width * 0.1,
-    maxWidth: 40,
-    maxHeight: 40,
-    borderRadius: width * 0.05,
-    backgroundColor: theme.colors.background.card,
-    overflow: 'hidden',
-    marginBottom: 12,
+    width: 48,
+    height: 48,
+    marginBottom: 8,
   },
   courseTitle: {
-    fontSize: theme.typography.fontSize.regular,
+    fontSize: 14,
+    fontWeight: '600',
     textAlign: 'center',
-    color: theme.colors.text.primary,
+    color: colors.text,
   },
   emptyStateCard: {
     width: '100%',
-    height: width * 0.2,
+    padding: 24,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: theme.spacing.m,
   },
   emptyStateText: {
-    fontSize: theme.typography.fontSize.regular,
-    color: theme.colors.text.secondary,
+    fontSize: 16,
+    color: colors.text.secondary,
   },
 });
 

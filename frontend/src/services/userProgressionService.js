@@ -67,8 +67,33 @@ export const calculateLevelProgress = (currentXp, nextLevelXp) => {
   return Math.min(Math.max(percentage, 0), 100); // Ensure between 0-100
 };
 
+/**
+ * Record a level up event in the activity feed
+ * @param {Number} newLevel - The new level achieved
+ * @returns {Promise} Promise with the activity record or null if error
+ */
+export const recordLevelUp = async (newLevel) => {
+  if (!newLevel || newLevel < 2) return null;
+  
+  try {
+    console.log(`🎉 Recording level up to level ${newLevel} in activity feed`);
+    
+    // Call the backend API to create a level up activity
+    // This endpoint would ideally be provided by the backend
+    const response = await api.post('/activity/level-up', { 
+      level: newLevel
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error('Error recording level up:', error);
+    return null;
+  }
+};
+
 // Export all functions
 export default {
   getUserProgressionData,
-  calculateLevelProgress
+  calculateLevelProgress,
+  recordLevelUp
 }; 

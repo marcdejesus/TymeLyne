@@ -150,4 +150,66 @@ export const removeFromCurrentCourses = async (courseId) => {
     console.error('Error removing course from current courses:', error);
     throw new Error(error.response?.data?.message || 'Failed to remove course');
   }
+};
+
+/**
+ * Mark a course as completed and record it in the activity feed
+ * @param {String} courseId - Course ID
+ * @returns {Promise} Promise object with completion status
+ */
+export const completeCourse = async (courseId) => {
+  try {
+    // First mark the course as completed
+    const response = await api.post(`/courses/${courseId}/complete`);
+    
+    // Then record the activity
+    await api.post('/activity/course-completion', {
+      courseId,
+      xpEarned: response.data.xpEarned || 0
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error completing course ${courseId}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Mark a course section as completed and record it in the activity feed
+ * @param {String} courseId - Course ID
+ * @param {String} sectionId - Section ID
+ * @returns {Promise} Promise object with completion status
+ */
+export const completeSection = async (courseId, sectionId) => {
+  try {
+    // First mark the section as completed
+    const response = await api.post(`/courses/${courseId}/sections/${sectionId}/complete`);
+    
+    // Then record the activity
+    await api.post('/activity/section-completion', {
+      courseId,
+      sectionId,
+      xpEarned: response.data.xpEarned || 0
+    });
+    
+    return response.data;
+  } catch (error) {
+    console.error(`Error completing section ${sectionId} in course ${courseId}:`, error);
+    throw error;
+  }
+};
+
+export default {
+  getCourses,
+  getCourseById,
+  getMyCourses,
+  createCourse,
+  updateCourse,
+  deleteCourse,
+  updateSectionCompletion,
+  addToCurrentCourses,
+  removeFromCurrentCourses,
+  completeCourse,
+  completeSection
 }; 

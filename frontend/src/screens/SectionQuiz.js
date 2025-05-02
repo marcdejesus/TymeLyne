@@ -47,7 +47,7 @@ const QuizOption = memo(({ index, option, selectedOption, onSelect }) => (
 ));
 
 const SectionQuiz = ({ navigation, route }) => {
-  const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 500 } = route.params;
+  const { courseId, sectionId, sectionTitle, quiz, experiencePoints = 250 } = route.params;
   const { updateProgression } = useUserProgression();
   
   // Quiz state

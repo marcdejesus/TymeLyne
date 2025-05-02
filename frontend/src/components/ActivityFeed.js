@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList } from 'react-native';
 import ActivityFeedItem from './ActivityFeedItem';
 import { colors } from '../constants/theme';
 
-const ActivityFeed = ({ activities, loading }) => {
+const ActivityFeed = ({ activities, loading, useParentScroll = false }) => {
   // Render empty state when there are no activities
   const renderEmptyState = () => {
     if (loading) {
@@ -23,19 +23,39 @@ const ActivityFeed = ({ activities, loading }) => {
       </View>
     );
   };
+
+  // Direct rendering of items when using parent scroll
+  const renderActivities = () => {
+    if (activities.length === 0) {
+      return renderEmptyState();
+    }
+    
+    return activities.map((item, index) => (
+      <ActivityFeedItem 
+        key={`activity-${item.id || index}`} 
+        activity={item} 
+      />
+    ));
+  };
   
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Activity Feed</Text>
       
-      <FlatList
-        data={activities}
-        keyExtractor={(item, index) => `activity-${item.id || index}`}
-        renderItem={({ item }) => <ActivityFeedItem activity={item} />}
-        contentContainerStyle={styles.listContainer}
-        ListEmptyComponent={renderEmptyState}
-        showsVerticalScrollIndicator={false}
-      />
+      {useParentScroll ? (
+        <View style={styles.listContainerNoScroll}>
+          {renderActivities()}
+        </View>
+      ) : (
+        <FlatList
+          data={activities}
+          keyExtractor={(item, index) => `activity-${item.id || index}`}
+          renderItem={({ item }) => <ActivityFeedItem activity={item} />}
+          contentContainerStyle={styles.listContainer}
+          ListEmptyComponent={renderEmptyState}
+          showsVerticalScrollIndicator={false}
+        />
+      )}
     </View>
   );
 };
@@ -55,6 +75,10 @@ const styles = StyleSheet.create({
   listContainer: {
     paddingBottom: 20,
     flexGrow: 1,
+  },
+  listContainerNoScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: 20,
   },
   emptyStateContainer: {
     padding: 20,

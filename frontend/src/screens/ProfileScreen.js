@@ -190,8 +190,8 @@ const ProfileScreen = ({ navigation }) => {
       <XpChart />
       
       
-      {/* Activity Feed Section */}
-      <ActivityFeed activities={activities} loading={activityLoading} />
+      {/* Activity Feed Section - Disable its internal scroll by passing useParentScroll prop */}
+      <ActivityFeed activities={activities} loading={activityLoading} useParentScroll={true} />
     </Screen>
   );
 };

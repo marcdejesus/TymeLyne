@@ -1,5 +1,5 @@
 import React, { useContext, useState, useEffect, useCallback, useRef } from 'react';
-import { View, StyleSheet, Alert, FlatList, ScrollView, Animated, RefreshControl, Platform } from 'react-native';
+import { View, StyleSheet, Alert, FlatList, ScrollView, Animated, RefreshControl } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import Screen from '../components/Screen';
@@ -12,8 +12,6 @@ import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import { getMyCourses } from '../services/courseService';
-// Import Constants to check if running in dev mode
-import Constants from 'expo-constants';
 
 // For fallback icons when course has no specific icon
 const defaultCourseIcons = [
@@ -40,9 +38,6 @@ const HomeScreen = ({ navigation }) => {
   // Track if initial data has been loaded
   const initialLoadComplete = useRef(false);
 
-  // Determine if in development mode
-  const isDevMode = __DEV__;
-
   // Function to fetch user's courses
   const fetchUserCourses = async (showLoadingUI = true) => {
     try {
@@ -62,8 +57,6 @@ const HomeScreen = ({ navigation }) => {
         if (!course.sections || course.sections.length === 0) return false;
         return course.sections.every(section => section.isCompleted);
       });
-      
-      console.log('Completed courses count:', completed.length);
       
       // Format completed courses for display
       const formattedCompletedCourses = completed.map((course, index) => {
@@ -92,23 +85,20 @@ const HomeScreen = ({ navigation }) => {
       // Sort by most recently active or created
       setCompletedCourses(formattedCompletedCourses);
       
-      // Get all user's courses - we consider a course active if it's not fully complete
-      // This means a course with no sections is active, or if at least one section is not completed
-      const activeCourses = courses.filter(course => {
-        // If there are no sections, it's still considered active
+      // Filter out in-progress courses
+      const inProgress = courses.filter(course => {
         if (!course.sections || course.sections.length === 0) return true;
-        
-        // A course is active if at least one section is not completed
-        return !course.sections.every(section => section.isCompleted);
+        const hasCompleted = course.sections.some(section => section.isCompleted);
+        const allCompleted = course.sections.every(section => section.isCompleted);
+        return hasCompleted && !allCompleted;
       });
       
-      console.log('Active courses count:', activeCourses.length);
-      console.log('Active courses data:', JSON.stringify(activeCourses, null, 2));
-      
-      // Map active courses to include icons and format for CourseCard
-      const formattedCourses = activeCourses.map((course, index) => {
+      // Map in-progress courses to include icons and format for CourseCard
+      const formattedCourses = inProgress.map((course, index) => {
         // Get the correct title from the course data - handle both title and course_name
         const courseTitle = course.title || course.course_name || 'Untitled Course';
+        
+        console.log(`Formatting course: ${courseTitle}`);
         
         return {
           id: course._id || course.course_id,
@@ -127,7 +117,6 @@ const HomeScreen = ({ navigation }) => {
         };
       });
       
-      console.log('Formatted active courses:', formattedCourses.length);
       setUserCourses(formattedCourses);
       initialLoadComplete.current = true;
       
@@ -149,18 +138,8 @@ const HomeScreen = ({ navigation }) => {
   // Handle pull-to-refresh
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Reset the initialLoadComplete flag to force a complete refresh
-    initialLoadComplete.current = false;
     fetchUserCourses(false); // Don't show skeleton loaders on refresh
   }, []);
-
-  // Add a function to manually refresh data
-  const handleManualRefresh = () => {
-    // Reset the initialLoadComplete flag to force a complete refresh
-    initialLoadComplete.current = false;
-    // Show full loading UI for manual refresh
-    fetchUserCourses(true);
-  };
 
   // Refresh courses when screen comes into focus, but only on first mount
   useFocusEffect(
@@ -225,40 +204,6 @@ const HomeScreen = ({ navigation }) => {
     );
   };
 
-  // Combined header actions for both menu and debug refresh
-  const handleRightHeaderPress = () => {
-    // In dev mode, long press will refresh data
-    if (isDevMode) {
-      Alert.alert(
-        'Dev Menu',
-        'Choose an action',
-        [
-          {
-            text: 'Logout',
-            onPress: () => {
-              logout();
-            },
-          },
-          {
-            text: 'Force Refresh',
-            onPress: () => {
-              initialLoadComplete.current = false;
-              fetchUserCourses(true);
-            },
-          },
-          {
-            text: 'Cancel',
-            style: 'cancel',
-          },
-        ],
-        { cancelable: true }
-      );
-    } else {
-      // In production, just show logout menu
-      handleMenuPress();
-    }
-  };
-
   // Render a section title or skeleton
   const renderSectionTitle = (title, rightText, onRightPress, style) => {
     if (visibleLoading) {
@@ -289,7 +234,7 @@ const HomeScreen = ({ navigation }) => {
           </Typography>
           <Button
             title="Try Again"
-            onPress={handleManualRefresh}
+            onPress={() => navigation.navigate('HomeTab')}
             variant="secondary"
             style={styles.tryAgainButton}
           />
@@ -299,18 +244,9 @@ const HomeScreen = ({ navigation }) => {
 
     if (userCourses.length === 0) {
       return (
-        <View style={styles.emptyStateContainer}>
-          <Typography variant="body" style={styles.emptyCourseText}>
-            You don't have any active courses yet.
-          </Typography>
-          <Button
-            title="Refresh"
-            onPress={handleManualRefresh}
-            variant="secondary"
-            size="small"
-            style={styles.refreshButton}
-          />
-        </View>
+        <Typography variant="body" style={styles.emptyCourseText}>
+          You don't have any active courses yet.
+        </Typography>
       );
     }
 
@@ -395,10 +331,7 @@ const HomeScreen = ({ navigation }) => {
       return <SkeletonLoader variant="course" count={2} />;
     }
     
-    // Get up to 4 completed courses
-    const availableCourses = completedCourses.slice(0, 4);
-    
-    if (availableCourses.length === 0) {
+    if (completedCourses.length === 0) {
       return (
         <Typography variant="body" style={styles.emptyCourseText}>
           Complete a course to see it here!
@@ -406,67 +339,24 @@ const HomeScreen = ({ navigation }) => {
       );
     }
 
-    // Create a 2x2 grid layout manually instead of using FlatList with flexWrap
     return (
-      <View style={styles.completedCoursesContainer}>
-        <View style={styles.completedCoursesRow}>
-          {/* Top Row */}
-          <View style={styles.completedCourseSlot}>
-            {availableCourses.length > 0 ? (
-              <CourseCard
-                course={availableCourses[0]}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { 
-                  courseId: availableCourses[0].id,
-                  courseData: availableCourses[0].courseData
-                })}
-              />
-            ) : <View style={styles.emptyCourseSlot} />}
-          </View>
-          
-          <View style={styles.completedCourseSlot}>
-            {availableCourses.length > 1 ? (
-              <CourseCard
-                course={availableCourses[1]}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { 
-                  courseId: availableCourses[1].id,
-                  courseData: availableCourses[1].courseData
-                })}
-              />
-            ) : <View style={styles.emptyCourseSlot} />}
-          </View>
-        </View>
-        
-        <View style={styles.completedCoursesRow}>
-          {/* Bottom Row */}
-          <View style={styles.completedCourseSlot}>
-            {availableCourses.length > 2 ? (
-              <CourseCard
-                course={availableCourses[2]}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { 
-                  courseId: availableCourses[2].id,
-                  courseData: availableCourses[2].courseData
-                })}
-              />
-            ) : <View style={styles.emptyCourseSlot} />}
-          </View>
-          
-          <View style={styles.completedCourseSlot}>
-            {availableCourses.length > 3 ? (
-              <CourseCard
-                course={availableCourses[3]}
-                variant="grid"
-                onPress={() => handleNavigation('CourseSections', { 
-                  courseId: availableCourses[3].id,
-                  courseData: availableCourses[3].courseData
-                })}
-              />
-            ) : <View style={styles.emptyCourseSlot} />}
-          </View>
-        </View>
-      </View>
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.carouselContainer}
+      >
+        {completedCourses.map((course) => (
+          <CourseCard 
+            key={course.id}
+            course={course}
+            style={styles.carouselCard}
+            onPress={() => handleNavigation('CourseSections', { 
+              courseId: course.id,
+              courseData: course.courseData
+            })}
+          />
+        ))}
+      </ScrollView>
     );
   };
 
@@ -475,8 +365,8 @@ const HomeScreen = ({ navigation }) => {
       title="Home"
       showHeader={true}
       headerRight={{
-        icon: isDevMode ? 'construct-outline' : 'menu-outline',
-        onPress: handleRightHeaderPress,
+        icon: 'menu-outline',
+        onPress: handleMenuPress,
       }}
       showBottomNav={false}
     >
@@ -607,14 +497,10 @@ const styles = StyleSheet.create({
   emptyCourseSlot: {
     opacity: 0, // Make empty slots invisible
   },
-  emptyStateContainer: {
-    alignItems: 'center', 
-    justifyContent: 'center',
-    paddingVertical: spacing.m,
-  },
-  refreshButton: {
-    marginTop: spacing.m,
-    minWidth: 120,
+  emptyGridSlot: {
+    width: '48%',
+    margin: '1%',
+    height: 0, // Don't take up vertical space
   },
 });
 

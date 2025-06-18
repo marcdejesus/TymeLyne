@@ -1,5 +1,6 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { getUserProgressionData, recordLevelUp } from '../services/userProgressionService';
+import { AuthContext } from './AuthContext';
 
 // Create the progression context
 export const UserProgressionContext = createContext();
@@ -15,6 +16,9 @@ export const useUserProgression = () => {
 
 // Create the Provider component
 export const UserProgressionProvider = ({ children }) => {
+  // Get auth context to check if user is authenticated
+  const { userToken, isLoading: authLoading } = useContext(AuthContext);
+  
   const [progressData, setProgressData] = useState({
     level: 1,
     totalXp: 0,
@@ -31,6 +35,24 @@ export const UserProgressionProvider = ({ children }) => {
 
   // Fetch user progression data from backend
   const fetchUserProgression = async () => {
+    // Only fetch if user is authenticated
+    if (!userToken) {
+      console.log('UserProgressionContext: User not authenticated, skipping data fetch');
+      setLoading(false);
+      setError(null);
+      // Reset to default values when not authenticated
+      setProgressData({
+        level: 1,
+        totalXp: 0,
+        currentLevelXp: 0,
+        totalXpForNextLevel: 500,
+        levelProgress: 0,
+        userId: null,
+        username: null
+      });
+      return;
+    }
+
     try {
       setError(null);
       const data = await getUserProgressionData();
@@ -98,16 +120,28 @@ export const UserProgressionProvider = ({ children }) => {
     }
   };
 
-  // Initial data load
+  // Initial data load - only when user is authenticated and auth is not loading
   useEffect(() => {
+    // Wait for auth context to finish loading
+    if (authLoading) {
+      return;
+    }
+
     fetchUserProgression();
     
-    // Set up interval to refresh data every 2 minutes
-    const refreshInterval = setInterval(fetchUserProgression, 120000);
+    // Set up interval to refresh data every 2 minutes only if authenticated
+    let refreshInterval;
+    if (userToken) {
+      refreshInterval = setInterval(fetchUserProgression, 120000);
+    }
     
-    // Clean up the interval on component unmount
-    return () => clearInterval(refreshInterval);
-  }, []);
+    // Clean up the interval on component unmount or when user logs out
+    return () => {
+      if (refreshInterval) {
+        clearInterval(refreshInterval);
+      }
+    };
+  }, [userToken, authLoading]); // Re-run when authentication state changes
 
   // Update progression with new data (e.g., after completing a course section)
   const updateProgression = (newProgressData) => {

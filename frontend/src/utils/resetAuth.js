@@ -6,7 +6,7 @@ import * as SecureStore from 'expo-secure-store';
  */
 const resetAuthState = async () => {
   try {
-    console.log('🧹 Clearing auth state from SecureStore...');
+    console.log('Clearing auth state from SecureStore...');
     
     // Remove token and user data from storage
     await SecureStore.deleteItemAsync('userToken');

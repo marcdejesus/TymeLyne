@@ -9,7 +9,7 @@ export const getUserProgressionData = async () => {
     // Try the direct progression endpoint first (most compatible)
     try {
       const response = await api.get('/progression');
-      console.log('📊 Progression data received from /progression');
+      console.log('Progression data received from /progression');
       return response.data;
     } catch (directError) {
       // Only log detailed error in development
@@ -21,12 +21,12 @@ export const getUserProgressionData = async () => {
       try {
         // Try /api/profiles/progression first
         const profilesResponse = await api.get('/profiles/progression');
-        console.log('📊 Progression data received from /profiles/progression');
+        console.log('Progression data received from /profiles/progression');
         return profilesResponse.data;
       } catch (profilesError) {
         // Try /api/profile/progression as a fallback
         const profileResponse = await api.get('/profile/progression');
-        console.log('📊 Progression data received from /profile/progression');
+        console.log('Progression data received from /profile/progression');
         return profileResponse.data;
       }
     }
@@ -76,7 +76,7 @@ export const recordLevelUp = async (newLevel) => {
   if (!newLevel || newLevel < 2) return null;
   
   try {
-    console.log(`🎉 Recording level up to level ${newLevel} in activity feed`);
+    console.log(`Recording level up to level ${newLevel} in activity feed`);
     
     // Call the backend API to create a level up activity
     // This endpoint would ideally be provided by the backend

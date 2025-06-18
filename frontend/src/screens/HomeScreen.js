@@ -51,7 +51,7 @@ const HomeScreen = ({ navigation }) => {
               try {
                 // Call API to remove the course
                 await removeFromCurrentCourses(courseId);
-                console.log(`Course removed: ${courseId}`);
+                console.log(`Course removed successfully: ${courseTitle}`);
                 // Call the callback function to refresh the courses list
                 if (callback) callback();
               } catch (error) {
@@ -81,11 +81,13 @@ const HomeScreen = ({ navigation }) => {
       [
         {
           text: 'Delete Course',
-          onPress: () => handleCourseDelete(course.id, course.title, () => {
-            // Reset and refresh the courses when a course is deleted
-            initialLoadComplete.current = false;
-            fetchUserCourses();
-          }),
+          onPress: () => {
+            handleCourseDelete(course.id, course.title, () => {
+              // Reset and refresh the courses when a course is deleted
+              initialLoadComplete.current = false;
+              fetchUserCourses();
+            });
+          },
           style: 'destructive', // Red color
         },
         {
@@ -108,8 +110,7 @@ const HomeScreen = ({ navigation }) => {
       setError(null);
       const courses = await getMyCourses();
       
-      // Debug log to see actual course data
-      console.log('Fetched courses from API:', courses);
+      console.log('Fetched courses from API:', courses.length, 'courses');
       
       // Filter out completed courses (all sections completed)
       const completed = courses.filter(course => {
@@ -124,7 +125,7 @@ const HomeScreen = ({ navigation }) => {
         const courseTitle = course.title || course.course_name || 'Untitled Course';
         
         return {
-          id: course._id || course.course_id,
+          id: course.course_id || course._id,
           title: courseTitle,
           // Assign a default icon based on index
           icon: defaultCourseIcons[index % defaultCourseIcons.length],
@@ -166,11 +167,13 @@ const HomeScreen = ({ navigation }) => {
         
         console.log(`Formatting course: ${courseTitle}`);
         
+        const extractedId = course.course_id || course._id;
+        
         // Calculate progress for sorting purposes
         const progress = calculateProgress(course);
         
-        return {
-          id: course._id || course.course_id,
+        const formattedCourse = {
+          id: extractedId,
           title: courseTitle,
           // Assign a default icon based on index
           icon: defaultCourseIcons[index % defaultCourseIcons.length],
@@ -184,6 +187,8 @@ const HomeScreen = ({ navigation }) => {
             course_name: courseTitle
           }
         };
+        
+        return formattedCourse;
       });
       
       // Sort courses by progress percentage (descending) and alphabetically for ties

@@ -1,5 +1,6 @@
 // API Configuration Example (Copy this to apiConfig.js and customize)
 import { Platform } from 'react-native';
+import Device from 'react-native/Libraries/I18nManager/DeviceInfo';
 
 // Development endpoints
 const DEV_API_URLS = {
@@ -14,42 +15,42 @@ const DEV_API_URLS = {
 // Production endpoints (when you deploy your backend)
 const PROD_API_URL = 'https://your-production-api.com/api';
 
-// Choose the appropriate API URL based on environment and platform
-const getApiUrl = () => {
-  if (process.env.NODE_ENV === 'production') {
-    return PROD_API_URL;
-  }
-  
-  // Auto-detect platform and device type
-  const isIOS = Platform.OS === 'ios';
-  const isAndroid = Platform.OS === 'android';
-  
-  // Check if running on a simulator/emulator
-  const isSimulator = Platform.constants.Model === 'Simulator' || 
-                      (Platform.OS === 'android' && Platform.constants.Brand === 'google');
+// Configure API
+// Detect if running on device vs emulator/simulator
+const isDevice = Device.isDevice;
+const deviceType = Device.deviceType;
+const deviceName = Device.deviceName;
+const osName = Device.osName;
+const osVersion = Device.osVersion;
 
-  console.log('📱 Running on:', { 
-    platform: Platform.OS,
-    isSimulator,
-    model: Platform.constants.Model || 'unknown'
-  });
-  
-  if (isIOS) {
-    // iOS devices can't use localhost to access the host machine
-    // When in simulator, localhost works; when on device, need the actual IP
-    return isSimulator ? DEV_API_URLS.iOSSimulator : DEV_API_URLS.device;
-  } else if (isAndroid) {
-    // Android emulator uses 10.0.2.2 to access host; physical devices need the IP
-    return isSimulator ? DEV_API_URLS.androidEmulator : DEV_API_URLS.device;
-  }
-  
-  // Default fallback to device IP for unknown platforms
-  return DEV_API_URLS.device;
-};
+console.log('Running on:', {
+  isDevice,
+  deviceType,
+  deviceName,
+  osName,
+  osVersion
+});
 
-// Get the appropriate API URL
-const apiUrl = getApiUrl();
-console.log('🌐 Using API URL:', apiUrl);
+let apiUrl;
+
+if (__DEV__) {
+  // Development mode
+  if (Platform.OS === 'android') {
+    // For Android Emulator
+    apiUrl = 'http://10.0.2.2:3000/api';
+  } else if (Platform.OS === 'ios') {
+    // For iOS Simulator
+    apiUrl = 'http://localhost:3000/api';
+  } else {
+    // For web or other platforms
+    apiUrl = 'http://localhost:3000/api';
+  }
+} else {
+  // Production mode
+  apiUrl = 'https://api.tymelyne.com/api';  // Replace with your production API URL
+}
+
+console.log('Using API URL:', apiUrl);
 
 export default {
   apiUrl,

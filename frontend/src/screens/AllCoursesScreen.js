@@ -122,12 +122,6 @@ const AllCoursesScreen = ({ navigation, route }) => {
       // Get the raw course object for troubleshooting
       const courseToDelete = courses.find(c => String(c.id) === String(courseId));
       
-      console.log('Attempting to delete course:', {
-        courseId,
-        courseTitle,
-        courseObject: courseToDelete
-      });
-      
       // Format the courseId to ensure consistency
       const formattedCourseId = String(courseId);
       
@@ -155,21 +149,17 @@ const AllCoursesScreen = ({ navigation, route }) => {
                     rawCourse.course_id ? String(rawCourse.course_id) : null // String of course_id
                   ].filter(id => id !== null && id !== undefined);
                   
-                  console.log('Possible course IDs to try:', possibleIds);
-                  
                   // Try each ID format until one works
                   let success = false;
                   let lastError = null;
                   
                   for (const idToTry of possibleIds) {
                     try {
-                      console.log(`Trying to delete with ID: ${idToTry} (${typeof idToTry})`);
                       await removeFromCurrentCourses(idToTry);
                       success = true;
-                      console.log(`Course removed successfully with ID: ${idToTry}`);
+                      console.log('Course removed successfully');
                       break;
                     } catch (err) {
-                      console.log(`Failed to delete with ID ${idToTry}:`, err.message);
                       lastError = err;
                     }
                   }
@@ -177,12 +167,10 @@ const AllCoursesScreen = ({ navigation, route }) => {
                   // If ID-based deletion fails, try title-based approach as last resort
                   if (!success) {
                     try {
-                      console.log(`Trying to delete by title: "${courseTitle}"`);
                       await removeFromCurrentCoursesByTitle(courseTitle);
                       success = true;
-                      console.log(`Course removed successfully by title`);
+                      console.log('Course removed successfully by title');
                     } catch (err) {
-                      console.log(`Failed to delete by title:`, err.message);
                       lastError = err;
                     }
                   }
@@ -196,7 +184,6 @@ const AllCoursesScreen = ({ navigation, route }) => {
                     await removeFromCurrentCourses(formattedCourseId);
                   } catch (error) {
                     // If ID-based deletion fails, try by title as last resort
-                    console.log(`Trying title-based deletion as fallback for: "${courseTitle}"`);
                     await removeFromCurrentCoursesByTitle(courseTitle);
                   }
                 }

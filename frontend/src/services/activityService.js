@@ -10,7 +10,7 @@ import api from '../utils/api';
 export const getActivityFeed = async (options = {}) => {
   try {
     const { limit = 20, skip = 0 } = options;
-    console.log(`📱 Fetching activity feed with limit ${limit}, skip ${skip}`);
+    console.log(`Fetching activity feed with limit ${limit}, skip ${skip}`);
     
     const response = await api.get(`/activity/feed?limit=${limit}&skip=${skip}`);
     return response.data;
@@ -37,17 +37,16 @@ export const getActivityFeed = async (options = {}) => {
 export const getXpHistory = async (options = {}) => {
   try {
     const { period = 'monthly', limit = 12 } = options;
-    console.log(`📱 Fetching XP history with period ${period}, limit ${limit}`);
+    console.log(`Fetching XP history with period ${period}, limit ${limit}`);
     
     const response = await api.get(`/activity/xp-history?period=${period}&limit=${limit}`);
     
-    // If the API returns empty data, use mock data
-    if (!response.data || response.data.length === 0) {
-      console.log(`📊 API returned empty XP history data for ${period}, using mock data instead`);
+    if (response.data && response.data.length > 0) {
+      return response.data;
+    } else {
+      console.log(`API returned empty XP history data for ${period}, using mock data instead`);
       return generateMockXpHistory(period, limit);
     }
-    
-    return response.data;
   } catch (error) {
     console.error('Error fetching XP history:', error);
     
@@ -64,7 +63,7 @@ export const getXpHistory = async (options = {}) => {
  */
 export const toggleActivityLike = async (activityId) => {
   try {
-    console.log(`📱 Toggling like for activity ${activityId}`);
+    console.log(`Toggling like for activity ${activityId}`);
     
     const response = await api.post(`/activity/${activityId}/like`);
     return response.data;
@@ -82,7 +81,7 @@ export const toggleActivityLike = async (activityId) => {
  */
 export const addActivityComment = async (activityId, text) => {
   try {
-    console.log(`📱 Adding comment to activity ${activityId}`);
+    console.log(`Adding comment to activity ${activityId}`);
     
     const response = await api.post(`/activity/${activityId}/comment`, { text });
     return response.data;

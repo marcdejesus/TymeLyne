@@ -41,7 +41,7 @@ import UserProgressionProvider from './src/contexts/UserProgressionContext';
 // Enable mock API mode for development when backend isn't available
 if (__DEV__) {
   global.MOCK_API = true;
-  console.log('🧪 Mock API mode enabled for development');
+  console.log('Mock API mode enabled for development');
 }
 
 const Stack = createStackNavigator();
@@ -161,17 +161,6 @@ export default function App() {
     Montserrat_600SemiBold,
     Montserrat_700Bold
   });
-
-  // Clear any existing auth tokens on app startup to fix the issue with mismatched user IDs
-  // You can remove this after you've fixed the issue and logged in again
-  useEffect(() => {
-    const clearAuthState = async () => {
-      console.log('🚨 Clearing auth state due to user ID mismatch...');
-      await resetAuthState();
-    };
-    
-    clearAuthState();
-  }, []);
 
   // Show loading screen while fonts are loading
   if (!fontsLoaded) {

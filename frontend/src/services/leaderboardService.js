@@ -7,7 +7,7 @@ import api from '../utils/api';
  */
 export const getGlobalLeaderboard = async (limit = 100) => {
   try {
-    console.log(`📊 Fetching global leaderboard data with limit ${limit}`);
+    console.log(`Fetching global leaderboard data with limit ${limit}`);
     const response = await api.get(`/leaderboards/global?limit=${limit}`);
     return response.data;
   } catch (error) {
@@ -29,7 +29,7 @@ export const getGlobalLeaderboard = async (limit = 100) => {
  */
 export const getFriendsLeaderboard = async (limit = 100) => {
   try {
-    console.log(`📊 Fetching friends leaderboard data with limit ${limit}`);
+    console.log(`Fetching friends leaderboard data with limit ${limit}`);
     const response = await api.get(`/leaderboards/friends?limit=${limit}`);
     return response.data;
   } catch (error) {

@@ -39,7 +39,7 @@ if (__DEV__) {
           error.config.method === 'post' &&
           global.MOCK_API) {
         
-        console.log('🔄 Mock handling profile picture upload in development mode');
+        console.log('Mock handling profile picture upload in development mode');
         
         // Create a mock successful response
         const mockResponse = {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, Text, Dimensions, TouchableOpacity } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 import { colors } from '../constants/theme';
@@ -53,78 +53,99 @@ const XpChart = () => {
         limit: limit
       });
       
-      console.log(`📊 XP HISTORY (${periodType}): Received ${data?.length || 0} records:`, 
-        JSON.stringify(data));
+      console.log(`XP HISTORY (${periodType}): Received ${data?.length || 0} records:`,
+        data?.map(item => `${item.date}: ${item.xp}xp`).join(', ')
+      );
       
       setXpHistoryData(data);
       
-      // Process data for chart if we have data points
-      if (data && data.length > 0) {
-        // Sort data by date (oldest to newest for chart display)
-        const sortedData = [...data].sort((a, b) => new Date(a.date) - new Date(b.date));
-        console.log(`📊 XP CHART: Sorted data for ${periodType}:`, 
-          sortedData.map(item => ({ date: formatDate(item.date, periodType), xp: item.xp })));
+      // Sort data by date to ensure proper order
+      const sortedData = data?.sort((a, b) => new Date(a.date) - new Date(b.date)) || [];
+      
+      console.log(`XP CHART: Sorted data for ${periodType}:`,
+        sortedData.map(item => `${item.date}: ${item.xp}xp`).join(', ')
+      );
+      
+      if (sortedData.length > 0) {
+        const chartData = sortedData.map((item, index) => ({
+          x: index,  // Use index as x-axis value
+          y: item.xp,
+          date: item.date,
+          label: formatDate(item.date, periodType)
+        }));
         
-        // Extract labels and data points
-        const chartLabels = sortedData.map(item => formatDate(item.date, periodType));
-        const chartData = sortedData.map(item => item.xp);
+        console.log(`XP CHART: Setting chart data for ${periodType}:`,
+          chartData.map(item => `[${item.x}] ${item.label}: ${item.y}xp`).join(', ')
+        );
         
-        console.log(`📊 XP CHART: Setting chart data for ${periodType}:`, 
-          { labels: chartLabels, data: chartData });
-        
-        setLabels(chartLabels);
-        setDataPoints(chartData);
+        setLabels(chartData.map(item => item.label));
+        setDataPoints(chartData.map(item => item.y));
       } else {
-        // If no data, show empty chart with date labels
-        console.log(`📊 XP CHART: No data available for ${periodType}, showing empty chart`);
-        setDefaultEmptyChart(periodType);
+        console.log(`XP CHART: No data available for ${periodType}, showing empty chart`);
+        setDefaultEmptyChart();
       }
     } catch (error) {
       console.error('Error fetching XP history:', error);
       // Set default empty chart on error
-      setDefaultEmptyChart(periodType);
+      setDefaultEmptyChart();
     } finally {
       setLoading(false);
     }
   };
   
-  // Set default empty chart with appropriate time labels when no data exists
-  const setDefaultEmptyChart = (periodType) => {
-    const now = new Date();
-    const chartLabels = [];
-    const emptyData = [];
+  // Function to set default empty chart
+  const setDefaultEmptyChart = useCallback(() => {
+    let defaultData = [];
     
-    // Set same limits as fetch function
-    let limit = 7;  // default for daily
-    if (periodType === 'weekly') limit = 4;
-    if (periodType === 'monthly') limit = 6;
-    
-    // Create array of appropriate dates for the period
-    for (let i = limit - 1; i >= 0; i--) {
-      const date = new Date(now);
-      
-      switch (periodType) {
-        case 'daily':
-          date.setDate(date.getDate() - i);
-          break;
-        case 'weekly':
-          date.setDate(date.getDate() - (i * 7));
-          break;
-        case 'monthly':
-          date.setMonth(date.getMonth() - i);
-          break;
+    if (period === 'daily') {
+      // Show last 7 days
+      for (let i = 6; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - i);
+        defaultData.push({
+          x: 6 - i,
+          y: 0,
+          date: date.toISOString().split('T')[0],
+          label: date.toLocaleDateString('en-US', { weekday: 'short' })
+        });
       }
-      
-      chartLabels.push(formatDate(date, periodType));
-      emptyData.push(0); // Zero XP for empty data
+    } else if (period === 'weekly') {
+      // Show last 8 weeks
+      for (let i = 7; i >= 0; i--) {
+        const date = new Date();
+        date.setDate(date.getDate() - (i * 7));
+        // Get the start of the week (Sunday)
+        const startOfWeek = new Date(date);
+        startOfWeek.setDate(date.getDate() - date.getDay());
+        defaultData.push({
+          x: 7 - i,
+          y: 0,
+          date: startOfWeek.toISOString().split('T')[0],
+          label: `Week ${8 - i}`
+        });
+      }
+    } else {
+      // Monthly - show last 12 months
+      for (let i = 11; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        date.setDate(1); // First day of the month
+        defaultData.push({
+          x: 11 - i,
+          y: 0,
+          date: date.toISOString().split('T')[0],
+          label: date.toLocaleDateString('en-US', { month: 'short' })
+        });
+      }
     }
     
-    console.log(`📊 XP CHART: Setting default empty chart for ${periodType}:`,
-      { labels: chartLabels, data: emptyData });
+    console.log(`XP CHART: Setting default empty chart for ${period}:`,
+      defaultData.map(item => `[${item.x}] ${item.label}: ${item.y}xp`).join(', ')
+    );
     
-    setLabels(chartLabels);
-    setDataPoints(emptyData);
-  };
+    setLabels(defaultData.map(item => item.label));
+    setDataPoints(defaultData.map(item => item.y));
+  }, [period]);
   
   // Update chart when period changes
   useEffect(() => {

@@ -138,8 +138,8 @@ export const addToCurrentCourses = async (courseId) => {
 };
 
 /**
- * Remove a course from user's current courses
- * @param {string|number} courseId The ID of the course to remove
+ * Remove a course from user's current courses OR delete a course they created
+ * @param {string|number} courseId The ID of the course to remove/delete
  * @returns {Promise} Promise object with status and message
  */
 export const removeFromCurrentCourses = async (courseId) => {
@@ -149,33 +149,64 @@ export const removeFromCurrentCourses = async (courseId) => {
       throw new Error('Course ID is required');
     }
     
-    // Convert to string to ensure consistent format
-    const formattedCourseId = String(courseId);
+    // First, get the full course data to understand the course type
+    const allCourses = await getMyCourses();
+    const courseToDelete = allCourses.find(course => 
+      course.course_id === courseId || 
+      course._id === courseId || 
+      String(course.course_id) === String(courseId) ||
+      String(course._id) === String(courseId)
+    );
     
-    // Log detailed course ID info for debugging
-    console.log('Attempting to remove course with ID:', {
-      originalId: courseId,
-      formattedId: formattedCourseId,
-      idType: typeof courseId
-    });
+    if (!courseToDelete) {
+      throw new Error('Course not found in your courses');
+    }
     
-    // Call the API to remove the course
-    const response = await api.delete(`/profiles/courses/${formattedCourseId}`);
-    console.log('Successfully removed course:', response.data);
-    return response.data;
+    // Try to remove from current_courses first (for enrolled courses)
+    const idsToTry = [
+      courseId,                    // Original ID passed in
+      courseToDelete.course_id,    // Numeric course_id
+      courseToDelete._id,          // MongoDB _id
+      String(courseId),            // String version of original
+      String(courseToDelete.course_id), // String version of course_id
+      String(courseToDelete._id)   // String version of _id
+    ].filter((id, index, array) => 
+      id !== null && id !== undefined && array.indexOf(id) === index // Remove nulls and duplicates
+    );
+    
+    // Try removing from current_courses first
+    for (const idToTry of idsToTry) {
+      try {
+        const response = await api.delete(`/profiles/courses/${idToTry}`);
+        console.log('Course removed from current courses successfully');
+        return response.data;
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    // If removal from current_courses failed, try deleting the course entirely (for created courses)
+    for (const idToTry of idsToTry) {
+      try {
+        const response = await api.delete(`/courses/${idToTry}`);
+        console.log('Course deleted successfully');
+        return response.data;
+      } catch (error) {
+        continue;
+      }
+    }
+    
+    // If both methods failed
+    throw new Error('Unable to remove or delete the course. You may not have permission to perform this action.');
+    
   } catch (error) {
-    console.error('Error removing course from current courses:', error);
+    console.error('Error removing/deleting course:', error.message);
     
-    // Log detailed error information
-    if (error.response) {
-      console.error('Error response data:', error.response.data);
-      console.error('Error response status:', error.response.status);
+    // Return a more user-friendly error message
+    if (error.message.includes('Unable to remove or delete')) {
+      throw error;
     }
     
-    // Check for specific error code
-    if (error.response?.status === 400) {
-      throw new Error('Course not found in your current courses');
-    }
     throw new Error(error.response?.data?.message || 'Failed to remove course');
   }
 };

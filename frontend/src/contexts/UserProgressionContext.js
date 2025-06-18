@@ -111,7 +111,7 @@ export const UserProgressionProvider = ({ children }) => {
   const handleLevelUp = async (newLevel) => {
     if (newLevel > 1) {
       try {
-        console.log(`🎉 Level Up! Recording level ${newLevel} achievement in activity feed`);
+        console.log(`Level Up! Recording level ${newLevel} achievement in activity feed`);
         await recordLevelUp(newLevel);
       } catch (error) {
         console.error('Error recording level up activity:', error);

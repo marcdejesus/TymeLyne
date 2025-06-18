@@ -1,27 +1,17 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import * as SecureStore from 'expo-secure-store';
 import axios from 'axios';
 import apiConfig from '../config/apiConfig';
 
 export const AuthContext = createContext();
 
-// Create a hook to use the auth context
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
 // Load API URL from config file
 const API_URL = apiConfig.apiUrl;
-console.log('🌐 API URL set to:', API_URL);
+console.log('API URL set to:', API_URL);
 
-// Configure axios defaults
-axios.defaults.timeout = apiConfig.timeout;
+// Add request interceptor to log API calls
 axios.interceptors.request.use(request => {
-  console.log('🔄 Making request to:', request.url);
+  console.log('Making request to:', request.url);
   return request;
 });
 
@@ -35,33 +25,33 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     // Check if user is logged in
     const bootstrapAsync = async () => {
-      console.log('🔁 Checking for existing session...');
+      console.log('Checking for existing session...');
       try {
         // Retrieve token from secure storage
         const token = await SecureStore.getItemAsync('userToken');
         
         if (token) {
-          console.log('🔑 Token found in storage');
+          console.log('Token found in storage');
           setUserToken(token);
           
           // Retrieve user data
           const userDataJson = await SecureStore.getItemAsync('user');
           if (userDataJson) {
             const userData = JSON.parse(userDataJson);
-            console.log('👤 User data retrieved from storage:', {
+            console.log('User data retrieved from storage:', {
               username: userData.username,
               email: userData.email,
               isVerified: userData.is_verified
             });
             setUser(userData);
           } else {
-            console.log('❓ No user data found in storage');
+            console.log('No user data found in storage');
           }
         } else {
-          console.log('🔒 No token found, user is not logged in');
+          console.log('No token found, user is not logged in');
         }
       } catch (e) {
-        console.error('🔴 Error restoring session:', e);
+        console.error('Error restoring session:', e);
       } finally {
         // Short delay to simulate loading
         setTimeout(() => {
@@ -74,14 +64,14 @@ const AuthProvider = ({ children }) => {
   }, []);
 
   const login = async (emailOrUsername, password) => {
-    console.log('🔶 LOGIN ATTEMPT:', { emailOrUsername });
+    console.log('LOGIN ATTEMPT:', { emailOrUsername });
     setIsLoading(true);
     setError(null);
     setNeedsVerification(false);
     
     try {
       // Call the backend API
-      console.log(`⚙️ Making login request to ${API_URL}/auth/login`);
+      console.log(`Making login request to ${API_URL}/auth/login`);
       const response = await axios.post(`${API_URL}/auth/login`, {
         emailOrUsername,
         password,
@@ -103,7 +93,7 @@ const AuthProvider = ({ children }) => {
       
       return { success: true };
     } catch (error) {
-      console.error('🔴 LOGIN ERROR:', error.response?.data || error.message);
+      console.error('LOGIN ERROR:', error.response?.data || error.message);
       console.error('Error details:', error);
       
       // Check if the error is due to unverified email
@@ -128,8 +118,8 @@ const AuthProvider = ({ children }) => {
   };
 
   const register = async (userData) => {
-    console.log('🔶 REGISTER ATTEMPT:', { 
-      email: userData.email, 
+    console.log('REGISTER ATTEMPT:', { 
+      email: userData.email,
       username: userData.username 
     });
     
@@ -138,7 +128,7 @@ const AuthProvider = ({ children }) => {
     
     try {
       // Call the backend API
-      console.log(`⚙️ Making registration request to ${API_URL}/auth/register`);
+      console.log(`Making registration request to ${API_URL}/auth/register`);
       const response = await axios.post(`${API_URL}/auth/register`, userData);
       
       const { success, needsVerification, message, user } = response.data;
@@ -162,7 +152,7 @@ const AuthProvider = ({ children }) => {
         needsVerification: true
       };
     } catch (error) {
-      console.error('🔴 REGISTER ERROR:', error.response?.data || error.message);
+      console.error('REGISTER ERROR:', error.response?.data || error.message);
       console.error('Error details:', error);
       setError(error.response?.data?.message || error.message || 'Registration failed');
       return { 
@@ -175,14 +165,14 @@ const AuthProvider = ({ children }) => {
   };
 
   const resendVerification = async (email) => {
-    console.log('🔶 RESEND VERIFICATION ATTEMPT:', { email });
+    console.log('RESEND VERIFICATION ATTEMPT:', { email });
     
     try {
       const response = await axios.post(`${API_URL}/auth/resend-verification`, { email });
       console.log('✅ VERIFICATION EMAIL RESENT:', { email, message: response.data.message });
       return { success: true, message: response.data.message };
     } catch (error) {
-      console.error('🔴 RESEND VERIFICATION ERROR:', error.response?.data || error.message);
+      console.error('RESEND VERIFICATION ERROR:', error.response?.data || error.message);
       console.error('Error details:', error);
       return { 
         success: false, 
@@ -192,7 +182,7 @@ const AuthProvider = ({ children }) => {
   };
 
   const logout = async () => {
-    console.log('🔶 LOGOUT ATTEMPT');
+    console.log('LOGOUT ATTEMPT');
     setIsLoading(true);
     
     try {
@@ -205,7 +195,7 @@ const AuthProvider = ({ children }) => {
       setUser(null);
       console.log('✅ LOGOUT SUCCESSFUL');
     } catch (e) {
-      console.error('🔴 LOGOUT ERROR:', e);
+      console.error('LOGOUT ERROR:', e);
     } finally {
       setIsLoading(false);
     }
@@ -214,7 +204,7 @@ const AuthProvider = ({ children }) => {
   // Update user data - new function for profile updates
   const updateUser = async (userData) => {
     try {
-      console.log('🔄 Updating user data');
+      console.log('Updating user data');
       
       // Check if we're receiving a new user object or just fields to update
       let updatedUser = userData;
@@ -239,7 +229,7 @@ const AuthProvider = ({ children }) => {
       
       return { success: true, user: updatedUser };
     } catch (error) {
-      console.error('🔴 UPDATE USER ERROR:', error);
+      console.error('UPDATE USER ERROR:', error);
       return { success: false, error: error.message };
     }
   };

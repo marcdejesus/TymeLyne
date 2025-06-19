@@ -25,6 +25,8 @@ const ProgressBar = ({
 }) => {
   // Ensure progress is between 0 and 100
   const normalizedProgress = Math.min(Math.max(progress, 0), 100);
+  // Round to ensure integer display
+  const displayProgress = Math.round(normalizedProgress);
   
   return (
     <View style={[styles.container, style]}>
@@ -34,7 +36,7 @@ const ProgressBar = ({
           weight="medium" 
           style={[styles.label, labelStyle]}
         >
-          {normalizedProgress}%
+          {displayProgress}%
         </Typography>
       )}
       

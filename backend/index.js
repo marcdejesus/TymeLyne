@@ -4,6 +4,7 @@ const cors = require('cors');
 const connectDB = require('./config/db');
 const os = require('os');
 const jwt = require('jsonwebtoken');
+const path = require('path');
 
 // Load environment variables
 dotenv.config();
@@ -52,6 +53,7 @@ connectDB();
 
 // Middleware
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Configure CORS to allow requests from the React Native app
 const defaultOrigins = [
@@ -94,6 +96,9 @@ app.use(['/api/profiles', '/api/profile'], require('./routes/profiles'));
 app.use('/api/courses', require('./routes/courses'));
 app.use('/api/leaderboards', require('./routes/leaderboards'));
 app.use('/api/activity', require('./routes/activity'));
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Direct routes for progression endpoints (for better compatibility)
 app.get(['/api/profile/progression', '/api/profiles/progression'], async (req, res) => {

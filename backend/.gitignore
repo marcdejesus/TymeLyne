@@ -37,4 +37,7 @@ temp/
 .DS_Store
 
 # MongoDB data folder if stored locally
-data/ 
+data/
+
+# Upload directories
+uploads/ 

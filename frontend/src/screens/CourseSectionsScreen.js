@@ -207,6 +207,8 @@ const CourseSectionsScreen = ({ navigation, route }) => {
             <View style={styles.logoContainer}>
               <Image 
                 source={
+                  // Prioritize AI-generated logo
+                  (courseData.ai_logo && { uri: courseData.ai_logo }) ||
                   courseData.icon || 
                   (courseData.courseData && courseData.courseData.icon) ||
                   require('../../assets/course-icons/computer.png')

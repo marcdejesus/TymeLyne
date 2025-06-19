@@ -21,6 +21,16 @@ const defaultCourseIcons = [
   require('../../assets/course-icons/marketing.png'),
 ];
 
+// Helper function to get course icon
+const getCourseIcon = (course, index) => {
+  // Prioritize AI-generated logo
+  if (course.ai_logo) {
+    return { uri: course.ai_logo };
+  }
+  // Fallback to default icons
+  return defaultCourseIcons[index % defaultCourseIcons.length];
+};
+
 // Import tutorial data
 import { tymelyneTutorialData } from '../data/tutorialData';
 
@@ -37,6 +47,16 @@ const HomeScreen = ({ navigation }) => {
   const [refreshing, setRefreshing] = useState(false);
   // Track if initial data has been loaded
   const initialLoadComplete = useRef(false);
+
+  // Debug refreshing state changes
+  useEffect(() => {
+    console.log('🔄 HomeScreen: Refreshing state changed to:', refreshing);
+  }, [refreshing]);
+
+  // Debug loading state changes
+  useEffect(() => {
+    console.log('⏳ HomeScreen: Loading state changed to:', loading);
+  }, [loading]);
 
   // Function to handle course deletion
   const handleCourseDelete = async (courseId, courseTitle, callback) => {
@@ -102,12 +122,15 @@ const HomeScreen = ({ navigation }) => {
   // Function to fetch user's courses
   const fetchUserCourses = async (showLoadingUI = true) => {
     try {
+      console.log('📊 HomeScreen: Starting fetchUserCourses', { showLoadingUI, refreshing });
+      
       if (showLoadingUI) {
         setLoading(true);
         setVisibleLoading(true);
       }
       
       setError(null);
+      console.log('Fetching courses from API...');
       const courses = await getMyCourses();
       
       console.log('Fetched courses from API:', courses.length, 'courses');
@@ -128,7 +151,7 @@ const HomeScreen = ({ navigation }) => {
           id: course.course_id || course._id,
           title: courseTitle,
           // Assign a default icon based on index
-          icon: defaultCourseIcons[index % defaultCourseIcons.length],
+          icon: getCourseIcon(course, index),
           progress: 100, // 100% completed
           // Store the original course data for details view
           courseData: { 
@@ -176,7 +199,7 @@ const HomeScreen = ({ navigation }) => {
           id: extractedId,
           title: courseTitle,
           // Assign a default icon based on index
-          icon: defaultCourseIcons[index % defaultCourseIcons.length],
+          icon: getCourseIcon(course, index),
           // Calculate progress based on completed sections
           progress,
           // Store the original course data for details view
@@ -207,19 +230,39 @@ const HomeScreen = ({ navigation }) => {
       setUserCourses(sortedCourses);
       initialLoadComplete.current = true;
       
-      // Slightly delay hiding the loading state to ensure smooth transition
-      setTimeout(() => {
+      // Handle different loading states
+      if (showLoadingUI) {
+        // Slightly delay hiding the loading state to ensure smooth transition
+        setTimeout(() => {
+          setVisibleLoading(false);
+          setLoading(false);
+          console.log('📊 HomeScreen: Course loading complete (with UI)');
+        }, 500);
+      } else {
+        // For pull-to-refresh, immediately update
         setVisibleLoading(false);
         setLoading(false);
-        if (refreshing) setRefreshing(false);
-      }, 500);
+        console.log('📊 HomeScreen: Course loading complete (refresh)');
+      }
+      
+      // Always turn off refreshing state
+      if (refreshing) {
+        console.log('🔄 HomeScreen: Turning off refresh indicator');
+        setRefreshing(false);
+      }
+      
+      console.log('Course data fetch completed successfully');
     } catch (err) {
-      console.error('Failed to fetch user courses:', err);
+      console.error('❌ HomeScreen: Failed to fetch user courses:', err);
       setError('Could not load your courses');
       setLoading(false);
       setVisibleLoading(false);
-      // Ensure refreshing state is turned off
-      if (refreshing) setRefreshing(false);
+      
+      // Always ensure refreshing state is turned off
+      if (refreshing) {
+        console.log('🔄 HomeScreen: Turning off refresh indicator (error)');
+        setRefreshing(false);
+      }
       
       // Add user-friendly error if triggered by pull-to-refresh
       if (refreshing) {
@@ -232,40 +275,32 @@ const HomeScreen = ({ navigation }) => {
     }
   };
 
+  // Refresh courses when screen comes into focus, but only on first mount
+  useFocusEffect(
+    useCallback(() => {
+      // Always refresh data when screen comes into focus to ensure deleted courses are reflected
+      console.log('🏠 HomeScreen focused - refreshing data');
+      fetchUserCourses();
+      
+      return () => {
+        // Cleanup function when screen loses focus (if needed)
+        console.log('🏠 HomeScreen unfocused');
+      };
+    }, []) // Empty dependency array means this only depends on screen focus
+  );
+
   // Handle pull-to-refresh
   // This allows users to pull down from the top of the screen to refresh their course data
   // Useful when courses are added, removed, or course progress has been updated
   const onRefresh = useCallback(() => {
+    console.log('🔄 Pull-to-refresh triggered on HomeScreen');
     setRefreshing(true);
-    try {
-      // Fetch fresh course data without showing skeleton loaders
-      fetchUserCourses(false);
-    } catch (error) {
-      console.error('Error during refresh:', error);
-      // Ensure refreshing state is turned off if there's an error
-      setRefreshing(false);
-    }
+    setError(null); // Clear any existing errors
+    
+    // Always fetch fresh data, resetting the cache
+    initialLoadComplete.current = false;
+    fetchUserCourses(false); // Don't show skeleton loaders during pull-to-refresh
   }, []);
-
-  // Refresh courses when screen comes into focus, but only on first mount
-  useFocusEffect(
-    useCallback(() => {
-      // Only load data if it hasn't been loaded before
-      if (!initialLoadComplete.current) {
-        console.log('Home screen focused - initial data load');
-        fetchUserCourses();
-      } else {
-        console.log('Home screen focused - using cached data');
-        // If we already have data, just use what we have
-        setLoading(false);
-        setVisibleLoading(false);
-      }
-      
-      return () => {
-        // Cleanup function when screen loses focus (if needed)
-      };
-    }, []) // Empty dependency array means this only depends on screen focus
-  );
 
   // Calculate course progress percentage
   const calculateProgress = (course) => {
@@ -526,19 +561,32 @@ const HomeScreen = ({ navigation }) => {
         showsVerticalScrollIndicator={false} 
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
+        scrollEventThrottle={16}
+        bounces={true}
+        alwaysBounceVertical={true}
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            colors={[colors.primary]}
-            tintColor={colors.primary}
-            progressBackgroundColor={colors.background}
-            progressViewOffset={10}
-            title="Pull to refresh"
-            titleColor={colors.text.secondary}
+            colors={[colors.primary, colors.secondary]} // Android
+            tintColor={colors.primary} // iOS
+            progressBackgroundColor={colors.background} // Android
+            progressViewOffset={0}
+            title="Pull to refresh courses" // iOS
+            titleColor={colors.text.secondary} // iOS
+            size="default" // Android: "default" or "large"
           />
         }
       >
+        {/* Show a loading banner when refreshing */}
+        {refreshing && (
+          <View style={styles.refreshingBanner}>
+            <Typography variant="caption" color="secondary">
+              Refreshing courses...
+            </Typography>
+          </View>
+        )}
+
         {/* Active Courses Section */}
         <View style={styles.firstSectionTitleContainer}>
           {renderSectionTitle("Active Courses", "View All", handleViewAllActiveCourses)}
@@ -676,6 +724,14 @@ const styles = StyleSheet.create({
     borderColor: __DEV__ ? colors.border : 'transparent',
     borderStyle: 'dashed',
     borderRadius: borderRadius.m,
+  },
+  refreshingBanner: {
+    padding: spacing.s,
+    backgroundColor: colors.background.card,
+    alignItems: 'center',
+    marginBottom: spacing.s,
+    borderRadius: borderRadius.s,
+    marginHorizontal: spacing.m,
   },
 });
 

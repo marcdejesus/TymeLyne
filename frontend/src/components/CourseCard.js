@@ -33,7 +33,11 @@ const CourseCard = ({
         noPadding={false}
       >
         <View style={styles.gridIconContainer}>
-          <Image source={course.icon} style={styles.gridIcon} />
+          <Image 
+            source={course.icon} 
+            style={styles.gridIcon}
+            onError={() => console.warn('Failed to load course icon:', course.icon)}
+          />
         </View>
         <Typography 
           variant="body2" 
@@ -57,7 +61,11 @@ const CourseCard = ({
       noPadding={false}
     >
       <View style={styles.iconContainer}>
-        <Image source={course.icon} style={styles.icon} />
+        <Image 
+          source={course.icon} 
+          style={styles.icon}
+          onError={() => console.warn('Failed to load course icon:', course.icon)}
+        />
       </View>
       
       <View style={styles.contentContainer}>

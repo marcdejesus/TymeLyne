@@ -1,4 +1,7 @@
 const { OpenAI } = require('openai');
+const fs = require('fs');
+const path = require('path');
+const https = require('https');
 
 // Initialize OpenAI with API key from environment variables
 const openai = new OpenAI({
@@ -310,6 +313,146 @@ const generateCourse = async (topic, difficulty = 'Beginner', sectionsCount = 3)
   }
 };
 
+/**
+ * Generates a custom logo for a course using OpenAI's DALL-E API
+ * @param {string} topic - The topic/subject of the course
+ * @param {string} difficulty - The difficulty level of the course
+ * @param {string} category - The category of the course
+ * @returns {Promise<string>} - URL of the generated logo image
+ */
+const generateCourseLogo = async (topic, difficulty = 'Beginner', category = 'Uncategorized') => {
+  try {
+    console.log('🎨 OpenAI Service: Starting logo generation for:', { topic, difficulty, category });
+    
+    // Check if we should use mock data
+    const useMockData = process.env.USE_MOCK_OPENAI === 'true';
+    
+    if (useMockData) {
+      console.log('🧪 Using mock logo URL for testing');
+      // Return a placeholder image URL for testing
+      return 'https://via.placeholder.com/512x512/4F46E5/FFFFFF?text=' + encodeURIComponent(topic.slice(0, 10));
+    }
+    
+    // Check if API key is configured
+    if (!process.env.OPENAI_API_KEY) {
+      console.error('❌ OpenAI Service: Missing API key for logo generation');
+      throw new Error('OpenAI API key is not configured');
+    }
+    
+    // Create a detailed prompt that references the existing course icons as templates
+    const prompt = `Create a professional, minimalist course logo icon for a ${difficulty.toLowerCase()} level course about "${topic}". 
+
+Style requirements:
+- Clean, modern, flat design similar to educational app icons
+- Solid background with a subtle gradient (use colors like deep blue #4F46E5, teal #0D9488, purple #7C3AED, or orange #EA580C)
+- Central icon/symbol that clearly represents the topic "${topic}"
+- Simple geometric shapes and clean lines
+- Professional and academic feel
+- 512x512 pixels, suitable for mobile app display
+- No text or letters in the design
+- Icon should be centered and prominent
+- Similar aesthetic to course platform icons with rounded corners
+- Keep the icon/symbol simple and easily-recognizable
+
+The logo should be instantly recognizable as related to "${topic}" while maintaining a professional educational appearance. Think of popular educational app icons - clean, colorful, and topic-specific.`;
+
+    console.log('🎨 Generating logo with DALL-E...');
+    
+    const response = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+      style: "vivid"
+    });
+    
+    const logoUrl = response.data[0].url;
+    console.log('✅ Logo generated successfully:', logoUrl);
+    
+    return logoUrl;
+    
+  } catch (error) {
+    console.error('❌ OpenAI Service: Error during logo generation:', error);
+    
+    // Handle specific error cases
+    if (error.code === 'insufficient_quota') {
+      console.log('💰 Quota exceeded, using fallback logo strategy');
+      return generateFallbackLogo(topic);
+    } else if (error.code === 'invalid_api_key') {
+      console.log('🔑 Invalid API key, using fallback logo strategy');
+      return generateFallbackLogo(topic);
+    } else if (error.status === 429) {
+      console.log('⏱️ Rate limit exceeded, using fallback logo strategy');
+      return generateFallbackLogo(topic);
+    }
+    
+    // For other errors, try fallback
+    console.log('🔄 Using fallback logo strategy due to error');
+    return generateFallbackLogo(topic);
+  }
+};
+
+/**
+ * Generates a fallback logo URL when DALL-E is not available
+ * @param {string} topic - The topic of the course
+ * @returns {string} - Fallback logo URL
+ */
+const generateFallbackLogo = (topic) => {
+  // Create a simple placeholder with the topic initial and a color based on topic hash
+  const colors = ['4F46E5', '0D9488', '7C3AED', 'EA580C', 'DC2626', '059669'];
+  const topicHash = topic.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+  const color = colors[topicHash % colors.length];
+  const initial = topic.charAt(0).toUpperCase();
+  
+  return `https://via.placeholder.com/512x512/${color}/FFFFFF?text=${initial}`;
+};
+
+/**
+ * Downloads an image from a URL and saves it locally
+ * @param {string} imageUrl - The URL of the image to download
+ * @param {string} filename - The filename to save the image as
+ * @returns {Promise<string>} - Local file path of the saved image
+ */
+const downloadAndSaveImage = async (imageUrl, filename) => {
+  try {
+    const logoDir = path.join(__dirname, '../uploads/logos');
+    
+    // Create directory if it doesn't exist
+    if (!fs.existsSync(logoDir)) {
+      fs.mkdirSync(logoDir, { recursive: true });
+    }
+    
+    const filePath = path.join(logoDir, filename);
+    
+    return new Promise((resolve, reject) => {
+      const file = fs.createWriteStream(filePath);
+      
+      https.get(imageUrl, (response) => {
+        response.pipe(file);
+        
+        file.on('finish', () => {
+          file.close();
+          console.log('✅ Logo saved locally:', filePath);
+          resolve(filePath);
+        });
+        
+        file.on('error', (err) => {
+          fs.unlink(filePath, () => {}); // Delete the file on error
+          reject(err);
+        });
+      }).on('error', (err) => {
+        reject(err);
+      });
+    });
+  } catch (error) {
+    console.error('❌ Error downloading/saving image:', error);
+    throw error;
+  }
+};
+
 module.exports = {
-  generateCourse
+  generateCourse,
+  generateCourseLogo,
+  downloadAndSaveImage
 }; 

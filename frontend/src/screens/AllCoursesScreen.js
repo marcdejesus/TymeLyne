@@ -93,20 +93,32 @@ const AllCoursesScreen = ({ navigation, route }) => {
         _id: course._id,
         course_id: course.course_id,
         id: courseId,
-        idType: typeof courseId
+        idType: typeof courseId,
+        ai_logo: course.ai_logo
       });
+      
+      // Determine which icon to use - prioritize AI-generated logo
+      let courseIcon;
+      if (course.ai_logo) {
+        // Use AI-generated logo if available
+        courseIcon = { uri: course.ai_logo };
+      } else {
+        // Fallback to default icons if no AI logo
+        courseIcon = defaultIcons[index % defaultIcons.length];
+      }
       
       return {
         id: courseId,
         idStr: courseIdStr,
         rawCourse: course, // Keep raw course for troubleshooting
         title: courseTitle,
-        icon: defaultIcons[index % defaultIcons.length],
+        icon: courseIcon,
         progress: isCompleted ? 100 : calculateProgress(course),
         courseData: {
           ...course,
           title: courseTitle,
           course_name: courseTitle,
+          icon: courseIcon, // Also add icon to courseData
           sections: course.sections ? course.sections.map(section => ({
             ...section,
             isCompleted: isCompleted ? true : section.isCompleted
@@ -193,6 +205,12 @@ const AllCoursesScreen = ({ navigation, route }) => {
                 
                 // Call the callback function to refresh the courses list
                 if (callback) callback();
+                
+                // Mark the navigation state to indicate data has changed
+                // This will help the HomeScreen know to refresh when returning
+                if (navigation.setParams) {
+                  navigation.setParams({ dataChanged: true, timestamp: Date.now() });
+                }
                 
                 // Show success message
                 Alert.alert('Success', `Course "${courseTitle}" has been removed from your courses.`);

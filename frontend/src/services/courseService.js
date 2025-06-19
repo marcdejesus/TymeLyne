@@ -1,4 +1,34 @@
 import api from '../utils/api';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import apiConfig from '../config/apiConfig';
+
+// Create a special API instance with longer timeout for course generation
+const createLongTimeoutApi = () => {
+  const longTimeoutApi = axios.create({
+    baseURL: apiConfig.apiUrl,
+    timeout: 120000, // 2 minutes timeout for course generation
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  // Add the same request interceptor as the main api instance
+  longTimeoutApi.interceptors.request.use(
+    async (config) => {
+      const token = await SecureStore.getItemAsync('userToken');
+      if (token) {
+        config.headers['x-auth-token'] = token;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  return longTimeoutApi;
+};
 
 /**
  * Get all publicly available courses
@@ -63,10 +93,20 @@ export const getMyCourses = async () => {
 export const createCourse = async (courseData) => {
   try {
     console.log('Generating course with data:', courseData);
-    const response = await api.post('/courses/generate', courseData);
+    
+    // Use the long timeout API for course generation since it includes AI content and logo generation
+    const longTimeoutApi = createLongTimeoutApi();
+    const response = await longTimeoutApi.post('/courses/generate', courseData);
+    
     return response.data;
   } catch (error) {
     console.error('Error generating course:', error);
+    
+    // Provide more specific error messages for timeouts
+    if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+      throw new Error('Course generation is taking longer than expected. This can happen with complex AI generation. Please try again or simplify your request.');
+    }
+    
     throw new Error(error.response?.data?.message || 'Failed to generate course');
   }
 };

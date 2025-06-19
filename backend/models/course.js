@@ -69,6 +69,10 @@ const CourseSchema = new Schema({
     type: String,
     enum: ['Beginner', 'Intermediate', 'Advanced'],
     default: 'Beginner'
+  },
+  ai_logo: {
+    type: String,
+    default: null
   }
 });
 

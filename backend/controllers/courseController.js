@@ -1,6 +1,6 @@
 const Course = require('../models/course');
 const Profile = require('../models/profile');
-const { generateCourse } = require('../services/openai.service');
+const { generateCourse, generateCourseLogo, downloadAndSaveImage } = require('../services/openai.service');
 const userProgressionService = require('../services/userProgressionService');
 
 /**
@@ -37,18 +37,18 @@ exports.generateCourse = async (req, res) => {
       username: profile.username
     });
     
-    // Generate course content using OpenAI
-    console.log('🤖 Requesting AI course generation for:', {
-      topic,
-      difficulty,
-      sectionsCount
-    });
+    // Generate course content and logo in parallel for better performance
+    console.log('🤖 Starting parallel AI generation (course content + logo)...');
     
-    const courseData = await generateCourse(topic, difficulty, sectionsCount);
+    const [courseData, logoUrl] = await Promise.all([
+      generateCourse(topic, difficulty, sectionsCount),
+      generateCourseLogo(topic, difficulty, topic) // Using topic as category
+    ]);
     
     console.log('✅ AI generation successful:', {
       title: courseData.title,
-      sections_count: courseData.sections.length
+      sections_count: courseData.sections.length,
+      logo_url: logoUrl
     });
     
     // Create the course in the database
@@ -60,10 +60,23 @@ exports.generateCourse = async (req, res) => {
       difficulty: difficulty,
       is_public: false, // Default to private
       category: topic, // Using topic as initial category
+      ai_logo: logoUrl // Store the generated logo URL
     });
     
     await course.save();
     console.log(`✅ Course saved to database with ID: ${course._id}`);
+    
+    // Optional: Download and save the logo locally (for backup/caching)
+    try {
+      if (logoUrl && !logoUrl.includes('placeholder')) {
+        const filename = `course_${course._id}_logo.png`;
+        await downloadAndSaveImage(logoUrl, filename);
+        console.log('💾 Logo saved locally as backup');
+      }
+    } catch (logoSaveError) {
+      console.warn('⚠️ Failed to save logo locally (non-critical):', logoSaveError.message);
+      // Continue without failing the course creation
+    }
     
     res.status(201).json({ 
       message: 'Course created successfully',

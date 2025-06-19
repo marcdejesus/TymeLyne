@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useContext } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, ScrollView, ActivityIndicator, Alert, StatusBar, Platform, Keyboard, TouchableWithoutFeedback } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,17 +7,18 @@ import Typography from '../components/Typography';
 import Button from '../components/Button';
 import Card from '../components/Card';
 import Input from '../components/Input';
+import ProgressBar from '../components/ProgressBar';
 import { colors, spacing, borderRadius, shadows, deviceInfo } from '../constants/theme';
 import { Picker } from '@react-native-picker/picker';
 import Slider from '@react-native-community/slider';
 import { createCourse } from '../services/courseService';
-import { useAuth } from '../contexts/AuthContext';
+import { AuthContext } from '../contexts/AuthContext';
 
 const { width } = Dimensions.get('window');
 const isIphoneWithNotch = Platform.OS === 'ios' && Dimensions.get('window').height > 800;
 
 const CourseCreateScreen = ({ navigation }) => {
-  const { user } = useAuth();
+  const { user } = useContext(AuthContext);
   const scrollViewRef = useRef(null);
   
   // Form state
@@ -33,6 +34,9 @@ const CourseCreateScreen = ({ navigation }) => {
   const [error, setError] = useState(null);
   const [sectionsCount, setSectionsCount] = useState(3);
   const [difficulty, setDifficulty] = useState('Beginner');
+  const [progress, setProgress] = useState(0);
+  const [currentStep, setCurrentStep] = useState('');
+  const [progressSteps, setProgressSteps] = useState([]);
   
   // Radio button options
   const goalOptions = [
@@ -87,6 +91,69 @@ const CourseCreateScreen = ({ navigation }) => {
     }
   };
 
+  // Progress tracking steps
+  const generateProgressSteps = (sectionsCount) => {
+    const steps = [
+      { id: 'initializing', label: 'Initializing course generation...', progress: 5 },
+      { id: 'course_structure', label: 'Creating course structure...', progress: 15 },
+      { id: 'course_content', label: 'Generating course content...', progress: 25 },
+    ];
+    
+    // Add section generation steps
+    for (let i = 1; i <= sectionsCount; i++) {
+      steps.push({
+        id: `section_${i}`,
+        label: `Generating Section ${i}...`,
+        progress: Math.round(25 + (i * (50 / sectionsCount)))
+      });
+    }
+    
+    // Add final steps
+    steps.push(
+      { id: 'logo_generation', label: 'Creating custom AI logo...', progress: 85 },
+      { id: 'finalizing', label: 'Finalizing course...', progress: 95 },
+      { id: 'complete', label: 'Course created successfully, one moment!', progress: 100 }
+    );
+    
+    return steps;
+  };
+
+  // Progress simulation function
+  const simulateProgress = async (steps) => {
+    const totalEstimatedTime = 45000; // 45 seconds estimated total time
+    const stepCount = steps.length;
+    
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i];
+      setCurrentStep(step.label);
+      setProgress(Math.round(step.progress));
+      
+      // Calculate adaptive delay based on step type and position
+      let delay = totalEstimatedTime / stepCount; // Base delay
+      
+      if (step.id === 'initializing') {
+        delay = 1000; // Quick start
+      } else if (step.id === 'course_structure') {
+        delay = 2000; // Structure takes a bit longer
+      } else if (step.id === 'course_content') {
+        delay = 3000; // Content generation is significant
+      } else if (step.id.startsWith('section_')) {
+        delay = 2500; // Each section takes time
+      } else if (step.id === 'logo_generation') {
+        delay = 8000; // Logo generation takes the longest
+      } else if (step.id === 'finalizing') {
+        delay = 2000; // Finalizing takes some time
+      } else if (step.id === 'complete') {
+        delay = 500; // Quick completion
+      }
+      
+      // Don't delay on the last step
+      if (i < steps.length - 1) {
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  };
+
   // Handle course generation with all form data
   const handleCreateCourse = async () => {
     if (!courseTitle.trim()) {
@@ -103,6 +170,12 @@ const CourseCreateScreen = ({ navigation }) => {
     try {
       setLoading(true);
       setError(null);
+      setProgress(0);
+      setCurrentStep('');
+      
+      // Generate progress steps based on sections count
+      const steps = generateProgressSteps(sectionsCount);
+      setProgressSteps(steps);
       
       // Create a detailed prompt based on questionnaire
       const userPreferences = {
@@ -123,7 +196,23 @@ const CourseCreateScreen = ({ navigation }) => {
         scrollViewRef.current?.scrollToEnd({ animated: true });
       }, 100);
 
-      const result = await createCourse(userPreferences);
+      // Start progress simulation and course creation simultaneously
+      const progressPromise = simulateProgress(steps);
+      const coursePromise = createCourse(userPreferences);
+      
+      // Wait for both to complete, but handle the case where one finishes first
+      const results = await Promise.allSettled([progressPromise, coursePromise]);
+      const courseResult = results[1];
+      
+      if (courseResult.status === 'rejected') {
+        throw courseResult.reason;
+      }
+      
+      const result = courseResult.value;
+      
+      // Ensure we show 100% completion
+      setProgress(100);
+      setCurrentStep('Course created successfully, one moment!');
       
       setLoading(false);
       
@@ -156,6 +245,8 @@ const CourseCreateScreen = ({ navigation }) => {
       }
     } catch (err) {
       setLoading(false);
+      setProgress(0);
+      setCurrentStep('');
       setError(err.message || 'Failed to generate course. Please try again.');
       Alert.alert('Error', err.message || 'Failed to generate course. Please try again.');
     }
@@ -363,21 +454,39 @@ const CourseCreateScreen = ({ navigation }) => {
                 AI-Powered Learning
               </Typography>
               <Button
-                title={loading ? "Generating..." : "Generate Course"}
+                title={loading ? "Generating with AI..." : "Generate Course"}
                 onPress={handleCreateCourse}
                 style={styles.button}
                 disabled={loading || !courseTitle.trim() || !selectedGoal || !skillLevel || !timePerWeek}
               >
-                {loading ? "Generating..." : "Generate Course"}
+                {loading ? "Generating with AI..." : "Generate Course"}
               </Button>
             </View>
             
             {loading && (
               <View style={styles.loadingContainer}>
-                <ActivityIndicator size="large" color={colors.primary} />
-                <Typography variant="body2" style={styles.loadingText}>
-                  Creating your personalized course... This may take a minute.
-                </Typography>
+                <View style={styles.progressSection}>
+                  <Typography variant="body2" style={styles.progressTitle}>
+                    Creating Your AI-Powered Course
+                  </Typography>
+                  
+                  <ProgressBar 
+                    progress={progress} 
+                    height={12}
+                    color={colors.primary}
+                    showLabel={true}
+                    style={styles.progressBar}
+                  />
+                  
+                  <Typography variant="body2" style={styles.currentStepText}>
+                    {currentStep}
+                  </Typography>
+                  
+                  <Typography variant="caption" style={styles.progressNote}>
+                    This process includes AI content generation and custom logo creation.
+                    Please don't close the app.
+                  </Typography>
+                </View>
               </View>
             )}
           </Card>
@@ -541,9 +650,28 @@ const styles = StyleSheet.create({
     marginTop: spacing.l,
     alignItems: 'center',
   },
-  loadingText: {
-    marginTop: spacing.s,
+  progressSection: {
+    width: '100%',
+    padding: spacing.m,
+    alignItems: 'center',
+  },
+  progressTitle: {
+    marginBottom: spacing.s,
     textAlign: 'center',
+    fontWeight: '600',
+  },
+  progressBar: {
+    marginBottom: spacing.s,
+  },
+  currentStepText: {
+    marginBottom: spacing.s,
+    textAlign: 'center',
+    color: colors.primary,
+    fontWeight: '500',
+  },
+  progressNote: {
+    textAlign: 'center',
+    color: colors.text.secondary,
   },
   errorText: {
     color: colors.status.error,
